@@ -1,0 +1,21 @@
+version: 2.1
+
+workflows:
+  version: 2
+  api_verify:
+    jobs:
+      - verify
+
+executors:
+  build:
+    docker:
+      - image: circleci/golang:1.11
+    working_directory: /go/src/github.com/tetratelabs/go2sky
+
+jobs:
+  verify:
+    executor: build
+    steps:
+      - checkout
+      - run: make vet
+      - run: make test
