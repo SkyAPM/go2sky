@@ -1,6 +1,8 @@
 
 .DEFAULT_GOAL := test
 
+GO111MODULE:=on
+
 .PHONY: test
 test:
 	go test -v -race -cover ./...

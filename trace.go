@@ -10,15 +10,20 @@ import (
 // Tracer is go2sky tracer implementation.
 type Tracer struct {
 	serviceCode string
+	reporter    Reporter
 }
 
 // TracerOption allows for functional options to adjust behaviour
 // of a Tracer to be created by NewTracer
-type TracerOption func(t *Tracer) error
+type TracerOption func(t *Tracer)
 
 // NewTracer return a new go2sky Tracer
 func NewTracer(opts ...TracerOption) (tracer *Tracer, err error) {
-	return &Tracer{}, nil
+	t := &Tracer{}
+	for _, opt := range opts {
+		opt(t)
+	}
+	return t, nil
 }
 
 // CreateEntrySpan creates and starts an entry span for incoming request
@@ -36,11 +41,14 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (Span,
 	if parentSpan, ok := ctx.Value(key).(Span); ok && parentSpan != nil {
 		opts = append(opts, WithParent(parentSpan.Context()))
 		if parentRootSpan, okk := parentSpan.(SegmentSpan); okk {
-			root = parentRootSpan.SegmentRegister()
+			root = !parentRootSpan.SegmentRegister()
 			opts = append(opts, WithSegment(parentRootSpan.SegmentContext()))
 		}
 	}
-	s := &defaultSpan{}
+	s := &defaultSpan{
+		tracer:  t,
+		root:    root,
+	}
 	for _, opt := range opts {
 		opt(s)
 	}
@@ -73,15 +81,17 @@ type Span interface {
 // SegmentSpan interface as segment span specification
 type SegmentSpan interface {
 	SegmentRegister() bool
-	SegmentContext() segmentContext
+	SegmentContext()  segmentContext
 }
 
 type defaultSpan struct {
 	propagation.ContextCarrier
 	segmentContext
+	root    bool
 	notify  <-chan Span
 	segment []Span
 	doneCh  chan int32
+	tracer  *Tracer
 }
 
 type segmentContext struct {
@@ -111,16 +121,17 @@ func (s *defaultSpan) SegmentContext() segmentContext {
 
 func (s *defaultSpan) End() {
 	go func() {
-		if s.segment == nil {
-			s.collect <- s
+		if s.root {
+			s.doneCh <- atomic.SwapInt32(s.refNum, -1)
 			return
 		}
-		s.doneCh <- atomic.SwapInt32(s.refNum, -1)
+		s.collect <- s
 	}()
 }
 
 func (s *defaultSpan) createSegment() {
-	atomic.StoreInt32(s.refNum, 0)
+	var init int32 = 0
+	s.refNum = &init
 	ch := make(chan Span)
 	s.collect = ch
 	s.notify = ch
@@ -129,7 +140,7 @@ func (s *defaultSpan) createSegment() {
 	go func() {
 		total := -1
 		defer close(ch)
-		close(s.doneCh)
+		defer close(s.doneCh)
 		for {
 			select {
 			case span, ok := <-s.notify:
@@ -137,13 +148,14 @@ func (s *defaultSpan) createSegment() {
 					return
 				}
 				s.segment = append(s.segment, span)
-			case total = <-s.doneCh:
+			case n := <-s.doneCh:
+				total = int(n)
 			}
 			if total == len(s.segment) {
 				break
 			}
 		}
-		// Todo compose segment
+		s.tracer.reporter.Send(append(s.segment, s))
 	}()
 }
 
@@ -154,3 +166,8 @@ type SpanOption func(s *defaultSpan)
 type ctxKey struct{}
 
 var key = ctxKey{}
+
+type Reporter interface {
+	Send(spans []Span)
+	Close()
+}
