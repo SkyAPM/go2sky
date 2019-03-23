@@ -42,7 +42,9 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (Span,
 		opts = append(opts, WithParent(parentSpan.Context()))
 		if parentRootSpan, okk := parentSpan.(SegmentSpan); okk {
 			root = !parentRootSpan.SegmentRegister()
-			opts = append(opts, WithSegment(parentRootSpan.SegmentContext()))
+			opts = append(opts, func(s *defaultSpan) {
+				s.segmentContext = parentRootSpan.SegmentContext()
+			})
 		}
 	}
 	s := &defaultSpan{
@@ -130,7 +132,7 @@ func (s *defaultSpan) End() {
 }
 
 func (s *defaultSpan) createSegment() {
-	var init int32 = 0
+	var init int32
 	s.refNum = &init
 	ch := make(chan Span)
 	s.collect = ch
@@ -167,6 +169,7 @@ type ctxKey struct{}
 
 var key = ctxKey{}
 
+//Reporter is a data transit specification
 type Reporter interface {
 	Send(spans []Span)
 	Close()

@@ -2,7 +2,6 @@ package go2sky
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -113,11 +112,11 @@ func (r *MockReporter) Send(spans []Span) {
 
 func (r *MockReporter) Verify(mm ...int) error {
 	if len(mm) != len(r.Message) {
-		return errors.New(fmt.Sprintf("message size mismatch. expected %d actual %d", len(mm), len(r.Message)))
+		return fmt.Errorf("message size mismatch. expected %d actual %d", len(mm), len(r.Message))
 	}
 	for i, m := range mm {
 		if m != len(r.Message[i]) {
-			return errors.New(fmt.Sprintf("span size mismatch. expected %d actual %d", len(mm), len(r.Message)))
+			return fmt.Errorf("span size mismatch. expected %d actual %d", len(mm), len(r.Message))
 		}
 	}
 	return nil

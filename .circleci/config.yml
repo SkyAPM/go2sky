@@ -17,6 +17,5 @@ jobs:
     executor: build
     steps:
       - checkout
-      - run: make lint
       - run: make vet
       - run: make test
