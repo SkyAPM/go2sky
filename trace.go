@@ -2,8 +2,6 @@ package go2sky
 
 import (
 	"context"
-	"sync/atomic"
-
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
@@ -36,27 +34,18 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, extractor propagation.Extr
 }
 
 // CreateLocalSpan creates and starts a span for local usage
-func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (Span, context.Context, error) {
-	root := true
-	if parentSpan, ok := ctx.Value(key).(Span); ok && parentSpan != nil {
+func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Span, c context.Context, err error) {
+	parentSpan, ok := ctx.Value(key).(Span)
+	if ok && parentSpan != nil {
 		opts = append(opts, WithParent(parentSpan.Context()))
-		if parentRootSpan, okk := parentSpan.(SegmentSpan); okk {
-			root = !parentRootSpan.SegmentRegister()
-			opts = append(opts, func(s *defaultSpan) {
-				s.segmentContext = parentRootSpan.SegmentContext()
-			})
-		}
 	}
-	s := &defaultSpan{
+	ds := &defaultSpan{
 		tracer:  t,
-		root:    root,
 	}
 	for _, opt := range opts {
-		opt(s)
+		opt(ds)
 	}
-	if root {
-		s.createSegment()
-	}
+	s = newSegmentSpan(ds, parentSpan)
 	return s, context.WithValue(ctx, key, s), nil
 }
 
@@ -80,85 +69,17 @@ type Span interface {
 	End()
 }
 
-// SegmentSpan interface as segment span specification
-type SegmentSpan interface {
-	SegmentRegister() bool
-	SegmentContext()  segmentContext
-}
-
 type defaultSpan struct {
 	propagation.ContextCarrier
-	segmentContext
-	root    bool
-	notify  <-chan Span
-	segment []Span
-	doneCh  chan int32
 	tracer  *Tracer
-}
-
-type segmentContext struct {
-	collect chan<- Span
-	refNum  *int32
 }
 
 func (s *defaultSpan) Context() propagation.ContextCarrier {
 	return s.ContextCarrier
 }
 
-func (s *defaultSpan) SegmentRegister() bool {
-	for {
-		o := atomic.LoadInt32(s.refNum)
-		if o < 0 {
-			return false
-		}
-		if atomic.CompareAndSwapInt32(s.refNum, o, o+1) {
-			return true
-		}
-	}
-}
-
-func (s *defaultSpan) SegmentContext() segmentContext {
-	return s.segmentContext
-}
-
 func (s *defaultSpan) End() {
-	go func() {
-		if s.root {
-			s.doneCh <- atomic.SwapInt32(s.refNum, -1)
-			return
-		}
-		s.collect <- s
-	}()
-}
 
-func (s *defaultSpan) createSegment() {
-	var init int32
-	s.refNum = &init
-	ch := make(chan Span)
-	s.collect = ch
-	s.notify = ch
-	s.segment = make([]Span, 0, 10)
-	s.doneCh = make(chan int32)
-	go func() {
-		total := -1
-		defer close(ch)
-		defer close(s.doneCh)
-		for {
-			select {
-			case span, ok := <-s.notify:
-				if !ok {
-					return
-				}
-				s.segment = append(s.segment, span)
-			case n := <-s.doneCh:
-				total = int(n)
-			}
-			if total == len(s.segment) {
-				break
-			}
-		}
-		s.tracer.reporter.Send(append(s.segment, s))
-	}()
 }
 
 // SpanOption allows for functional options to adjust behaviour

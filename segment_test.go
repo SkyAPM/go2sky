@@ -69,14 +69,14 @@ func TestAsyncMultipleSegments(t *testing.T) {
 	reportWg.Wait()
 	reportWg.Add(2)
 	go func() {
-		oSpan, ctx, _ := tracer.CreateLocalSpan(ctx)
-		eSpan, _ := tracer.CreateExitSpan(ctx, MockInjector)
+		oSpan, subCtx, _ := tracer.CreateLocalSpan(ctx)
+		eSpan, _ := tracer.CreateExitSpan(subCtx, MockInjector)
 		eSpan.End()
 		oSpan.End()
 	}()
 	go func() {
-		oSpan, ctx, _ := tracer.CreateLocalSpan(ctx)
-		eSpan, _ := tracer.CreateExitSpan(ctx, MockInjector)
+		oSpan, subCtx, _ := tracer.CreateLocalSpan(ctx)
+		eSpan, _ := tracer.CreateExitSpan(subCtx, MockInjector)
 		eSpan.End()
 		oSpan.End()
 	}()
@@ -116,7 +116,7 @@ func (r *MockReporter) Verify(mm ...int) error {
 	}
 	for i, m := range mm {
 		if m != len(r.Message[i]) {
-			return fmt.Errorf("span size mismatch. expected %d actual %d", len(mm), len(r.Message))
+			return fmt.Errorf("span size mismatch. expected %d actual %d", m, len(r.Message[i]))
 		}
 	}
 	return nil
