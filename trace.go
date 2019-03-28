@@ -2,13 +2,17 @@ package go2sky
 
 import (
 	"context"
+
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
 // Tracer is go2sky tracer implementation.
 type Tracer struct {
-	serviceCode string
-	reporter    Reporter
+	service  string
+	instance string
+	reporter Reporter
+	// 0 not init 1 init
+	initFlag int32
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -16,10 +20,20 @@ type Tracer struct {
 type TracerOption func(t *Tracer)
 
 // NewTracer return a new go2sky Tracer
-func NewTracer(opts ...TracerOption) (tracer *Tracer, err error) {
-	t := &Tracer{}
+func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error) {
+	t := &Tracer{
+		service:  service,
+		initFlag: 0,
+	}
 	for _, opt := range opts {
 		opt(t)
+	}
+	if t.reporter != nil {
+		err := t.reporter.Register(t.service, t.instance)
+		if err != nil {
+			return nil, err
+		}
+		t.initFlag = 1
 	}
 	return t, nil
 }
@@ -40,7 +54,7 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 		opts = append(opts, WithParent(parentSpan.Context()))
 	}
 	ds := &defaultSpan{
-		tracer:  t,
+		tracer: t,
 	}
 	for _, opt := range opts {
 		opt(ds)
@@ -71,7 +85,7 @@ type Span interface {
 
 type defaultSpan struct {
 	propagation.ContextCarrier
-	tracer  *Tracer
+	tracer *Tracer
 }
 
 func (s *defaultSpan) Context() propagation.ContextCarrier {
@@ -92,6 +106,7 @@ var key = ctxKey{}
 
 //Reporter is a data transit specification
 type Reporter interface {
+	Register(service string, instance string) error
 	Send(spans []Span)
 	Close()
 }

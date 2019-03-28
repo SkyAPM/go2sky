@@ -15,7 +15,7 @@ func TestSyncSegment(t *testing.T) {
 	mr := MockReporter{
 		WaitGroup: wg,
 	}
-	tracer, _ := NewTracer(WithReporter(&mr))
+	tracer, _ := NewTracer("segmentTest", WithReporter(&mr))
 	ctx := context.Background()
 	span, ctx, _ := tracer.CreateEntrySpan(ctx, MockExtractor)
 	eSpan, _ := tracer.CreateExitSpan(ctx, MockInjector)
@@ -35,7 +35,7 @@ func TestAsyncSingleSegment(t *testing.T) {
 	mr := MockReporter{
 		WaitGroup: reportWg,
 	}
-	tracer, _ := NewTracer(WithReporter(&mr))
+	tracer, _ := NewTracer("segmentTest", WithReporter(&mr))
 	ctx := context.Background()
 	span, ctx, _ := tracer.CreateEntrySpan(ctx, MockExtractor)
 	go func() {
@@ -62,7 +62,7 @@ func TestAsyncMultipleSegments(t *testing.T) {
 	mr := MockReporter{
 		WaitGroup: reportWg,
 	}
-	tracer, _ := NewTracer(WithReporter(&mr))
+	tracer, _ := NewTracer("segmentTest", WithReporter(&mr))
 	ctx := context.Background()
 	span, ctx, _ := tracer.CreateEntrySpan(ctx, MockExtractor)
 	span.End()
@@ -98,9 +98,14 @@ func MockInjector(carrier *propagation.ContextCarrier) (e error) {
 type Segment []Span
 
 type MockReporter struct {
+	Reporter
 	Message []Segment
 	*sync.WaitGroup
 	sync.Mutex
+}
+
+func (r *MockReporter) Register(service string, instance string) error {
+	return nil
 }
 
 func (r *MockReporter) Send(spans []Span) {
@@ -120,7 +125,4 @@ func (r *MockReporter) Verify(mm ...int) error {
 		}
 	}
 	return nil
-}
-
-func (r *MockReporter) Close() {
 }
