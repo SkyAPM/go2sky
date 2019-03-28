@@ -1,7 +1,9 @@
+export GO111MODULE=on
+export GO2SKY_GO := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+GRPC_PATH := $(GO2SKY_GO)/reporter/grpc
 
 .DEFAULT_GOAL := test
 
-GO111MODULE:=on
 
 .PHONY: test
 test:
@@ -15,6 +17,15 @@ lint:
 .PHONY: vet
 vet:
 	go vet ./...
+
+.PHONY: proto-gen
+proto-gen:
+	cd $(GRPC_PATH) && \
+	  protoc common/*.proto --go_out=plugins=grpc:$(GOPATH)/src
+	cd $(GRPC_PATH) && \
+      protoc language-agent-v2/*.proto --go_out=plugins=grpc:$(GOPATH)/src
+	cd $(GRPC_PATH) && \
+      protoc register/*.proto --go_out=plugins=grpc:$(GOPATH)/src
 
 .PHONY: all
 all: vet lint test

@@ -9,7 +9,7 @@ workflows:
 executors:
   build:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/tetratelabs/go2sky
 
 jobs:
@@ -17,5 +17,6 @@ jobs:
     executor: build
     steps:
       - checkout
+      - run: go get -u golang.org/x/lint/golint
       - run: make vet
       - run: make test
