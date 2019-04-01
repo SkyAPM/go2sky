@@ -2,7 +2,6 @@ package go2sky
 
 import (
 	"context"
-
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
@@ -40,25 +39,27 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 
 // CreateEntrySpan creates and starts an entry span for incoming request
 func (t *Tracer) CreateEntrySpan(ctx context.Context, extractor propagation.Extractor) (Span, context.Context, error) {
-	cc, err := extractor()
+	dc, err := extractor()
 	if err != nil {
 		return nil, nil, err
 	}
-	return t.CreateLocalSpan(ctx, WithParent(cc))
+	return t.CreateLocalSpan(ctx, WithDownstream(dc))
 }
 
 // CreateLocalSpan creates and starts a span for local usage
 func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Span, c context.Context, err error) {
-	parentSpan, ok := ctx.Value(key).(Span)
-	if ok && parentSpan != nil {
-		opts = append(opts, WithParent(parentSpan.Context()))
-	}
 	ds := &defaultSpan{
 		tracer: t,
+		sc:     SpanContext{},
 	}
 	for _, opt := range opts {
 		opt(ds)
 	}
+	parentSpan, ok := ctx.Value(key).(Span)
+	if !ok {
+		parentSpan = nil
+	}
+	ds.sc = NewSpanContext(parentSpan)
 	s = newSegmentSpan(ds, parentSpan)
 	return s, context.WithValue(ctx, key, s), nil
 }
@@ -69,36 +70,11 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, injector propagation.Inject
 	if err != nil {
 		return nil, err
 	}
-	cc := s.Context()
-	err = injector(&cc)
 	if err != nil {
 		return nil, err
 	}
 	return s, nil
 }
-
-// Span interface as common span specification
-type Span interface {
-	Context() propagation.ContextCarrier
-	End()
-}
-
-type defaultSpan struct {
-	propagation.ContextCarrier
-	tracer *Tracer
-}
-
-func (s *defaultSpan) Context() propagation.ContextCarrier {
-	return s.ContextCarrier
-}
-
-func (s *defaultSpan) End() {
-
-}
-
-// SpanOption allows for functional options to adjust behaviour
-// of a Span to be created by CreateLocalSpan
-type SpanOption func(s *defaultSpan)
 
 type ctxKey struct{}
 

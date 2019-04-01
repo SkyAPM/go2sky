@@ -103,7 +103,15 @@ func (r *gRPCReporter) registerInstance(name string) error {
 }
 
 func (r *gRPCReporter) Send(spans []go2sky.Span) {
-
+	//client := v2.NewTraceSegmentReportServiceClient(r.conn)
+	//stream, _ := client.Collect(context.Background())
+	//segment := &common.UpstreamSegment{
+	//	GlobalTraceIds: []*common.UniqueId{
+	//		{
+	//			IdParts: []int64{generateId()},
+	//		},
+	//	},
+	//}
 }
 
 func (r *gRPCReporter) Close() {

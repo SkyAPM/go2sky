@@ -4,7 +4,7 @@ import "sync/atomic"
 
 func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
 	s := &segmentSpanImpl{
-		defaultSpan: *defaultSpan,
+		defaultSpan:    *defaultSpan,
 		segmentContext: &segmentContext{},
 	}
 	if parentSpan == nil {

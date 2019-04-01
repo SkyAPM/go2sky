@@ -86,12 +86,11 @@ func TestAsyncMultipleSegments(t *testing.T) {
 	}
 }
 
-func MockExtractor() (c propagation.ContextCarrier, e error) {
+func MockExtractor() (c propagation.DownstreamContext, e error) {
 	return
 }
 
-func MockInjector(carrier *propagation.ContextCarrier) (e error) {
-	carrier.GetAllItems()
+func MockInjector(carrier propagation.UpstreamContext) (e error) {
 	return
 }
 
