@@ -94,7 +94,7 @@ func MockInjector(carrier propagation.UpstreamContext) (e error) {
 	return
 }
 
-type Segment []Span
+type Segment []ReportedSpan
 
 type MockReporter struct {
 	Reporter
@@ -103,11 +103,11 @@ type MockReporter struct {
 	sync.Mutex
 }
 
-func (r *MockReporter) Register(service string, instance string) error {
-	return nil
+func (r *MockReporter) Register(service string, instance string) (int32, int32, error) {
+	return 0, 0, nil
 }
 
-func (r *MockReporter) Send(spans []Span) {
+func (r *MockReporter) Send(spans []ReportedSpan) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.Message = append(r.Message, spans)

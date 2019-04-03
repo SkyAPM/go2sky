@@ -11,7 +11,9 @@ type Tracer struct {
 	instance string
 	reporter Reporter
 	// 0 not init 1 init
-	initFlag int32
+	initFlag   int32
+	serviceID  int32
+	instanceID int32
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -28,11 +30,13 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 		opt(t)
 	}
 	if t.reporter != nil {
-		err := t.reporter.Register(t.service, t.instance)
+		serviceID, instanceID, err := t.reporter.Register(t.service, t.instance)
 		if err != nil {
 			return nil, err
 		}
 		t.initFlag = 1
+		t.serviceID = serviceID
+		t.instanceID = instanceID
 	}
 	return t, nil
 }
@@ -43,15 +47,12 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, extractor propagation.Extr
 	if err != nil {
 		return nil, nil, err
 	}
-	return t.CreateLocalSpan(ctx, WithDownstream(dc))
+	return t.CreateLocalSpan(ctx, WithDownstream(dc), WithSpanType(SpanTypeEntry))
 }
 
 // CreateLocalSpan creates and starts a span for local usage
 func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Span, c context.Context, err error) {
-	ds := &defaultSpan{
-		tracer: t,
-		sc:     SpanContext{},
-	}
+	ds := newLocalSpan(t)
 	for _, opt := range opts {
 		opt(ds)
 	}
@@ -59,14 +60,14 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	if !ok {
 		parentSpan = nil
 	}
-	ds.sc = NewSpanContext(parentSpan)
+	ds.sc = newSpanContext(parentSpan)
 	s = newSegmentSpan(ds, parentSpan)
 	return s, context.WithValue(ctx, key, s), nil
 }
 
 // CreateExitSpan creates and starts an exit span for client
 func (t *Tracer) CreateExitSpan(ctx context.Context, injector propagation.Injector) (Span, error) {
-	s, _, err := t.CreateLocalSpan(ctx)
+	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit))
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ var key = ctxKey{}
 
 //Reporter is a data transit specification
 type Reporter interface {
-	Register(service string, instance string) error
-	Send(spans []Span)
+	Register(service string, instance string) (int32, int32, error)
+	Send(spans []ReportedSpan)
 	Close()
 }

@@ -1,6 +1,9 @@
 package go2sky
 
-import "sync/atomic"
+import (
+	"github.com/tetratelabs/go2sky/pkg"
+	"sync/atomic"
+)
 
 func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
 	s := &segmentSpanImpl{
@@ -36,7 +39,7 @@ func (s *segmentSpanImpl) context() *segmentContext {
 }
 
 type segmentContext struct {
-	collect chan<- Span
+	collect chan<- ReportedSpan
 	refNum  *int32
 }
 
@@ -53,6 +56,7 @@ func (s *segmentSpanImpl) segmentRegister() bool {
 }
 
 func (s *segmentSpanImpl) End() {
+	s.defaultSpan.End()
 	go func() {
 		s.collect <- s
 	}()
@@ -60,8 +64,8 @@ func (s *segmentSpanImpl) End() {
 
 type rootSegmentSpan struct {
 	*segmentSpanImpl
-	notify  <-chan Span
-	segment []Span
+	notify  <-chan ReportedSpan
+	segment []ReportedSpan
 	doneCh  chan int32
 }
 
@@ -75,12 +79,13 @@ func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 	s := &rootSegmentSpan{
 		segmentSpanImpl: segmentSpan,
 	}
+	s.sc.SegmentID = pkg.GenerateScopedGlobalID(int64(s.tracer.instanceID))
 	var init int32
 	s.refNum = &init
-	ch := make(chan Span)
+	ch := make(chan ReportedSpan)
 	s.collect = ch
 	s.notify = ch
-	s.segment = make([]Span, 0, 10)
+	s.segment = make([]ReportedSpan, 0, 10)
 	s.doneCh = make(chan int32)
 	go func() {
 		total := -1

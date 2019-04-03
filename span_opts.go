@@ -20,3 +20,9 @@ func WithDownstream(cc propagation.DownstreamContext) SpanOption {
 		s.tc = tc
 	}
 }
+
+func WithSpanType(spanType SpanType) SpanOption {
+	return func(s *defaultSpan) {
+		s.spanType = spanType
+	}
+}

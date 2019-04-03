@@ -93,15 +93,15 @@ type mockRegisterReporter struct {
 	success bool
 }
 
-func (r *mockRegisterReporter) Send(spans []Span) {
+func (r *mockRegisterReporter) Send(spans []ReportedSpan) {
 }
 
 func (r *mockRegisterReporter) Close() {
 }
 
-func (r *mockRegisterReporter) Register(service string, instance string) error {
+func (r *mockRegisterReporter) Register(service string, instance string) (int32, int32, error) {
 	if r.success {
-		return nil
+		return 1, 1, nil
 	}
-	return errRegister
+	return 0, 0, errRegister
 }

@@ -1,4 +1,4 @@
-package go2sky
+package pkg
 
 import (
 	"math/rand"
@@ -17,10 +17,18 @@ func generateID() int64 {
 	return seededIDGen.Int63()
 }
 
-func generateGlobalID() []int64 {
+func GenerateGlobalID() []int64 {
 	return []int64{
 		time.Now().UnixNano(),
 		0,
+		generateID(),
+	}
+}
+
+func GenerateScopedGlobalID(scopeId int64) []int64 {
+	return []int64{
+		scopeId,
+		time.Now().UnixNano(),
 		generateID(),
 	}
 }
