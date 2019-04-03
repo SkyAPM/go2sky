@@ -2,6 +2,7 @@ package go2sky
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
@@ -28,6 +29,13 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 	}
 	for _, opt := range opts {
 		opt(t)
+	}
+	if t.instance == "" {
+		id, err := uuid.NewUUID()
+		if err != nil {
+			return nil, err
+		}
+		t.instance = id.String()
 	}
 	if t.reporter != nil {
 		serviceID, instanceID, err := t.reporter.Register(t.service, t.instance)

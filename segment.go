@@ -16,6 +16,7 @@ func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
 	if rootSpan, ok := parentSpan.(segmentSpan); ok {
 		if rootSpan.segmentRegister() {
 			s.segmentContext = rootSpan.context()
+			s.sc.SpanID = atomic.AddInt32(s.SpanIDGenerator, 1)
 			return s
 		}
 		return newSegmentRoot(s)
@@ -41,6 +42,7 @@ func (s *segmentSpanImpl) context() *segmentContext {
 type segmentContext struct {
 	collect chan<- ReportedSpan
 	refNum  *int32
+	SpanIDGenerator *int32
 }
 
 func (s *segmentSpanImpl) segmentRegister() bool {
@@ -70,6 +72,7 @@ type rootSegmentSpan struct {
 }
 
 func (rs *rootSegmentSpan) End() {
+	rs.defaultSpan.End()
 	go func() {
 		rs.doneCh <- atomic.SwapInt32(rs.refNum, -1)
 	}()
@@ -80,6 +83,10 @@ func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 		segmentSpanImpl: segmentSpan,
 	}
 	s.sc.SegmentID = pkg.GenerateScopedGlobalID(int64(s.tracer.instanceID))
+	g := int32(0)
+	s.SpanIDGenerator = &g
+	s.sc.SpanID = g
+	s.sc.ParentSpanID = -1
 	var init int32
 	s.refNum = &init
 	ch := make(chan ReportedSpan)

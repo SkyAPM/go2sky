@@ -27,6 +27,16 @@ proto-gen:
 	cd $(GRPC_PATH) && \
       protoc register/*.proto --go_out=plugins=grpc:$(GOPATH)/src
 
+.PHONY: mock-gen
+mock-gen:
+	cd $(GRPC_PATH)/register && \
+	  mkdir -p mock_register && \
+	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/register RegisterClient > mock_register/Register.mock.go && \
+	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/register ServiceInstancePingClient > mock_register/InstancePing.mock.go
+	cd $(GRPC_PATH)/language-agent-v2 && \
+    	  mkdir -p mock_trace && \
+    	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2 TraceSegmentReportServiceClient > mock_trace/trace.mock.go
+
 .PHONY: all
 all: vet lint test
 

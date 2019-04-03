@@ -2,7 +2,6 @@ package go2sky
 
 import (
 	"math"
-	"sync/atomic"
 	"time"
 
 	"github.com/tetratelabs/go2sky/pkg"
@@ -50,18 +49,14 @@ type ReportedSpan interface {
 }
 
 func newSpanContext(parentSpan Span) SpanContext {
-	sc := SpanContext{}
+	var sc SpanContext
 	if parentSpan == nil {
+		sc = SpanContext{}
 		sc.TraceID = pkg.GenerateGlobalID()
-		var g int32
-		sc.SpanIDGenerator = &g
 	} else {
-		parentContext := parentSpan.Context()
-		sc.TraceID = parentContext.TraceID
-		sc.ParentSpanID = parentContext.SpanID
-		sc.SpanIDGenerator = parentContext.SpanIDGenerator
+		sc = parentSpan.Context()
+		sc.ParentSpanID = parentSpan.Context().SpanID
 	}
-	sc.SpanID = atomic.AddInt32(sc.SpanIDGenerator, 1)
 	return sc
 }
 
@@ -72,7 +67,6 @@ type SpanContext struct {
 	SpanID          int32
 	ParentSegmentID []int64
 	ParentSpanID    int32
-	SpanIDGenerator *int32
 }
 
 func newLocalSpan(t *Tracer) *defaultSpan {
@@ -159,9 +153,9 @@ func (ds *defaultSpan) Tag(key string, value string) {
 }
 
 func (ds *defaultSpan) Log(time time.Time, ll ...string) {
-	data := make([]*common.KeyStringValuePair, int32(math.Ceil(float64(len(ll)) / 2.0)))
+	data := make([]*common.KeyStringValuePair, 0, int32(math.Ceil(float64(len(ll)) / 2.0)))
+	var kvp *common.KeyStringValuePair
 	for i, l := range ll {
-		var kvp *common.KeyStringValuePair
 		if i % 2 == 0 {
 			kvp = &common.KeyStringValuePair{}
 			data = append(data, kvp)

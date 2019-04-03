@@ -3,6 +3,7 @@ package reporter
 import (
 	"context"
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"log"
 	"os"
 	"time"
@@ -22,7 +23,8 @@ const (
 )
 
 var (
-	errRegister = errors.New("fail to register reporter")
+	errServiceRegister = errors.New("fail to register service")
+	errInstanceRegister = errors.New("fail to instance service")
 )
 
 // NewGRPCReporter create a new reporter to send data to gRPC oap server
@@ -77,17 +79,30 @@ type gRPCReporter struct {
 }
 
 func (r *gRPCReporter) Register(service string, instance string) (int32, int32, error) {
-	err := r.registerService(service)
-	if err != nil {
-		return 0, 0, err
-	}
-	err = r.registerInstance(instance)
-	if err == nil {
-		r.initSendPipeline()
-		r.ping()
-	}
-	return r.serviceID, r.instanceID, err
+	r.retryRegister(func() error {
+		return r.registerService(service)
+	})
+	r.retryRegister(func() error {
+		return r.registerInstance(instance)
+	})
+	r.initSendPipeline()
+	r.ping()
+	return r.serviceID, r.instanceID, nil
 }
+
+type retryFunction func() error
+
+func (r *gRPCReporter) retryRegister(f retryFunction) {
+	for {
+		err := f()
+		if err == nil {
+			break
+		}
+		r.logger.Printf("register error %v \n", err)
+		time.Sleep(time.Second)
+	}
+}
+
 
 func (r *gRPCReporter) registerService(name string) error {
 	in := &register.Services{
@@ -102,10 +117,10 @@ func (r *gRPCReporter) registerService(name string) error {
 		return err
 	}
 	if len(mapping.Services) < 1 {
-		return errRegister
+		return errServiceRegister
 	}
 	r.serviceID = mapping.Services[0].Value
-	r.logger.Printf("the id of service %s is %d", name, r.serviceID)
+	r.logger.Printf("the id of service '%s' is %d", name, r.serviceID)
 	return nil
 }
 
@@ -115,6 +130,7 @@ func (r *gRPCReporter) registerInstance(name string) error {
 			{
 				ServiceId:    r.serviceID,
 				InstanceUUID: name,
+				Time: pkg.Millisecond(time.Now()),
 			},
 		},
 	}
@@ -123,19 +139,20 @@ func (r *gRPCReporter) registerInstance(name string) error {
 		return err
 	}
 	if len(mapping.ServiceInstances) < 1 {
-		return errRegister
+		return errInstanceRegister
 	}
 	r.instanceID = mapping.ServiceInstances[0].Value
 	r.instanceName = name
-	r.logger.Printf("the id of instance %s 's id is %d", name, r.serviceID)
+	r.logger.Printf("the id of instance '%s' id is %d", name, r.instanceID)
 	return nil
 }
 
 func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
-	if len(spans) < 1 {
+	spanSize := len(spans)
+	if spanSize < 1 {
 		return
 	}
-	rootSpan := spans[0]
+	rootSpan := spans[spanSize - 1]
 	segment := &common.UpstreamSegment{
 		GlobalTraceIds: []*common.UniqueId{
 			{
@@ -143,13 +160,13 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			},
 		},
 	}
-	segmentObject := v2.SegmentObject{
+	segmentObject := &v2.SegmentObject{
 		ServiceId:         r.serviceID,
 		ServiceInstanceId: r.instanceID,
 		TraceSegmentId: &common.UniqueId{
 			IdParts: rootSpan.Context().SegmentID,
 		},
-		Spans: make([]*v2.SpanObjectV2, len(spans)),
+		Spans: make([]*v2.SpanObjectV2, spanSize),
 	}
 	for i, s := range spans {
 		segmentObject.Spans[i] = &v2.SpanObjectV2{
@@ -176,8 +193,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			})
 		}
 	}
-	var b []byte
-	b, err := segmentObject.XXX_Marshal(b, true)
+	b, err := proto.Marshal(segmentObject)
 	if err != nil {
 		log.Printf("marshal segment object err %v", err)
 		return
@@ -198,20 +214,22 @@ func (r *gRPCReporter) Close() {
 }
 
 func (r *gRPCReporter) initSendPipeline() {
+	if r.traceClient == nil {
+		return
+	}
 	go func() {
-		var err error
 	StreamLoop:
 		for {
-			stream, _ := r.traceClient.Collect(context.Background())
+			stream, err := r.traceClient.Collect(context.Background())
 			for {
 				select {
 				case s := <-r.sendCh:
 					err = stream.Send(s)
 					if err != nil {
-						log.Printf("send segment error %v", err)
+						r.logger.Printf("send segment error %v", err)
 						err = stream.CloseSend()
 						if err != nil {
-							log.Printf("send closing error %v", err)
+							r.logger.Printf("send closing error %v", err)
 						}
 						continue StreamLoop
 					}
@@ -222,15 +240,21 @@ func (r *gRPCReporter) initSendPipeline() {
 }
 
 func (r *gRPCReporter) ping() {
-	for {
-		_, err := r.pingClient.DoPing(context.Background(), &register.ServiceInstancePingPkg{
-			Time:                pkg.Millisecond(time.Now()),
-			ServiceInstanceId:   r.instanceID,
-			ServiceInstanceUUID: r.instanceName,
-		})
-		if err != nil {
-			log.Printf("pinging error %v", err)
-		}
-		time.Sleep(r.pingInterval)
+	if r.pingInterval < 0 || r.pingClient == nil {
+		return
 	}
+	go func() {
+		for {
+			_, err := r.pingClient.DoPing(context.Background(), &register.ServiceInstancePingPkg{
+				Time:                pkg.Millisecond(time.Now()),
+				ServiceInstanceId:   r.instanceID,
+				ServiceInstanceUUID: r.instanceName,
+			})
+			if err != nil {
+				r.logger.Printf("pinging error %v", err)
+			}
+			time.Sleep(r.pingInterval)
+		}
+	}()
+
 }
