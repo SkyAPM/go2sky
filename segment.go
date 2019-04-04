@@ -1,10 +1,13 @@
 package go2sky
 
-import "sync/atomic"
+import (
+	"github.com/tetratelabs/go2sky/pkg"
+	"sync/atomic"
+)
 
 func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
 	s := &segmentSpanImpl{
-		defaultSpan: *defaultSpan,
+		defaultSpan:    *defaultSpan,
 		segmentContext: &segmentContext{},
 	}
 	if parentSpan == nil {
@@ -13,10 +16,10 @@ func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
 	if rootSpan, ok := parentSpan.(segmentSpan); ok {
 		if rootSpan.segmentRegister() {
 			s.segmentContext = rootSpan.context()
+			s.sc.SpanID = atomic.AddInt32(s.SpanIDGenerator, 1)
 			return s
 		}
 		return newSegmentRoot(s)
-
 	}
 	return newSegmentRoot(s)
 }
@@ -36,8 +39,9 @@ func (s *segmentSpanImpl) context() *segmentContext {
 }
 
 type segmentContext struct {
-	collect chan<- Span
-	refNum  *int32
+	collect         chan<- ReportedSpan
+	refNum          *int32
+	SpanIDGenerator *int32
 }
 
 func (s *segmentSpanImpl) segmentRegister() bool {
@@ -53,6 +57,7 @@ func (s *segmentSpanImpl) segmentRegister() bool {
 }
 
 func (s *segmentSpanImpl) End() {
+	s.defaultSpan.End()
 	go func() {
 		s.collect <- s
 	}()
@@ -60,12 +65,13 @@ func (s *segmentSpanImpl) End() {
 
 type rootSegmentSpan struct {
 	*segmentSpanImpl
-	notify  <-chan Span
-	segment []Span
+	notify  <-chan ReportedSpan
+	segment []ReportedSpan
 	doneCh  chan int32
 }
 
 func (rs *rootSegmentSpan) End() {
+	rs.defaultSpan.End()
 	go func() {
 		rs.doneCh <- atomic.SwapInt32(rs.refNum, -1)
 	}()
@@ -75,12 +81,17 @@ func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 	s := &rootSegmentSpan{
 		segmentSpanImpl: segmentSpan,
 	}
+	s.sc.SegmentID = pkg.GenerateScopedGlobalID(int64(s.tracer.instanceID))
+	g := int32(0)
+	s.SpanIDGenerator = &g
+	s.sc.SpanID = g
+	s.sc.ParentSpanID = -1
 	var init int32
 	s.refNum = &init
-	ch := make(chan Span)
+	ch := make(chan ReportedSpan)
 	s.collect = ch
 	s.notify = ch
-	s.segment = make([]Span, 0, 10)
+	s.segment = make([]ReportedSpan, 0, 10)
 	s.doneCh = make(chan int32)
 	go func() {
 		total := -1
