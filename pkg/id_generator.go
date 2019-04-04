@@ -17,6 +17,7 @@ func generateID() int64 {
 	return seededIDGen.Int63()
 }
 
+// GenerateGlobalID generates global unique id
 func GenerateGlobalID() []int64 {
 	return []int64{
 		time.Now().UnixNano(),
@@ -25,9 +26,10 @@ func GenerateGlobalID() []int64 {
 	}
 }
 
-func GenerateScopedGlobalID(scopeId int64) []int64 {
+// GenerateScopedGlobalID generates global unique id with a scopeId prefix
+func GenerateScopedGlobalID(scopeID int64) []int64 {
 	return []int64{
-		scopeId,
+		scopeID,
 		time.Now().UnixNano(),
 		generateID(),
 	}

@@ -28,12 +28,12 @@ type Injector func(carrier UpstreamContext) error
 
 // TraceContext defines propagation specification of SkyWalking
 type TraceContext struct {
-	sample   int8
-	traceID  []int64
-	parentSegmentID []int64
-	parentSpanID int32
+	sample                  int8
+	traceID                 []int64
+	parentSegmentID         []int64
+	parentSpanID            int32
 	parentServiceInstanceID int32
-	entryServiceInstanceID int32
+	entryServiceInstanceID  int32
 }
 
 // DecodeSW6 converts string header to TraceContext

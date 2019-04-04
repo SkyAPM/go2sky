@@ -10,14 +10,19 @@ import (
 	v2 "github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2"
 )
 
+// SpanType is used to identify entry, exit and local
 type SpanType int32
 
 const (
+	// SpanTypeEntry is a entry span, eg http server
 	SpanTypeEntry SpanType = 0
-	SpanTypeExit  SpanType = 1
+	// SpanTypeExit is a exit span, eg http client
+	SpanTypeExit SpanType = 1
+	// SpanTypeLocal is a local span, eg local method invoke
 	SpanTypeLocal SpanType = 2
 )
 
+// BaseSpan is a base interface defines the common method sharding among different spans
 type BaseSpan interface {
 	Context() SpanContext
 }
@@ -34,6 +39,7 @@ type Span interface {
 	End()
 }
 
+// ReportedSpan is accessed by Reporter to load reported data
 type ReportedSpan interface {
 	BaseSpan
 	TraceContext() *propagation.TraceContext
@@ -71,9 +77,9 @@ type SpanContext struct {
 
 func newLocalSpan(t *Tracer) *defaultSpan {
 	return &defaultSpan{
-		tracer: t,
+		tracer:    t,
 		startTime: time.Now(),
-		spanType: SpanTypeLocal,
+		spanType:  SpanTypeLocal,
 	}
 }
 
@@ -153,10 +159,10 @@ func (ds *defaultSpan) Tag(key string, value string) {
 }
 
 func (ds *defaultSpan) Log(time time.Time, ll ...string) {
-	data := make([]*common.KeyStringValuePair, 0, int32(math.Ceil(float64(len(ll)) / 2.0)))
+	data := make([]*common.KeyStringValuePair, 0, int32(math.Ceil(float64(len(ll))/2.0)))
 	var kvp *common.KeyStringValuePair
 	for i, l := range ll {
-		if i % 2 == 0 {
+		if i%2 == 0 {
 			kvp = &common.KeyStringValuePair{}
 			data = append(data, kvp)
 			kvp.Key = l

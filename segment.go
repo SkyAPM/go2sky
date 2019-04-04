@@ -20,7 +20,6 @@ func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
 			return s
 		}
 		return newSegmentRoot(s)
-
 	}
 	return newSegmentRoot(s)
 }
@@ -40,8 +39,8 @@ func (s *segmentSpanImpl) context() *segmentContext {
 }
 
 type segmentContext struct {
-	collect chan<- ReportedSpan
-	refNum  *int32
+	collect         chan<- ReportedSpan
+	refNum          *int32
 	SpanIDGenerator *int32
 }
 

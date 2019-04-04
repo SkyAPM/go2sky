@@ -2,7 +2,6 @@ package go2sky_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/reporter"
 	"log"
@@ -37,6 +36,6 @@ func ExampleNewTracer() {
 	time.Sleep(1 * time.Second)
 	span.End()
 	time.Sleep(time.Minute)
-	fmt.Print("aa")
+	// fmt.Print("aa")
 	// Output: aa
 }

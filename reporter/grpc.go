@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	maxSendQueueSize    int32  = 30000
-	defaultPingInterval        = 20 * time.Second
+	maxSendQueueSize    int32 = 30000
+	defaultPingInterval       = 20 * time.Second
 )
 
 var (
-	errServiceRegister = errors.New("fail to register service")
+	errServiceRegister  = errors.New("fail to register service")
 	errInstanceRegister = errors.New("fail to instance service")
 )
 
@@ -59,6 +59,7 @@ func WithLogger(logger *log.Logger) GRPCReporterOption {
 	}
 }
 
+// WithPingInterval setup ping interval
 func WithPingInterval(interval time.Duration) GRPCReporterOption {
 	return func(r *gRPCReporter) {
 		r.pingInterval = interval
@@ -103,7 +104,6 @@ func (r *gRPCReporter) retryRegister(f retryFunction) {
 	}
 }
 
-
 func (r *gRPCReporter) registerService(name string) error {
 	in := &register.Services{
 		Services: []*register.Service{
@@ -130,7 +130,7 @@ func (r *gRPCReporter) registerInstance(name string) error {
 			{
 				ServiceId:    r.serviceID,
 				InstanceUUID: name,
-				Time: pkg.Millisecond(time.Now()),
+				Time:         pkg.Millisecond(time.Now()),
 			},
 		},
 	}
@@ -152,7 +152,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 	if spanSize < 1 {
 		return
 	}
-	rootSpan := spans[spanSize - 1]
+	rootSpan := spans[spanSize-1]
 	segment := &common.UpstreamSegment{
 		GlobalTraceIds: []*common.UniqueId{
 			{
@@ -178,9 +178,9 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			Peer:          s.Peer(),
 			SpanType:      s.SpanType(),
 			SpanLayer:     s.SpanLayer(),
-			IsError:     s.IsError(),
-			Tags:        s.Tags(),
-			Logs:        s.Logs(),
+			IsError:       s.IsError(),
+			Tags:          s.Tags(),
+			Logs:          s.Logs(),
 		}
 		srr := make([]*v2.SegmentReference, 0)
 		if i == 0 && s.Context().ParentSpanID > -1 {
@@ -207,6 +207,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 }
 
 func (r *gRPCReporter) Close() {
+	close(r.sendCh)
 	err := r.conn.Close()
 	if err != nil {
 		r.logger.Print(err)
@@ -223,20 +224,28 @@ func (r *gRPCReporter) initSendPipeline() {
 			stream, err := r.traceClient.Collect(context.Background())
 			for {
 				select {
-				case s := <-r.sendCh:
+				case s, ok := <-r.sendCh:
+					if !ok {
+						r.closeStream(stream)
+						return
+					}
 					err = stream.Send(s)
 					if err != nil {
 						r.logger.Printf("send segment error %v", err)
-						err = stream.CloseSend()
-						if err != nil {
-							r.logger.Printf("send closing error %v", err)
-						}
+						r.closeStream(stream)
 						continue StreamLoop
 					}
 				}
 			}
 		}
 	}()
+}
+
+func (r *gRPCReporter) closeStream(stream v2.TraceSegmentReportService_CollectClient) {
+	err := stream.CloseSend()
+	if err != nil {
+		r.logger.Printf("send closing error %v", err)
+	}
 }
 
 func (r *gRPCReporter) ping() {
