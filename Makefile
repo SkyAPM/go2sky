@@ -9,15 +9,6 @@ GRPC_PATH := $(GO2SKY_GO)/reporter/grpc
 test:
 	go test -v -race -cover ./...
 
-.PHONY: lint
-lint:
-	# Ignore grep's exit code since no match returns 1.
-	echo 'linting...' ; golint ./...
-
-.PHONY: vet
-vet:
-	go vet ./...
-
 .PHONY: proto-gen
 proto-gen:
 	cd $(GRPC_PATH) && \
@@ -37,7 +28,14 @@ mock-gen:
     	  mkdir -p mock_trace && \
     	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2 TraceSegmentReportServiceClient > mock_trace/trace.mock.go
 
-.PHONY: all
-all: vet lint test
+LINTER := bin/golangci-lint
+$(LINTER):
+	wget -q -O- https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.13
 
-.PHONY: example
+.PHONY: lint
+lint: $(LINTER) ./golangci.yml  ## Run the linters
+	@echo "linting..."
+	$(LINTER) run --config ./golangci.yml
+
+.PHONY: all
+all: test lint
