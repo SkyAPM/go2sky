@@ -7,3 +7,17 @@
 
 # License
 Apache 2.0
+
+# Road Map
+
+ - Segment span :heavy_check_mark:
+ - Local trace  :heavy_check_mark:
+ - Reporter :heavy_check_mark:
+ - Propagation WIP
+ - Noop span
+ - Http plugin 
+ - Sampling 
+ - gRPC plugin
+ - Compressed key
+ - Document
+ - Reset command

@@ -64,11 +64,10 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	for _, opt := range opts {
 		opt(ds)
 	}
-	parentSpan, ok := ctx.Value(key).(Span)
+	parentSpan, ok := ctx.Value(key).(segmentSpan)
 	if !ok {
 		parentSpan = nil
 	}
-	ds.sc = newSpanContext(parentSpan)
 	s = newSegmentSpan(ds, parentSpan)
 	return s, context.WithValue(ctx, key, s), nil
 }

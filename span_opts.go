@@ -12,12 +12,12 @@ func WithDownstream(cc propagation.DownstreamContext) SpanOption {
 		if header == "" {
 			return
 		}
-		tc := &propagation.TraceContext{}
+		tc := &propagation.SpanContext{}
 		err := tc.DecodeSW6(cc.Header())
 		if err != nil {
 			return
 		}
-		s.tc = tc
+		s.Refs = append(s.Refs, tc)
 	}
 }
 

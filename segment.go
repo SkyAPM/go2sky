@@ -1,47 +1,123 @@
 package go2sky
 
 import (
-	"github.com/tetratelabs/go2sky/pkg"
+	"github.com/tetratelabs/go2sky/propagation"
 	"sync/atomic"
+
+	"github.com/tetratelabs/go2sky/pkg"
+	"github.com/tetratelabs/go2sky/reporter/grpc/common"
+	v2 "github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2"
 )
 
-func newSegmentSpan(defaultSpan *defaultSpan, parentSpan Span) Span {
-	s := &segmentSpanImpl{
+func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segmentSpan) {
+	ssi := &segmentSpanImpl{
 		defaultSpan:    *defaultSpan,
-		segmentContext: &segmentContext{},
 	}
-	if parentSpan == nil {
-		return newSegmentRoot(s)
+	ssi.createSegmentContext(parentSpan)
+	if parentSpan == nil || !parentSpan.segmentRegister() {
+		rs := newSegmentRoot(ssi)
+		rs.createRootSegmentContext(parentSpan)
+		s = rs
+	} else {
+		s = ssi
 	}
-	if rootSpan, ok := parentSpan.(segmentSpan); ok {
-		if rootSpan.segmentRegister() {
-			s.segmentContext = rootSpan.context()
-			s.sc.SpanID = atomic.AddInt32(s.SpanIDGenerator, 1)
-			return s
-		}
-		return newSegmentRoot(s)
-	}
-	return newSegmentRoot(s)
+	return
+}
+
+type SegmentContext struct {
+	TraceID         []int64
+	SpanID          int32
+	SegmentID       []int64
+	ParentSpanID    int32
+	ParentSegmentID []int64
+	collect         chan<- ReportedSpan
+	refNum          *int32
+	spanIDGenerator *int32
+}
+
+// Span is accessed by Reporter to load reported data
+type ReportedSpan interface {
+	Context() *SegmentContext
+	Refs() []*propagation.SpanContext
+	StartTime() int64
+	EndTime() int64
+	OperationName() string
+	Peer() string
+	SpanType() common.SpanType
+	SpanLayer() common.SpanLayer
+	IsError() bool
+	Tags() []*common.KeyStringValuePair
+	Logs() []*v2.Log
 }
 
 type segmentSpan interface {
-	context() *segmentContext
+	Span
+	context() SegmentContext
 	segmentRegister() bool
 }
 
 type segmentSpanImpl struct {
 	defaultSpan
-	*segmentContext
+	SegmentContext
 }
 
-func (s *segmentSpanImpl) context() *segmentContext {
-	return s.segmentContext
+// For Span
+
+func (s *segmentSpanImpl) End() {
+	s.defaultSpan.End()
+	go func() {
+		s.collect <- s
+	}()
 }
 
-type segmentContext struct {
-	collect         chan<- ReportedSpan
-	refNum          *int32
-	SpanIDGenerator *int32
+// For Span
+
+func (s *segmentSpanImpl) Context() *SegmentContext {
+	return &s.SegmentContext
+}
+
+func (s *segmentSpanImpl) Refs() []*propagation.SpanContext {
+	return s.defaultSpan.Refs
+}
+
+func (s *segmentSpanImpl) StartTime() int64 {
+	return pkg.Millisecond(s.startTime)
+}
+
+func (s *segmentSpanImpl) EndTime() int64 {
+	return pkg.Millisecond(s.endTime)
+}
+
+func (s *segmentSpanImpl) OperationName() string {
+	return s.operationName
+}
+
+func (s *segmentSpanImpl) Peer() string {
+	return s.peer
+}
+
+func (s *segmentSpanImpl) SpanType() common.SpanType {
+	return common.SpanType(s.spanType)
+}
+
+func (s *segmentSpanImpl) SpanLayer() common.SpanLayer {
+	return s.layer
+}
+
+func (s *segmentSpanImpl) IsError() bool {
+	return s.isError
+}
+
+func (s *segmentSpanImpl) Tags() []*common.KeyStringValuePair {
+	return s.tags
+}
+
+func (s *segmentSpanImpl) Logs() []*v2.Log {
+	return s.logs
+}
+
+func (s *segmentSpanImpl) context() SegmentContext {
+	return s.SegmentContext
 }
 
 func (s *segmentSpanImpl) segmentRegister() bool {
@@ -56,11 +132,20 @@ func (s *segmentSpanImpl) segmentRegister() bool {
 	}
 }
 
-func (s *segmentSpanImpl) End() {
-	s.defaultSpan.End()
-	go func() {
-		s.collect <- s
-	}()
+func (s *segmentSpanImpl) createSegmentContext(parent segmentSpan) {
+	if parent == nil {
+		s.SegmentContext = SegmentContext{}
+		if len(s.defaultSpan.Refs) > 0 {
+			s.TraceID = s.defaultSpan.Refs[0].TraceID
+		} else {
+			s.TraceID = pkg.GenerateGlobalID()
+		}
+	} else {
+		s.SegmentContext = parent.context()
+		s.ParentSegmentID = s.SegmentID
+		s.ParentSpanID = s.SpanID
+		s.SpanID = atomic.AddInt32(s.spanIDGenerator, 1)
+	}
 }
 
 type rootSegmentSpan struct {
@@ -77,15 +162,18 @@ func (rs *rootSegmentSpan) End() {
 	}()
 }
 
+func (rs *rootSegmentSpan) createRootSegmentContext(parent segmentSpan) {
+	rs.SegmentID = pkg.GenerateScopedGlobalID(int64(rs.tracer.instanceID))
+	i := int32(0)
+	rs.spanIDGenerator = &i
+	rs.SpanID = i
+	rs.ParentSpanID = -1
+}
+
 func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 	s := &rootSegmentSpan{
 		segmentSpanImpl: segmentSpan,
 	}
-	s.sc.SegmentID = pkg.GenerateScopedGlobalID(int64(s.tracer.instanceID))
-	g := int32(0)
-	s.SpanIDGenerator = &g
-	s.sc.SpanID = g
-	s.sc.ParentSpanID = -1
 	var init int32
 	s.refNum = &init
 	ch := make(chan ReportedSpan)

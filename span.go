@@ -22,14 +22,8 @@ const (
 	SpanTypeLocal SpanType = 2
 )
 
-// BaseSpan is a base interface defines the common method sharding among different spans
-type BaseSpan interface {
-	Context() SpanContext
-}
-
 // Span interface as common span specification
 type Span interface {
-	BaseSpan
 	SetOperationName(string)
 	SetPeer(string)
 	SetSpanLayer(common.SpanLayer)
@@ -37,42 +31,6 @@ type Span interface {
 	Log(time.Time, ...string)
 	Error(time.Time, ...string)
 	End()
-}
-
-// ReportedSpan is accessed by Reporter to load reported data
-type ReportedSpan interface {
-	BaseSpan
-	TraceContext() *propagation.TraceContext
-	StartTime() int64
-	EndTime() int64
-	OperationName() string
-	Peer() string
-	SpanType() common.SpanType
-	SpanLayer() common.SpanLayer
-	IsError() bool
-	Tags() []*common.KeyStringValuePair
-	Logs() []*v2.Log
-}
-
-func newSpanContext(parentSpan Span) SpanContext {
-	var sc SpanContext
-	if parentSpan == nil {
-		sc = SpanContext{}
-		sc.TraceID = pkg.GenerateGlobalID()
-	} else {
-		sc = parentSpan.Context()
-		sc.ParentSpanID = parentSpan.Context().SpanID
-	}
-	return sc
-}
-
-// SpanContext defines the relationship between spans in one trace
-type SpanContext struct {
-	TraceID         []int64
-	SegmentID       []int64
-	SpanID          int32
-	ParentSegmentID []int64
-	ParentSpanID    int32
 }
 
 func newLocalSpan(t *Tracer) *defaultSpan {
@@ -84,8 +42,7 @@ func newLocalSpan(t *Tracer) *defaultSpan {
 }
 
 type defaultSpan struct {
-	tc            *propagation.TraceContext
-	sc            SpanContext
+	Refs          []*propagation.SpanContext
 	tracer        *Tracer
 	startTime     time.Time
 	endTime       time.Time
@@ -96,48 +53,6 @@ type defaultSpan struct {
 	logs          []*v2.Log
 	isError       bool
 	spanType      SpanType
-}
-
-// For ReportedSpan
-
-func (ds *defaultSpan) TraceContext() *propagation.TraceContext {
-	return ds.tc
-}
-
-func (ds *defaultSpan) StartTime() int64 {
-	return pkg.Millisecond(ds.startTime)
-}
-
-func (ds *defaultSpan) EndTime() int64 {
-	return pkg.Millisecond(ds.endTime)
-}
-
-func (ds *defaultSpan) OperationName() string {
-	return ds.operationName
-}
-
-func (ds *defaultSpan) Peer() string {
-	return ds.peer
-}
-
-func (ds *defaultSpan) SpanType() common.SpanType {
-	return common.SpanType(ds.spanType)
-}
-
-func (ds *defaultSpan) SpanLayer() common.SpanLayer {
-	return ds.layer
-}
-
-func (ds *defaultSpan) IsError() bool {
-	return ds.isError
-}
-
-func (ds *defaultSpan) Tags() []*common.KeyStringValuePair {
-	return ds.tags
-}
-
-func (ds *defaultSpan) Logs() []*v2.Log {
-	return ds.logs
 }
 
 // For Span
@@ -167,7 +82,9 @@ func (ds *defaultSpan) Log(time time.Time, ll ...string) {
 			data = append(data, kvp)
 			kvp.Key = l
 		} else {
-			kvp.Value = l
+			if kvp != nil {
+				kvp.Value = l
+			}
 		}
 	}
 	ds.logs = append(ds.logs, &v2.Log{Time: pkg.Millisecond(time), Data: data})
@@ -180,10 +97,6 @@ func (ds *defaultSpan) Error(time time.Time, ll ...string) {
 
 func (ds *defaultSpan) End() {
 	ds.endTime = time.Now()
-}
-
-func (ds *defaultSpan) Context() SpanContext {
-	return ds.sc
 }
 
 // SpanOption allows for functional options to adjust behaviour
