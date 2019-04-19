@@ -3,6 +3,7 @@ package go2sky
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
@@ -50,12 +51,44 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 }
 
 // CreateEntrySpan creates and starts an entry span for incoming request
-func (t *Tracer) CreateEntrySpan(ctx context.Context, extractor propagation.Extractor) (Span, context.Context, error) {
-	dc, err := extractor()
+func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extractor propagation.Extractor) (s Span, nCtx context.Context, err error) {
+	header, err := extractor()
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	return t.CreateLocalSpan(ctx, WithDownstream(dc), WithSpanType(SpanTypeEntry))
+	var refSc *propagation.SpanContext
+	if header != "" {
+		refSc = &propagation.SpanContext{}
+		err = refSc.DecodeSW6(header)
+		if err != nil {
+			return
+		}
+	}
+	s, nCtx, err = t.CreateLocalSpan(ctx, WithContext(refSc), WithSpanType(SpanTypeEntry))
+	if err != nil {
+		return
+	}
+	s.SetOperationName(operationName)
+	ref, ok := nCtx.Value(refKeyInstance).(*propagation.SpanContext)
+	if ok && ref != nil {
+		return
+	}
+	sc := &propagation.SpanContext{
+		Sample: 1,
+		ParentEndpoint: operationName,
+		EntryEndpoint: operationName,
+		EntryServiceInstanceID: t.instanceID,
+	}
+	if refSc != nil {
+		sc.Sample = refSc.Sample
+		if refSc.EntryEndpoint != "" {
+			sc.EntryEndpoint = refSc.EntryEndpoint
+		}
+		sc.EntryEndpointID = refSc.EntryEndpointID
+		sc.EntryServiceInstanceID = refSc.EntryServiceInstanceID
+	}
+	nCtx = context.WithValue(nCtx, refKeyInstance, sc)
+	return
 }
 
 // CreateLocalSpan creates and starts a span for local usage
@@ -64,20 +97,44 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	for _, opt := range opts {
 		opt(ds)
 	}
-	parentSpan, ok := ctx.Value(key).(segmentSpan)
+	parentSpan, ok := ctx.Value(ctxKeyInstance).(segmentSpan)
 	if !ok {
 		parentSpan = nil
 	}
 	s = newSegmentSpan(ds, parentSpan)
-	return s, context.WithValue(ctx, key, s), nil
+	return s, context.WithValue(ctx, ctxKeyInstance, s), nil
 }
 
 // CreateExitSpan creates and starts an exit span for client
-func (t *Tracer) CreateExitSpan(ctx context.Context, injector propagation.Injector) (Span, error) {
+func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer string, injector propagation.Injector) (Span, error) {
 	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit))
 	if err != nil {
 		return nil, err
 	}
+	s.SetOperationName(operationName)
+	s.SetPeer(peer)
+	spanContext := &propagation.SpanContext{}
+	span, ok := s.(ReportedSpan)
+	if !ok {
+		return nil, errors.New("span type is wrong")
+	}
+	spanContext.Sample = 1
+	spanContext.TraceID = span.Context().TraceID
+	spanContext.ParentSpanID = span.Context().SpanID
+	spanContext.ParentSegmentID = span.Context().SegmentID
+	spanContext.NetworkAddress = peer
+	spanContext.ParentServiceInstanceID = t.instanceID
+	// TODO confirm client
+	spanContext.EntryServiceInstanceID = t.instanceID
+	ref, ok := ctx.Value(refKeyInstance).(*propagation.SpanContext)
+	if ok && ref != nil {
+		spanContext.Sample = ref.Sample
+		spanContext.ParentEndpoint = ref.ParentEndpoint
+		spanContext.EntryServiceInstanceID = ref.EntryServiceInstanceID
+		spanContext.EntryEndpoint = ref.EntryEndpoint
+		spanContext.EntryEndpointID = ref.EntryEndpointID
+	}
+	err = injector(spanContext.EncodeSW6())
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +143,11 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, injector propagation.Inject
 
 type ctxKey struct{}
 
-var key = ctxKey{}
+type refKey struct {}
+
+var ctxKeyInstance = ctxKey{}
+
+var refKeyInstance = refKey{}
 
 //Reporter is a data transit specification
 type Reporter interface {

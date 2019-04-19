@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-
-	"github.com/tetratelabs/go2sky/propagation"
 )
 
 func TestSyncSegment(t *testing.T) {
@@ -17,8 +15,8 @@ func TestSyncSegment(t *testing.T) {
 	}
 	tracer, _ := NewTracer("segmentTest", WithReporter(&mr))
 	ctx := context.Background()
-	span, ctx, _ := tracer.CreateEntrySpan(ctx, MockExtractor)
-	eSpan, _ := tracer.CreateExitSpan(ctx, MockInjector)
+	span, ctx, _ := tracer.CreateEntrySpan(ctx, "", MockExtractor)
+	eSpan, _ := tracer.CreateExitSpan(ctx,"", "", MockInjector)
 	eSpan.End()
 	span.End()
 	wg.Wait()
@@ -37,14 +35,14 @@ func TestAsyncSingleSegment(t *testing.T) {
 	}
 	tracer, _ := NewTracer("segmentTest", WithReporter(&mr))
 	ctx := context.Background()
-	span, ctx, _ := tracer.CreateEntrySpan(ctx, MockExtractor)
+	span, ctx, _ := tracer.CreateEntrySpan(ctx, "", MockExtractor)
 	go func() {
-		eSpan, _ := tracer.CreateExitSpan(ctx, MockInjector)
+		eSpan, _ := tracer.CreateExitSpan(ctx,"", "", MockInjector)
 		eSpan.End()
 		exitWg.Done()
 	}()
 	go func() {
-		eSpan, _ := tracer.CreateExitSpan(ctx, MockInjector)
+		eSpan, _ := tracer.CreateExitSpan(ctx, "", "", MockInjector)
 		eSpan.End()
 		exitWg.Done()
 	}()
@@ -64,19 +62,19 @@ func TestAsyncMultipleSegments(t *testing.T) {
 	}
 	tracer, _ := NewTracer("segmentTest", WithReporter(&mr))
 	ctx := context.Background()
-	span, ctx, _ := tracer.CreateEntrySpan(ctx, MockExtractor)
+	span, ctx, _ := tracer.CreateEntrySpan(ctx, "", MockExtractor)
 	span.End()
 	reportWg.Wait()
 	reportWg.Add(2)
 	go func() {
 		oSpan, subCtx, _ := tracer.CreateLocalSpan(ctx)
-		eSpan, _ := tracer.CreateExitSpan(subCtx, MockInjector)
+		eSpan, _ := tracer.CreateExitSpan(subCtx, "", "", MockInjector)
 		eSpan.End()
 		oSpan.End()
 	}()
 	go func() {
 		oSpan, subCtx, _ := tracer.CreateLocalSpan(ctx)
-		eSpan, _ := tracer.CreateExitSpan(subCtx, MockInjector)
+		eSpan, _ := tracer.CreateExitSpan(subCtx, "", "", MockInjector)
 		eSpan.End()
 		oSpan.End()
 	}()
@@ -86,11 +84,11 @@ func TestAsyncMultipleSegments(t *testing.T) {
 	}
 }
 
-func MockExtractor() (c propagation.DownstreamContext, e error) {
+func MockExtractor() (c string, e error) {
 	return
 }
 
-func MockInjector(carrier propagation.UpstreamContext) (e error) {
+func MockInjector(string) (e error) {
 	return
 }
 

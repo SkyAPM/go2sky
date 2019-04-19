@@ -2,7 +2,6 @@ package go2sky_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/reporter"
 	"log"
@@ -10,7 +9,7 @@ import (
 )
 
 func ExampleNewTracer() {
-	r, err := reporter.NewGRPCReporter("localhost:11800")
+	r, err := reporter.NewGRPCReporter("hello.com:11800")
 	if err != nil {
 		log.Fatalf("new reporter error %v \n", err)
 	}
@@ -37,6 +36,6 @@ func ExampleNewTracer() {
 	time.Sleep(1 * time.Second)
 	span.End()
 	time.Sleep(time.Minute)
-	fmt.Print("aa")
+	//fmt.Print("aa")
 	// Output: aa
 }

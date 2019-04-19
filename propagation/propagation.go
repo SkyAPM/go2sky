@@ -2,6 +2,7 @@ package propagation
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -16,25 +17,15 @@ var (
 	errInsufficientHeaderEntities = errors.New("insufficient header entities")
 )
 
-// DownstreamContext define the trace context from downstream
-type DownstreamContext interface {
-	Header() string
-}
-
-// UpstreamContext define the trace context to upstream
-type UpstreamContext interface {
-	SetHeader(header string)
-}
-
 // Extractor is a tool specification which define how to
 // extract trace parent context from propagation context
-type Extractor func() (DownstreamContext, error)
+type Extractor func() (string, error)
 
 // Injector is a tool specification which define how to
 // inject trace context into propagation context
-type Injector func(carrier UpstreamContext) error
+type Injector func(header string) error
 
-// Refs defines propagation specification of SkyWalking
+// SpanContext defines propagation specification of SkyWalking
 type SpanContext struct {
 	Sample                  int8
 	TraceID                 []int64
@@ -50,7 +41,7 @@ type SpanContext struct {
 	ParentEndpointID        int32
 }
 
-// DecodeSW6 converts string header to Refs
+// DecodeSW6 converts string header to SpanContext
 func (tc *SpanContext) DecodeSW6(header string) error {
 	if header == "" {
 		return errEmptyHeader
@@ -102,6 +93,21 @@ func (tc *SpanContext) DecodeSW6(header string) error {
 	return nil
 }
 
+// EncodeSW6 converts SpanContext to string header
+func (tc *SpanContext) EncodeSW6() string {
+	return strings.Join([]string{
+		fmt.Sprint(tc.Sample),
+		globalIDConvertString(tc.TraceID),
+		globalIDConvertString(tc.ParentSegmentID),
+		fmt.Sprint(tc.ParentSpanID),
+		fmt.Sprint(tc.ParentServiceInstanceID),
+		fmt.Sprint(tc.EntryServiceInstanceID),
+		encodeCompressedField(tc.NetworkAddressID, tc.NetworkAddress),
+		encodeCompressedField(tc.EntryEndpointID, tc.EntryEndpoint),
+		encodeCompressedField(tc.ParentEndpointID, tc.ParentEndpoint),
+	}, "-")
+}
+
 func stringConvertGlobalID(str string) ([]int64, error) {
 	idStr, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
@@ -111,7 +117,7 @@ func stringConvertGlobalID(str string) ([]int64, error) {
 	if len(ss) < 3 {
 		return nil, errors.Errorf("decode id entities error %s", string(idStr))
 	}
-	ii := make([]int64, 0, len(ss))
+	ii := make([]int64, len(ss), len(ss))
 	for i, s := range ss {
 		ii[i], err = strconv.ParseInt(s, 0, 64)
 		if err != nil {
@@ -140,4 +146,19 @@ func decodeBase64(str string) (string, int32, error) {
 		return "", 0, err
 	}
 	return "", int32(i), nil
+}
+
+func globalIDConvertString(id []int64) string {
+	ii := make([]string, len(id))
+	for i, v := range id {
+		ii[i] = fmt.Sprint(v)
+	}
+	return base64.StdEncoding.EncodeToString([]byte(strings.Join(ii, ".")))
+}
+
+func encodeCompressedField(id int32, text string) string {
+	if id > 0 {
+		return base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(id)))
+	}
+	return base64.StdEncoding.EncodeToString([]byte("#" + text))
 }

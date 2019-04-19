@@ -24,6 +24,7 @@ func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segment
 	return
 }
 
+// SegmentContext is the context in a segment
 type SegmentContext struct {
 	TraceID         []int64
 	SpanID          int32
@@ -35,7 +36,7 @@ type SegmentContext struct {
 	spanIDGenerator *int32
 }
 
-// Span is accessed by Reporter to load reported data
+// ReportedSpan is accessed by Reporter to load reported data
 type ReportedSpan interface {
 	Context() *SegmentContext
 	Refs() []*propagation.SpanContext
