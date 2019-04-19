@@ -183,9 +183,10 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 		Spans: make([]*v2.SpanObjectV2, spanSize),
 	}
 	for i, s := range spans {
+		spanCtx := s.Context()
 		segmentObject.Spans[i] = &v2.SpanObjectV2{
-			SpanId:        s.Context().SpanID,
-			ParentSpanId:  s.Context().ParentSpanID,
+			SpanId:        spanCtx.SpanID,
+			ParentSpanId:  spanCtx.ParentSpanID,
 			StartTime:     s.StartTime(),
 			EndTime:       s.EndTime(),
 			OperationName: s.OperationName(),
@@ -197,15 +198,36 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			Logs:          s.Logs(),
 		}
 		srr := make([]*v2.SegmentReference, 0)
-		if i == 0 && s.Context().ParentSpanID > -1 {
+		if i == (spanSize-1) && spanCtx.ParentSpanID > -1 {
 			srr = append(srr, &v2.SegmentReference{
-				ParentSpanId: s.Context().ParentSpanID,
+				ParentSpanId: spanCtx.ParentSpanID,
 				ParentTraceSegmentId: &common.UniqueId{
-					IdParts: s.Context().ParentSegmentID,
+					IdParts: spanCtx.ParentSegmentID,
 				},
 				ParentServiceInstanceId: r.instanceID,
+				RefType:                 common.RefType_CrossThread,
 			})
 		}
+		if len(s.Refs()) > 0 {
+			for _, tc := range s.Refs() {
+				srr = append(srr, &v2.SegmentReference{
+					ParentSpanId: tc.ParentSpanID,
+					ParentTraceSegmentId: &common.UniqueId{
+						IdParts: tc.ParentSegmentID,
+					},
+					ParentServiceInstanceId: tc.ParentServiceInstanceID,
+					EntryEndpoint:           tc.EntryEndpoint,
+					EntryEndpointId:         tc.EntryEndpointID,
+					EntryServiceInstanceId:  tc.EntryServiceInstanceID,
+					NetworkAddress:          tc.NetworkAddress,
+					NetworkAddressId:        tc.NetworkAddressID,
+					ParentEndpoint:          tc.ParentEndpoint,
+					ParentEndpointId:        tc.ParentEndpointID,
+					RefType:                 common.RefType_CrossProcess,
+				})
+			}
+		}
+		segmentObject.Spans[i].Refs = srr
 	}
 	b, err := proto.Marshal(segmentObject)
 	if err != nil {
@@ -236,21 +258,20 @@ func (r *gRPCReporter) initSendPipeline() {
 	StreamLoop:
 		for {
 			stream, err := r.traceClient.Collect(context.Background())
-			for {
-				select {
-				case s, ok := <-r.sendCh:
-					if !ok {
-						r.closeStream(stream)
-						return
-					}
-					err = stream.Send(s)
-					if err != nil {
-						r.logger.Printf("send segment error %v", err)
-						r.closeStream(stream)
-						continue StreamLoop
-					}
+			if err != nil {
+				r.logger.Printf("open stream error %v", err)
+				time.Sleep(5 * time.Second)
+				continue StreamLoop
+			}
+			for s := range r.sendCh {
+				err = stream.Send(s)
+				if err != nil {
+					r.logger.Printf("send segment error %v", err)
+					r.closeStream(stream)
+					continue StreamLoop
 				}
 			}
+			r.closeStream(stream)
 		}
 	}()
 }
