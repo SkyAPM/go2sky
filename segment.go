@@ -1,8 +1,23 @@
+// Copyright 2019 Tetrate Labs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package go2sky
 
 import (
-	"github.com/tetratelabs/go2sky/propagation"
 	"sync/atomic"
+
+	"github.com/tetratelabs/go2sky/propagation"
 
 	"github.com/tetratelabs/go2sky/pkg"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
@@ -11,7 +26,7 @@ import (
 
 func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segmentSpan) {
 	ssi := &segmentSpanImpl{
-		defaultSpan:    *defaultSpan,
+		defaultSpan: *defaultSpan,
 	}
 	ssi.createSegmentContext(parentSpan)
 	if parentSpan == nil || !parentSpan.segmentRegister() {
@@ -27,8 +42,8 @@ func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segment
 // SegmentContext is the context in a segment
 type SegmentContext struct {
 	TraceID         []int64
-	SpanID          int32
 	SegmentID       []int64
+	SpanID          int32
 	ParentSpanID    int32
 	ParentSegmentID []int64
 	collect         chan<- ReportedSpan
@@ -67,7 +82,7 @@ type segmentSpanImpl struct {
 func (s *segmentSpanImpl) End() {
 	s.defaultSpan.End()
 	go func() {
-		s.collect <- s
+		s.Context().collect <- s
 	}()
 }
 
@@ -123,11 +138,11 @@ func (s *segmentSpanImpl) context() SegmentContext {
 
 func (s *segmentSpanImpl) segmentRegister() bool {
 	for {
-		o := atomic.LoadInt32(s.refNum)
+		o := atomic.LoadInt32(s.Context().refNum)
 		if o < 0 {
 			return false
 		}
-		if atomic.CompareAndSwapInt32(s.refNum, o, o+1) {
+		if atomic.CompareAndSwapInt32(s.Context().refNum, o, o+1) {
 			return true
 		}
 	}
@@ -145,7 +160,7 @@ func (s *segmentSpanImpl) createSegmentContext(parent segmentSpan) {
 		s.SegmentContext = parent.context()
 		s.ParentSegmentID = s.SegmentID
 		s.ParentSpanID = s.SpanID
-		s.SpanID = atomic.AddInt32(s.spanIDGenerator, 1)
+		s.SpanID = atomic.AddInt32(s.Context().spanIDGenerator, 1)
 	}
 }
 
@@ -159,7 +174,7 @@ type rootSegmentSpan struct {
 func (rs *rootSegmentSpan) End() {
 	rs.defaultSpan.End()
 	go func() {
-		rs.doneCh <- atomic.SwapInt32(rs.refNum, -1)
+		rs.doneCh <- atomic.SwapInt32(rs.Context().refNum, -1)
 	}()
 }
 

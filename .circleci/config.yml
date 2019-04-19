@@ -17,6 +17,5 @@ jobs:
     executor: build
     steps:
       - checkout
-      - run: go get -u golang.org/x/lint/golint
-      - run: make vet
       - run: make test
+      - run: make lint

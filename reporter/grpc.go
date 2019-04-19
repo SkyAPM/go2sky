@@ -1,13 +1,27 @@
+// Copyright 2019 Tetrate Labs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package reporter
 
 import (
 	"context"
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"log"
 	"os"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 
 	"github.com/tetratelabs/go2sky"
@@ -184,14 +198,14 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			Logs:          s.Logs(),
 		}
 		srr := make([]*v2.SegmentReference, 0)
-		if i == (spanSize - 1) && spanCtx.ParentSpanID > -1 {
+		if i == (spanSize-1) && spanCtx.ParentSpanID > -1 {
 			srr = append(srr, &v2.SegmentReference{
 				ParentSpanId: spanCtx.ParentSpanID,
 				ParentTraceSegmentId: &common.UniqueId{
 					IdParts: spanCtx.ParentSegmentID,
 				},
 				ParentServiceInstanceId: r.instanceID,
-				RefType: common.RefType_CrossThread,
+				RefType:                 common.RefType_CrossThread,
 			})
 		}
 		if len(s.Refs()) > 0 {
@@ -202,14 +216,14 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 						IdParts: tc.ParentSegmentID,
 					},
 					ParentServiceInstanceId: tc.ParentServiceInstanceID,
-					EntryEndpoint: tc.EntryEndpoint,
-					EntryEndpointId: tc.EntryEndpointID,
-					EntryServiceInstanceId: tc.EntryServiceInstanceID,
-					NetworkAddress: tc.NetworkAddress,
-					NetworkAddressId: tc.NetworkAddressID,
-					ParentEndpoint: tc.ParentEndpoint,
-					ParentEndpointId: tc.ParentEndpointID,
-					RefType: common.RefType_CrossProcess,
+					EntryEndpoint:           tc.EntryEndpoint,
+					EntryEndpointId:         tc.EntryEndpointID,
+					EntryServiceInstanceId:  tc.EntryServiceInstanceID,
+					NetworkAddress:          tc.NetworkAddress,
+					NetworkAddressId:        tc.NetworkAddressID,
+					ParentEndpoint:          tc.ParentEndpoint,
+					ParentEndpointId:        tc.ParentEndpointID,
+					RefType:                 common.RefType_CrossProcess,
 				})
 			}
 		}
@@ -244,21 +258,20 @@ func (r *gRPCReporter) initSendPipeline() {
 	StreamLoop:
 		for {
 			stream, err := r.traceClient.Collect(context.Background())
-			for {
-				select {
-				case s, ok := <-r.sendCh:
-					if !ok {
-						r.closeStream(stream)
-						return
-					}
-					err = stream.Send(s)
-					if err != nil {
-						r.logger.Printf("send segment error %v", err)
-						r.closeStream(stream)
-						continue StreamLoop
-					}
+			if err != nil {
+				r.logger.Printf("open stream error %v", err)
+				time.Sleep(5 * time.Second)
+				continue StreamLoop
+			}
+			for s := range r.sendCh {
+				err = stream.Send(s)
+				if err != nil {
+					r.logger.Printf("send segment error %v", err)
+					r.closeStream(stream)
+					continue StreamLoop
 				}
 			}
+			r.closeStream(stream)
 		}
 	}()
 }

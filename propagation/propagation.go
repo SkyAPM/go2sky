@@ -1,3 +1,17 @@
+// Copyright 2019 Tetrate Labs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package propagation
 
 import (
@@ -13,7 +27,7 @@ const splitToken string = "-"
 const idToken string = "."
 
 var (
-	errEmptyHeader = errors.New("empty header")
+	errEmptyHeader                = errors.New("empty header")
 	errInsufficientHeaderEntities = errors.New("insufficient header entities")
 )
 
@@ -27,18 +41,18 @@ type Injector func(header string) error
 
 // SpanContext defines propagation specification of SkyWalking
 type SpanContext struct {
-	Sample                  int8
 	TraceID                 []int64
 	ParentSegmentID         []int64
 	ParentSpanID            int32
 	ParentServiceInstanceID int32
 	EntryServiceInstanceID  int32
-	NetworkAddress          string
 	NetworkAddressID        int32
-	EntryEndpoint           string
 	EntryEndpointID         int32
-	ParentEndpoint          string
 	ParentEndpointID        int32
+	Sample                  int8
+	NetworkAddress          string
+	EntryEndpoint           string
+	ParentEndpoint          string
 }
 
 // DecodeSW6 converts string header to SpanContext
@@ -117,7 +131,7 @@ func stringConvertGlobalID(str string) ([]int64, error) {
 	if len(ss) < 3 {
 		return nil, errors.Errorf("decode id entities error %s", string(idStr))
 	}
-	ii := make([]int64, len(ss), len(ss))
+	ii := make([]int64, len(ss))
 	for i, s := range ss {
 		ii[i], err = strconv.ParseInt(s, 0, 64)
 		if err != nil {
