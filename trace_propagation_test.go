@@ -32,6 +32,7 @@ func TestTracer_EntryAndExit(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	tracer.WaitUntilRegister()
 	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return "", nil
 	})
@@ -63,6 +64,7 @@ func TestTracer_Entry(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	tracer.WaitUntilRegister()
 	entrySpan, _, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return header, nil
 	})
@@ -88,6 +90,7 @@ func TestTracer_EntryAndExitInTrace(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	tracer.WaitUntilRegister()
 	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return header, nil
 	})

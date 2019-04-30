@@ -16,6 +16,9 @@ package go2sky
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -31,6 +34,7 @@ type Tracer struct {
 	initFlag   int32
 	serviceID  int32
 	instanceID int32
+	wg         *sync.WaitGroup
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -40,8 +44,10 @@ type TracerOption func(t *Tracer)
 // NewTracer return a new go2sky Tracer
 func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error) {
 	t := &Tracer{
-		service:  service,
-		initFlag: 0,
+		service:    service,
+		initFlag:   0,
+		serviceID:  0,
+		instanceID: 0,
 	}
 	for _, opt := range opts {
 		opt(t)
@@ -54,19 +60,38 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 		t.instance = id.String()
 	}
 	if t.reporter != nil {
-		serviceID, instanceID, err := t.reporter.Register(t.service, t.instance)
-		if err != nil {
-			return nil, err
-		}
-		t.initFlag = 1
-		t.serviceID = serviceID
-		t.instanceID = instanceID
+		t.wg = &sync.WaitGroup{}
+		t.wg.Add(1)
+		go func() {
+			defer t.wg.Done()
+			for {
+				serviceID, instanceID, err := t.reporter.Register(t.service, t.instance)
+				if err != nil {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				if atomic.SwapInt32(&t.serviceID, serviceID) == 0 && atomic.SwapInt32(&t.instanceID, instanceID) == 0 {
+					atomic.SwapInt32(&t.initFlag, 1)
+					break
+				}
+			}
+		}()
 	}
 	return t, nil
 }
 
+//WaitUntilRegister is a tool helps user to wait until register process has finished
+func (t *Tracer) WaitUntilRegister() {
+	if t.wg != nil {
+		t.wg.Wait()
+	}
+}
+
 // CreateEntrySpan creates and starts an entry span for incoming request
 func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extractor propagation.Extractor) (s Span, nCtx context.Context, err error) {
+	if s, nCtx = t.createNoop(ctx); s != nil {
+		return
+	}
 	header, err := extractor()
 	if err != nil {
 		return
@@ -108,6 +133,9 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extr
 
 // CreateLocalSpan creates and starts a span for local usage
 func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Span, c context.Context, err error) {
+	if s, _ = t.createNoop(ctx); s != nil {
+		return
+	}
 	ds := newLocalSpan(t)
 	for _, opt := range opts {
 		opt(ds)
@@ -122,6 +150,9 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 
 // CreateExitSpan creates and starts an exit span for client
 func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer string, injector propagation.Injector) (Span, error) {
+	if s, _ := t.createNoop(ctx); s != nil {
+		return s, nil
+	}
 	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit))
 	if err != nil {
 		return nil, err
@@ -154,6 +185,20 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 		return nil, err
 	}
 	return s, nil
+}
+
+func (t *Tracer) createNoop(ctx context.Context) (s Span, nCtx context.Context) {
+	if ns, ok := ctx.Value(ctxKeyInstance).(*NoopSpan); ok {
+		nCtx = ctx
+		s = ns
+		return
+	}
+	if t.initFlag == 0 {
+		s = &NoopSpan{}
+		nCtx = context.WithValue(ctx, ctxKeyInstance, s)
+		return
+	}
+	return
 }
 
 type ctxKey struct{}

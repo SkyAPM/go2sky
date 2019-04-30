@@ -33,12 +33,6 @@ func TestTracerInit(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	_, err = NewTracer("", WithReporter(&mockRegisterReporter{
-		success: false,
-	}))
-	if err != errRegister {
-		t.Fail()
-	}
 }
 
 func TestTracer_CreateLocalSpan(t *testing.T) {
@@ -46,6 +40,7 @@ func TestTracer_CreateLocalSpan(t *testing.T) {
 		success: true,
 	}
 	tracer, _ := NewTracer("", WithReporter(reporter))
+	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -65,6 +60,7 @@ func TestTracer_CreateLocalSpanAsync(t *testing.T) {
 		success: true,
 	}
 	tracer, _ := NewTracer("", WithReporter(reporter))
+	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		t.Error(err)
