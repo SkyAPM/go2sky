@@ -20,3 +20,10 @@ func WithReporter(reporter Reporter) TracerOption {
 		t.reporter = reporter
 	}
 }
+
+// WithInstance setup instance identify
+func WithInstance(instance string) TracerOption {
+	return func(t *Tracer) {
+		t.instance = instance
+	}
+}

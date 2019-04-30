@@ -86,7 +86,7 @@ func (s *segmentSpanImpl) End() {
 	}()
 }
 
-// For Span
+// For Reported Span
 
 func (s *segmentSpanImpl) Context() *SegmentContext {
 	return &s.SegmentContext
