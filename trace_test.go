@@ -16,10 +16,12 @@ package go2sky
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"sync"
 	"testing"
+
+	"github.com/pkg/errors"
+	"github.com/tetratelabs/go2sky/propagation"
 )
 
 var (
@@ -27,7 +29,7 @@ var (
 )
 
 func TestTracerInit(t *testing.T) {
-	_, err := NewTracer("", WithReporter(&mockRegisterReporter{
+	_, err := NewTracer("service", WithReporter(&mockRegisterReporter{
 		success: true,
 	}))
 	if err != nil {
@@ -39,7 +41,7 @@ func TestTracer_CreateLocalSpan(t *testing.T) {
 	reporter := &mockRegisterReporter{
 		success: true,
 	}
-	tracer, _ := NewTracer("", WithReporter(reporter))
+	tracer, _ := NewTracer("service", WithReporter(reporter))
 	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
@@ -59,7 +61,7 @@ func TestTracer_CreateLocalSpanAsync(t *testing.T) {
 	reporter := &mockRegisterReporter{
 		success: true,
 	}
-	tracer, _ := NewTracer("", WithReporter(reporter))
+	tracer, _ := NewTracer("service", WithReporter(reporter))
 	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
@@ -126,4 +128,233 @@ func (r *mockRegisterReporter) Register(service string, instance string) (int32,
 
 func (r *mockRegisterReporter) wait() {
 	r.wg.Wait()
+}
+
+func TestNewTracer(t *testing.T) {
+	type args struct {
+		service string
+		opts    []TracerOption
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantTracer *Tracer
+		wantErr    bool
+	}{
+		{
+			"null service name",
+			struct {
+				service string
+				opts    []TracerOption
+			}{service: "", opts: nil},
+			nil,
+			true,
+		},
+		{
+			"without reporter",
+			struct {
+				service string
+				opts    []TracerOption
+			}{service: "test", opts: nil},
+			&Tracer{service: "test"},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotTracer, err := NewTracer(tt.args.service, tt.args.opts...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewTracer() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotTracer, tt.wantTracer) {
+				t.Errorf("NewTracer() = %v, want %v", gotTracer, tt.wantTracer)
+			}
+		})
+	}
+}
+
+func TestTracer_CreateEntrySpan_Parameter(t *testing.T) {
+	type args struct {
+		ctx           context.Context
+		operationName string
+		extractor     propagation.Extractor
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"context is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				extractor     propagation.Extractor
+			}{ctx: nil, operationName: "query type", extractor: func() (s string, e error) {
+				return "", nil
+			}},
+			true,
+		},
+		{
+			"operationName is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				extractor     propagation.Extractor
+			}{ctx: context.Background(), operationName: "", extractor: func() (s string, e error) {
+				return "", nil
+			}},
+			true,
+		},
+		{
+			"extractor is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				extractor     propagation.Extractor
+			}{ctx: context.Background(), operationName: "query type", extractor: nil},
+			true,
+		},
+		{
+			"normal",
+			struct {
+				ctx           context.Context
+				operationName string
+				extractor     propagation.Extractor
+			}{ctx: context.Background(), operationName: "query type", extractor: func() (s string, e error) {
+				return "", nil
+			}},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tracer := &Tracer{}
+			_, _, err := tracer.CreateEntrySpan(tt.args.ctx, tt.args.operationName, tt.args.extractor)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Tracer.CreateEntrySpan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func TestTracer_CreateLocalSpan_Parameter(t *testing.T) {
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"context is nil",
+			struct {
+				ctx context.Context
+			}{ctx: nil},
+			true,
+		},
+		{
+			"normal",
+			struct {
+				ctx context.Context
+			}{ctx: context.Background()},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tracer := &Tracer{}
+			_, _, err := tracer.CreateLocalSpan(tt.args.ctx)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Tracer.CreateLocalSpan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
+	type args struct {
+		ctx           context.Context
+		operationName string
+		peer          string
+		injector      propagation.Injector
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"context is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				peer          string
+				injector      propagation.Injector
+			}{ctx: nil, operationName: "query type", peer: "localhost:8080", injector: func(header string) error {
+				return nil
+			}},
+			true,
+		},
+		{
+			"operationName is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				peer          string
+				injector      propagation.Injector
+			}{ctx: context.Background(), operationName: "", peer: "localhost:8080", injector: func(header string) error {
+				return nil
+			}},
+			true,
+		},
+		{
+			"peer is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				peer          string
+				injector      propagation.Injector
+			}{ctx: context.Background(), operationName: "query type", peer: "", injector: func(header string) error {
+				return nil
+			}},
+			true,
+		},
+		{
+			"injector is nil",
+			struct {
+				ctx           context.Context
+				operationName string
+				peer          string
+				injector      propagation.Injector
+			}{ctx: context.Background(), operationName: "", peer: "localhost:8080", injector: nil},
+			true,
+		},
+		{
+			"normal",
+			struct {
+				ctx           context.Context
+				operationName string
+				peer          string
+				injector      propagation.Injector
+			}{ctx: context.Background(), operationName: "query type", peer: "localhost:8080", injector: func(header string) error {
+				return nil
+			}},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tracer := &Tracer{}
+			_, err := tracer.CreateExitSpan(tt.args.ctx, tt.args.operationName, tt.args.peer, tt.args.injector)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Tracer.CreateExitSpan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
 }

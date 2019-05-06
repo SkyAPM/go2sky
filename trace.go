@@ -21,9 +21,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/pkg/errors"
 	"github.com/tetratelabs/go2sky/propagation"
 )
+
+var errParameter = errors.New("parameter are nil")
 
 // Tracer is go2sky tracer implementation.
 type Tracer struct {
@@ -43,6 +46,9 @@ type TracerOption func(t *Tracer)
 
 // NewTracer return a new go2sky Tracer
 func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error) {
+	if service == "" {
+		return nil, errParameter
+	}
 	t := &Tracer{
 		service:    service,
 		initFlag:   0,
@@ -52,14 +58,14 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 	for _, opt := range opts {
 		opt(t)
 	}
-	if t.instance == "" {
-		id, err := uuid.NewUUID()
-		if err != nil {
-			return nil, err
-		}
-		t.instance = id.String()
-	}
 	if t.reporter != nil {
+		if t.instance == "" {
+			id, err := uuid.NewUUID()
+			if err != nil {
+				return nil, err
+			}
+			t.instance = id.String()
+		}
 		t.wg = &sync.WaitGroup{}
 		t.wg.Add(1)
 		go func() {
@@ -89,6 +95,9 @@ func (t *Tracer) WaitUntilRegister() {
 
 // CreateEntrySpan creates and starts an entry span for incoming request
 func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extractor propagation.Extractor) (s Span, nCtx context.Context, err error) {
+	if ctx == nil || operationName == "" || extractor == nil {
+		return nil, nil, errParameter
+	}
 	if s, nCtx = t.createNoop(ctx); s != nil {
 		return
 	}
@@ -133,6 +142,9 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extr
 
 // CreateLocalSpan creates and starts a span for local usage
 func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Span, c context.Context, err error) {
+	if ctx == nil {
+		return nil, nil, errParameter
+	}
 	if s, _ = t.createNoop(ctx); s != nil {
 		return
 	}
@@ -150,6 +162,9 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 
 // CreateExitSpan creates and starts an exit span for client
 func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer string, injector propagation.Injector) (Span, error) {
+	if ctx == nil || operationName == "" || peer == "" || injector == nil {
+		return nil, errParameter
+	}
 	if s, _ := t.createNoop(ctx); s != nil {
 		return s, nil
 	}

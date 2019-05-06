@@ -7,7 +7,7 @@ GRPC_PATH := $(GO2SKY_GO)/reporter/grpc
 
 .PHONY: test
 test:
-	go test -v -race -cover ./...
+	go test -v -race -cover `go list ./... | grep -v github.com/tetratelabs/go2sky/reporter/grpc`
 
 .PHONY: proto-gen
 proto-gen:

@@ -18,12 +18,15 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 )
 
 type createFunc func() (Span, context.Context, error)
 
 func TestCreateNoopSpan(t *testing.T) {
-	tracer, _ := NewTracer("")
+	tracer, _ := NewTracer("noop")
 	tests := []struct {
 		name string
 		n    createFunc
@@ -31,13 +34,17 @@ func TestCreateNoopSpan(t *testing.T) {
 		{
 			"Entry",
 			func() (Span, context.Context, error) {
-				return tracer.CreateEntrySpan(context.Background(), "", nil)
+				return tracer.CreateEntrySpan(context.Background(), "entry", func() (s string, e error) {
+					return "", nil
+				})
 			},
 		},
 		{
 			"Exit",
 			func() (s Span, c context.Context, err error) {
-				s, err = tracer.CreateExitSpan(context.Background(), "", "", nil)
+				s, err = tracer.CreateExitSpan(context.Background(), "exit", "localhost:8080", func(header string) error {
+					return nil
+				})
 				return
 			},
 		},
@@ -64,14 +71,18 @@ func TestNoopSpanFromBegin(t *testing.T) {
 	r := &registerReporter{
 		wg: wg,
 	}
-	tracer, _ := NewTracer("", WithReporter(r))
-	span, ctx, _ := tracer.CreateEntrySpan(context.Background(), "", nil)
+	tracer, _ := NewTracer("service", WithReporter(r))
+	span, ctx, _ := tracer.CreateEntrySpan(context.Background(), "entry", func() (s string, e error) {
+		return "", nil
+	})
 	if _, ok := span.(*NoopSpan); !ok {
 		t.Error("Should create noop span")
 	}
 	wg.Done()
 	tracer.WaitUntilRegister()
-	exitSpan, _ := tracer.CreateExitSpan(ctx, "", "", nil)
+	exitSpan, _ := tracer.CreateExitSpan(ctx, "exit", "localhost:8080", func(header string) error {
+		return nil
+	})
 	if _, ok := exitSpan.(*NoopSpan); !ok {
 		t.Error("Should create noop span")
 	}
@@ -92,4 +103,14 @@ func (r *registerReporter) Close() {
 func (r *registerReporter) Register(service string, instance string) (int32, int32, error) {
 	r.wg.Wait()
 	return 0, 0, nil
+}
+
+func TestNoopMethod(t *testing.T) {
+	n := NoopSpan{}
+	n.SetOperationName("aa")
+	n.SetPeer("localhost:1111")
+	n.SetSpanLayer(common.SpanLayer_Database)
+	n.Tag("key", "value")
+	n.Log(time.Now(), "key", "value")
+	n.Error(time.Now(), "key", "value")
 }

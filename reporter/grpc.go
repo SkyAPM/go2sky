@@ -231,22 +231,24 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 	}
 	b, err := proto.Marshal(segmentObject)
 	if err != nil {
-		log.Printf("marshal segment object err %v", err)
+		r.logger.Printf("marshal segment object err %v", err)
 		return
 	}
 	segment.Segment = b
 	select {
 	case r.sendCh <- segment:
 	default:
-		log.Printf("reach max send buffer")
+		r.logger.Printf("reach max send buffer")
 	}
 }
 
 func (r *gRPCReporter) Close() {
 	close(r.sendCh)
-	err := r.conn.Close()
-	if err != nil {
-		r.logger.Print(err)
+	if r.conn != nil {
+		err := r.conn.Close()
+		if err != nil {
+			r.logger.Print(err)
+		}
 	}
 }
 
