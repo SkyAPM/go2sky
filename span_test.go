@@ -116,7 +116,7 @@ func Test_defaultSpan_SetSpanLayer(t *testing.T) {
 
 func Test_defaultSpan_Tag(t *testing.T) {
 	type args struct {
-		key   string
+		key   Tag
 		value string
 	}
 	tests := []struct {

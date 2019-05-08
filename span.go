@@ -41,7 +41,7 @@ type Span interface {
 	SetOperationName(string)
 	SetPeer(string)
 	SetSpanLayer(common.SpanLayer)
-	Tag(string, string)
+	Tag(Tag, string)
 	Log(time.Time, ...string)
 	Error(time.Time, ...string)
 	End()
@@ -83,8 +83,8 @@ func (ds *defaultSpan) SetSpanLayer(layer common.SpanLayer) {
 	ds.layer = layer
 }
 
-func (ds *defaultSpan) Tag(key string, value string) {
-	ds.tags = append(ds.tags, &common.KeyStringValuePair{Key: key, Value: value})
+func (ds *defaultSpan) Tag(key Tag, value string) {
+	ds.tags = append(ds.tags, &common.KeyStringValuePair{Key: string(key), Value: value})
 }
 
 func (ds *defaultSpan) Log(time time.Time, ll ...string) {
@@ -116,3 +116,21 @@ func (ds *defaultSpan) End() {
 // SpanOption allows for functional options to adjust behaviour
 // of a Span to be created by CreateLocalSpan
 type SpanOption func(s *defaultSpan)
+
+// Tag are supported by sky-walking engine.
+// As default, all tags will be stored, but these ones have
+// particular meanings.
+type Tag string
+
+const (
+	TagURL             Tag = "url"
+	TagStatusCode      Tag = "status_code"
+	TagHTTPMethod      Tag = "http.method"
+	TagDBType          Tag = "db.type"
+	TagDBInstance      Tag = "db.instance"
+	TagDBStatement     Tag = "db.statement"
+	TagDBBindVariables Tag = "db.bind_vars"
+	TagMQQueue         Tag = "mq.queue"
+	TagMQBroker        Tag = "mq.broker"
+	TagMQTopic         Tag = "mq.topic"
+)

@@ -20,17 +20,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tetratelabs/go2sky/propagation"
+
 	"github.com/pkg/errors"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 
 	"github.com/tetratelabs/go2sky"
-)
-
-const (
-	httpHeader    = "sw6"
-	tagMethod     = "Method"
-	tagPath       = "Path"
-	tagStatusCode = "StatusCode"
 )
 
 var errInvalidTracer = errors.New("invalid tracer")
@@ -82,17 +77,17 @@ func NewServerMiddleware(tracer *go2sky.Tracer, options ...ServerOption) (func(h
 // ServeHTTP implements http.Handler.
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	span, ctx, err := h.tracer.CreateEntrySpan(r.Context(), getOperationName(h.name, r), func() (string, error) {
-		return r.Header.Get(httpHeader), nil
+		return r.Header.Get(propagation.Header), nil
 	})
 	if err != nil {
 		h.next.ServeHTTP(w, r)
 		return
 	}
 	for k, v := range h.extraTags {
-		span.Tag(k, v)
+		span.Tag(go2sky.Tag(k), v)
 	}
-	span.Tag(tagMethod, r.Method)
-	span.Tag(tagPath, r.URL.Path)
+	span.Tag(go2sky.TagHTTPMethod, r.Method)
+	span.Tag(go2sky.TagURL, fmt.Sprintf("%s%s", r.Host, r.URL.Path))
 	span.SetSpanLayer(common.SpanLayer_Http)
 
 	rww := &responseWriterWrapper{w: w, statusCode: 200}
@@ -101,7 +96,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if code >= 400 {
 			span.Error(time.Now(), "Error on handling request")
 		}
-		span.Tag(tagStatusCode, strconv.Itoa(code))
+		span.Tag(go2sky.TagStatusCode, strconv.Itoa(code))
 		span.End()
 	}()
 	h.next.ServeHTTP(rww, r.WithContext(ctx))

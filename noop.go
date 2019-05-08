@@ -32,7 +32,7 @@ func (*NoopSpan) SetPeer(string) {
 func (*NoopSpan) SetSpanLayer(common.SpanLayer) {
 }
 
-func (*NoopSpan) Tag(string, string) {
+func (*NoopSpan) Tag(Tag, string) {
 }
 
 func (*NoopSpan) Log(time.Time, ...string) {

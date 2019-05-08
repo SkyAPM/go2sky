@@ -82,7 +82,7 @@ func ExampleNewServerMiddleware() {
 	_ = res.Body.Close()
 	time.Sleep(time.Minute)
 
-	// Output: aa
+	// Output:
 }
 
 func middleFunc(client *http.Client, url string) http.HandlerFunc {

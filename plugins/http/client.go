@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tetratelabs/go2sky/propagation"
+
 	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 )
@@ -87,7 +89,7 @@ type transport struct {
 
 func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	span, err := t.tracer.CreateExitSpan(req.Context(), getOperationName(t.name, req), req.Host, func(header string) error {
-		req.Header.Set(httpHeader, header)
+		req.Header.Set(propagation.Header, header)
 		return nil
 	})
 	if err != nil {
@@ -95,17 +97,17 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 	}
 	defer span.End()
 	for k, v := range t.extraTags {
-		span.Tag(k, v)
+		span.Tag(go2sky.Tag(k), v)
 	}
-	span.Tag(tagMethod, req.Method)
-	span.Tag(tagPath, req.URL.Path)
+	span.Tag(go2sky.TagHTTPMethod, req.Method)
+	span.Tag(go2sky.TagURL, req.URL.String())
 	span.SetSpanLayer(common.SpanLayer_Http)
 	res, err = t.delegated.RoundTrip(req)
 	if err != nil {
 		span.Error(time.Now(), err.Error())
 		return
 	}
-	span.Tag(tagStatusCode, strconv.Itoa(res.StatusCode))
+	span.Tag(go2sky.TagStatusCode, strconv.Itoa(res.StatusCode))
 	if res.StatusCode >= 400 {
 		span.Error(time.Now(), "Errors on handling client")
 	}
