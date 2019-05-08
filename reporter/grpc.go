@@ -21,10 +21,9 @@ import (
 	"os"
 	"time"
 
-	"google.golang.org/grpc/connectivity"
-
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/pkg"
@@ -272,8 +271,7 @@ func (r *gRPCReporter) initSendPipeline() {
 			}
 			r.closeStream(stream)
 			if r.conn != nil {
-				err := r.conn.Close()
-				if err != nil {
+				if err := r.conn.Close(); err != nil {
 					r.logger.Print(err)
 				}
 			}

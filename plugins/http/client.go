@@ -19,9 +19,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tetratelabs/go2sky/propagation"
-
 	"github.com/tetratelabs/go2sky"
+	"github.com/tetratelabs/go2sky/propagation"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 )
 
@@ -114,5 +113,5 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 	if res.StatusCode >= 400 {
 		span.Error(time.Now(), "Errors on handling client")
 	}
-	return res, err
+	return res, nil
 }

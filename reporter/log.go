@@ -22,6 +22,11 @@ import (
 	"github.com/tetratelabs/go2sky"
 )
 
+const (
+	mockServiceID  = 1
+	mockInstanceID = 1
+)
+
 func NewLogReporter() (go2sky.Reporter, error) {
 	return &logReporter{logger: log.New(os.Stderr, "go2sky-log", log.LstdFlags)}, nil
 }
@@ -32,7 +37,8 @@ type logReporter struct {
 
 func (lr *logReporter) Register(service string, instance string) (int32, int32, error) {
 	lr.logger.Println("Register log reporter")
-	return 1, 1, nil
+	// Mock register results for log reporter
+	return mockServiceID, mockInstanceID, nil
 }
 
 func (lr *logReporter) Send(spans []go2sky.ReportedSpan) {

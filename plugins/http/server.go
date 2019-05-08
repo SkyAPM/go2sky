@@ -20,17 +20,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tetratelabs/go2sky/propagation"
-
-	"github.com/pkg/errors"
-	"github.com/tetratelabs/go2sky/reporter/grpc/common"
-
 	"github.com/tetratelabs/go2sky"
+	"github.com/tetratelabs/go2sky/pkg"
+	"github.com/tetratelabs/go2sky/propagation"
+	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 )
 
-const httpServerComponentID int32 = 49
-
-var errInvalidTracer = errors.New("invalid tracer")
+const (
+	httpServerComponentID int32 = 49
+	errInvalidTracer            = pkg.Error("invalid tracer")
+)
 
 type handler struct {
 	tracer    *go2sky.Tracer

@@ -21,10 +21,9 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/tetratelabs/go2sky"
-
 	"github.com/gorilla/mux"
 
+	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/reporter"
 )
 
