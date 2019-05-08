@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
