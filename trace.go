@@ -23,10 +23,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
+	"github.com/tetratelabs/go2sky/pkg"
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
-var errParameter = errors.New("parameter are nil")
+const errParameter = pkg.Error("parameter are nil")
 
 // Tracer is go2sky tracer implementation.
 type Tracer struct {
@@ -145,7 +146,7 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	if ctx == nil {
 		return nil, nil, errParameter
 	}
-	if s, _ = t.createNoop(ctx); s != nil {
+	if s, c = t.createNoop(ctx); s != nil {
 		return
 	}
 	ds := newLocalSpan(t)
@@ -185,8 +186,9 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	spanContext.ParentSegmentID = span.Context().SegmentID
 	spanContext.NetworkAddress = peer
 	spanContext.ParentServiceInstanceID = t.instanceID
-	// TODO confirm client
 	spanContext.EntryServiceInstanceID = t.instanceID
+	spanContext.EntryEndpoint = operationName
+	spanContext.ParentEndpoint = operationName
 	ref, ok := ctx.Value(refKeyInstance).(*propagation.SpanContext)
 	if ok && ref != nil {
 		spanContext.Sample = ref.Sample

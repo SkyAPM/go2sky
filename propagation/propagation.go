@@ -23,8 +23,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const splitToken string = "-"
-const idToken string = "."
+const (
+	Header     string = "sw6"
+	splitToken string = "-"
+	idToken    string = "."
+)
 
 var (
 	errEmptyHeader                = errors.New("empty header")

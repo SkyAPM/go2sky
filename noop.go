@@ -32,7 +32,10 @@ func (*NoopSpan) SetPeer(string) {
 func (*NoopSpan) SetSpanLayer(common.SpanLayer) {
 }
 
-func (*NoopSpan) Tag(string, string) {
+func (*NoopSpan) SetComponent(int32) {
+}
+
+func (*NoopSpan) Tag(Tag, string) {
 }
 
 func (*NoopSpan) Log(time.Time, ...string) {

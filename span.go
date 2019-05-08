@@ -41,7 +41,8 @@ type Span interface {
 	SetOperationName(string)
 	SetPeer(string)
 	SetSpanLayer(common.SpanLayer)
-	Tag(string, string)
+	SetComponent(int32)
+	Tag(Tag, string)
 	Log(time.Time, ...string)
 	Error(time.Time, ...string)
 	End()
@@ -50,41 +51,46 @@ type Span interface {
 func newLocalSpan(t *Tracer) *defaultSpan {
 	return &defaultSpan{
 		tracer:    t,
-		startTime: time.Now(),
-		spanType:  SpanTypeLocal,
+		StartTime: time.Now(),
+		SpanType:  SpanTypeLocal,
 	}
 }
 
 type defaultSpan struct {
 	Refs          []*propagation.SpanContext
 	tracer        *Tracer
-	startTime     time.Time
-	endTime       time.Time
-	operationName string
-	peer          string
-	layer         common.SpanLayer
-	tags          []*common.KeyStringValuePair
-	logs          []*v2.Log
-	isError       bool
-	spanType      SpanType
+	StartTime     time.Time
+	EndTime       time.Time
+	OperationName string
+	Peer          string
+	Layer         common.SpanLayer
+	ComponentID   int32
+	Tags          []*common.KeyStringValuePair
+	Logs          []*v2.Log
+	IsError       bool
+	SpanType      SpanType
 }
 
 // For Span
 
 func (ds *defaultSpan) SetOperationName(name string) {
-	ds.operationName = name
+	ds.OperationName = name
 }
 
 func (ds *defaultSpan) SetPeer(peer string) {
-	ds.peer = peer
+	ds.Peer = peer
 }
 
 func (ds *defaultSpan) SetSpanLayer(layer common.SpanLayer) {
-	ds.layer = layer
+	ds.Layer = layer
 }
 
-func (ds *defaultSpan) Tag(key string, value string) {
-	ds.tags = append(ds.tags, &common.KeyStringValuePair{Key: key, Value: value})
+func (ds *defaultSpan) SetComponent(componentID int32) {
+	ds.ComponentID = componentID
+}
+
+func (ds *defaultSpan) Tag(key Tag, value string) {
+	ds.Tags = append(ds.Tags, &common.KeyStringValuePair{Key: string(key), Value: value})
 }
 
 func (ds *defaultSpan) Log(time time.Time, ll ...string) {
@@ -101,18 +107,36 @@ func (ds *defaultSpan) Log(time time.Time, ll ...string) {
 			}
 		}
 	}
-	ds.logs = append(ds.logs, &v2.Log{Time: pkg.Millisecond(time), Data: data})
+	ds.Logs = append(ds.Logs, &v2.Log{Time: pkg.Millisecond(time), Data: data})
 }
 
 func (ds *defaultSpan) Error(time time.Time, ll ...string) {
-	ds.isError = true
+	ds.IsError = true
 	ds.Log(time, ll...)
 }
 
 func (ds *defaultSpan) End() {
-	ds.endTime = time.Now()
+	ds.EndTime = time.Now()
 }
 
 // SpanOption allows for functional options to adjust behaviour
 // of a Span to be created by CreateLocalSpan
 type SpanOption func(s *defaultSpan)
+
+// Tag are supported by sky-walking engine.
+// As default, all Tags will be stored, but these ones have
+// particular meanings.
+type Tag string
+
+const (
+	TagURL             Tag = "url"
+	TagStatusCode      Tag = "status_code"
+	TagHTTPMethod      Tag = "http.method"
+	TagDBType          Tag = "db.type"
+	TagDBInstance      Tag = "db.instance"
+	TagDBStatement     Tag = "db.statement"
+	TagDBBindVariables Tag = "db.bind_vars"
+	TagMQQueue         Tag = "mq.queue"
+	TagMQBroker        Tag = "mq.broker"
+	TagMQTopic         Tag = "mq.topic"
+)

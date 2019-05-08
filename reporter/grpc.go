@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/pkg"
@@ -44,7 +45,7 @@ var (
 // NewGRPCReporter create a new reporter to send data to gRPC oap server
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
 	r := &gRPCReporter{
-		logger:       log.New(os.Stderr, "go2sky", log.LstdFlags),
+		logger:       log.New(os.Stderr, "go2sky-gRPC", log.LstdFlags),
 		sendCh:       make(chan *common.UpstreamSegment, maxSendQueueSize),
 		pingInterval: defaultPingInterval,
 	}
@@ -196,6 +197,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			IsError:       s.IsError(),
 			Tags:          s.Tags(),
 			Logs:          s.Logs(),
+			ComponentId:   s.ComponentID(),
 		}
 		srr := make([]*v2.SegmentReference, 0)
 		if i == (spanSize-1) && spanCtx.ParentSpanID > -1 {
@@ -244,12 +246,6 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 
 func (r *gRPCReporter) Close() {
 	close(r.sendCh)
-	if r.conn != nil {
-		err := r.conn.Close()
-		if err != nil {
-			r.logger.Print(err)
-		}
-	}
 }
 
 func (r *gRPCReporter) initSendPipeline() {
@@ -274,6 +270,12 @@ func (r *gRPCReporter) initSendPipeline() {
 				}
 			}
 			r.closeStream(stream)
+			if r.conn != nil {
+				if err := r.conn.Close(); err != nil {
+					r.logger.Print(err)
+				}
+			}
+			break
 		}
 	}()
 }
@@ -291,6 +293,9 @@ func (r *gRPCReporter) ping() {
 	}
 	go func() {
 		for {
+			if r.conn.GetState() == connectivity.Shutdown {
+				break
+			}
 			_, err := r.pingClient.DoPing(context.Background(), &register.ServiceInstancePingPkg{
 				Time:                pkg.Millisecond(time.Now()),
 				ServiceInstanceId:   r.instanceID,

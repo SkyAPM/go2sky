@@ -12,23 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package go2sky
+package pkg
 
-import "github.com/tetratelabs/go2sky/propagation"
+type Error string
 
-// WithContext setup trace sc from propagation
-func WithContext(sc *propagation.SpanContext) SpanOption {
-	return func(s *defaultSpan) {
-		if sc == nil {
-			return
-		}
-		s.Refs = append(s.Refs, sc)
-	}
-}
-
-// WithSpanType setup span type of a span
-func WithSpanType(spanType SpanType) SpanOption {
-	return func(s *defaultSpan) {
-		s.SpanType = spanType
-	}
+func (e Error) Error() string {
+	return string(e)
 }

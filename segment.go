@@ -64,6 +64,7 @@ type ReportedSpan interface {
 	IsError() bool
 	Tags() []*common.KeyStringValuePair
 	Logs() []*v2.Log
+	ComponentID() int32
 }
 
 type segmentSpan interface {
@@ -97,39 +98,43 @@ func (s *segmentSpanImpl) Refs() []*propagation.SpanContext {
 }
 
 func (s *segmentSpanImpl) StartTime() int64 {
-	return pkg.Millisecond(s.startTime)
+	return pkg.Millisecond(s.defaultSpan.StartTime)
 }
 
 func (s *segmentSpanImpl) EndTime() int64 {
-	return pkg.Millisecond(s.endTime)
+	return pkg.Millisecond(s.defaultSpan.EndTime)
 }
 
 func (s *segmentSpanImpl) OperationName() string {
-	return s.operationName
+	return s.defaultSpan.OperationName
 }
 
 func (s *segmentSpanImpl) Peer() string {
-	return s.peer
+	return s.defaultSpan.Peer
 }
 
 func (s *segmentSpanImpl) SpanType() common.SpanType {
-	return common.SpanType(s.spanType)
+	return common.SpanType(s.defaultSpan.SpanType)
 }
 
 func (s *segmentSpanImpl) SpanLayer() common.SpanLayer {
-	return s.layer
+	return s.defaultSpan.Layer
 }
 
 func (s *segmentSpanImpl) IsError() bool {
-	return s.isError
+	return s.defaultSpan.IsError
 }
 
 func (s *segmentSpanImpl) Tags() []*common.KeyStringValuePair {
-	return s.tags
+	return s.defaultSpan.Tags
 }
 
 func (s *segmentSpanImpl) Logs() []*v2.Log {
-	return s.logs
+	return s.defaultSpan.Logs
+}
+
+func (s *segmentSpanImpl) ComponentID() int32 {
+	return s.defaultSpan.ComponentID
 }
 
 func (s *segmentSpanImpl) context() SegmentContext {
