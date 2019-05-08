@@ -198,6 +198,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			IsError:       s.IsError(),
 			Tags:          s.Tags(),
 			Logs:          s.Logs(),
+			ComponentId:   s.ComponentID(),
 		}
 		srr := make([]*v2.SegmentReference, 0)
 		if i == (spanSize-1) && spanCtx.ParentSpanID > -1 {

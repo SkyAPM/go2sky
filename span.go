@@ -41,6 +41,7 @@ type Span interface {
 	SetOperationName(string)
 	SetPeer(string)
 	SetSpanLayer(common.SpanLayer)
+	SetComponent(int32)
 	Tag(Tag, string)
 	Log(time.Time, ...string)
 	Error(time.Time, ...string)
@@ -63,6 +64,7 @@ type defaultSpan struct {
 	operationName string
 	peer          string
 	layer         common.SpanLayer
+	componentID   int32
 	tags          []*common.KeyStringValuePair
 	logs          []*v2.Log
 	isError       bool
@@ -81,6 +83,10 @@ func (ds *defaultSpan) SetPeer(peer string) {
 
 func (ds *defaultSpan) SetSpanLayer(layer common.SpanLayer) {
 	ds.layer = layer
+}
+
+func (ds *defaultSpan) SetComponent(componentID int32) {
+	ds.componentID = componentID
 }
 
 func (ds *defaultSpan) Tag(key Tag, value string) {

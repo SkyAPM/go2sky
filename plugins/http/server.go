@@ -28,6 +28,8 @@ import (
 	"github.com/tetratelabs/go2sky"
 )
 
+const httpServerComponentID int32 = 49
+
 var errInvalidTracer = errors.New("invalid tracer")
 
 type handler struct {
@@ -83,6 +85,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.next.ServeHTTP(w, r)
 		return
 	}
+	span.SetComponent(httpServerComponentID)
 	for k, v := range h.extraTags {
 		span.Tag(go2sky.Tag(k), v)
 	}

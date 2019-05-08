@@ -32,6 +32,9 @@ func (*NoopSpan) SetPeer(string) {
 func (*NoopSpan) SetSpanLayer(common.SpanLayer) {
 }
 
+func (*NoopSpan) SetComponent(int32) {
+}
+
 func (*NoopSpan) Tag(Tag, string) {
 }
 

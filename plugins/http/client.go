@@ -25,6 +25,8 @@ import (
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 )
 
+const httpClientComponentID int32 = 2
+
 type ClientConfig struct {
 	name      string
 	client    *http.Client
@@ -96,6 +98,7 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 		return t.delegated.RoundTrip(req)
 	}
 	defer span.End()
+	span.SetComponent(httpClientComponentID)
 	for k, v := range t.extraTags {
 		span.Tag(go2sky.Tag(k), v)
 	}

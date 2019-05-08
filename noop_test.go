@@ -110,6 +110,7 @@ func TestNoopMethod(t *testing.T) {
 	n.SetOperationName("aa")
 	n.SetPeer("localhost:1111")
 	n.SetSpanLayer(common.SpanLayer_Database)
+	n.SetComponent(2)
 	n.Tag("key", "value")
 	n.Log(time.Now(), "key", "value")
 	n.Error(time.Now(), "key", "value")

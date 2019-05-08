@@ -64,6 +64,7 @@ type ReportedSpan interface {
 	IsError() bool
 	Tags() []*common.KeyStringValuePair
 	Logs() []*v2.Log
+	ComponentID() int32
 }
 
 type segmentSpan interface {
@@ -130,6 +131,10 @@ func (s *segmentSpanImpl) Tags() []*common.KeyStringValuePair {
 
 func (s *segmentSpanImpl) Logs() []*v2.Log {
 	return s.logs
+}
+
+func (s *segmentSpanImpl) ComponentID() int32 {
+	return s.componentID
 }
 
 func (s *segmentSpanImpl) context() SegmentContext {
