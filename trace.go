@@ -185,8 +185,9 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	spanContext.ParentSegmentID = span.Context().SegmentID
 	spanContext.NetworkAddress = peer
 	spanContext.ParentServiceInstanceID = t.instanceID
-	// TODO confirm client
 	spanContext.EntryServiceInstanceID = t.instanceID
+	spanContext.EntryEndpoint = operationName
+	spanContext.ParentEndpoint = operationName
 	ref, ok := ctx.Value(refKeyInstance).(*propagation.SpanContext)
 	if ok && ref != nil {
 		spanContext.Sample = ref.Sample

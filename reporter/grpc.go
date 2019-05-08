@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"google.golang.org/grpc/connectivity"
+
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 
@@ -244,12 +246,6 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 
 func (r *gRPCReporter) Close() {
 	close(r.sendCh)
-	if r.conn != nil {
-		err := r.conn.Close()
-		if err != nil {
-			r.logger.Print(err)
-		}
-	}
 }
 
 func (r *gRPCReporter) initSendPipeline() {
@@ -274,6 +270,13 @@ func (r *gRPCReporter) initSendPipeline() {
 				}
 			}
 			r.closeStream(stream)
+			if r.conn != nil {
+				err := r.conn.Close()
+				if err != nil {
+					r.logger.Print(err)
+				}
+			}
+			break
 		}
 	}()
 }
@@ -291,6 +294,9 @@ func (r *gRPCReporter) ping() {
 	}
 	go func() {
 		for {
+			if r.conn.GetState() == connectivity.Shutdown {
+				break
+			}
 			_, err := r.pingClient.DoPing(context.Background(), &register.ServiceInstancePingPkg{
 				Time:                pkg.Millisecond(time.Now()),
 				ServiceInstanceId:   r.instanceID,
