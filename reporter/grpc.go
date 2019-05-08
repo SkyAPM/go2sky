@@ -46,7 +46,7 @@ var (
 // NewGRPCReporter create a new reporter to send data to gRPC oap server
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
 	r := &gRPCReporter{
-		logger:       log.New(os.Stderr, "go2sky", log.LstdFlags),
+		logger:       log.New(os.Stderr, "go2sky-gRPC", log.LstdFlags),
 		sendCh:       make(chan *common.UpstreamSegment, maxSendQueueSize),
 		pingInterval: defaultPingInterval,
 	}

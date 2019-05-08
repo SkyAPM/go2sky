@@ -17,7 +17,6 @@ package http
 import (
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -30,7 +29,8 @@ import (
 )
 
 func ExampleNewServerMiddleware() {
-	r, err := reporter.NewGRPCReporter("hello.com:11800")
+	// Use gRPC reporter for production
+	r, err := reporter.NewLogReporter()
 	if err != nil {
 		log.Fatalf("new reporter error %v \n", err)
 	}
@@ -55,15 +55,7 @@ func ExampleNewServerMiddleware() {
 	router := mux.NewRouter()
 
 	// create test server
-	l, err := net.Listen("tcp", "127.0.0.1:8080")
-	if err != nil {
-		log.Fatalf("listen error %v \n", err)
-	}
-	ts := &httptest.Server{
-		Listener: l,
-		Config:   &http.Server{Handler: sm(router)},
-	}
-	ts.Start()
+	ts := httptest.NewServer(sm(router))
 	defer ts.Close()
 
 	// add handlers
@@ -80,7 +72,7 @@ func ExampleNewServerMiddleware() {
 		log.Fatalf("unable to do http request: %+v\n", err)
 	}
 	_ = res.Body.Close()
-	time.Sleep(time.Minute)
+	time.Sleep(time.Second)
 
 	// Output:
 }

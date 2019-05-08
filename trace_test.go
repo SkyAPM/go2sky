@@ -197,7 +197,7 @@ func TestTracer_CreateEntrySpan_Parameter(t *testing.T) {
 			true,
 		},
 		{
-			"operationName is nil",
+			"OperationName is nil",
 			struct {
 				ctx           context.Context
 				operationName string
@@ -301,7 +301,7 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 			true,
 		},
 		{
-			"operationName is nil",
+			"OperationName is nil",
 			struct {
 				ctx           context.Context
 				operationName string
@@ -313,7 +313,7 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 			true,
 		},
 		{
-			"peer is nil",
+			"Peer is nil",
 			struct {
 				ctx           context.Context
 				operationName string

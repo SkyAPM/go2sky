@@ -145,7 +145,7 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	if ctx == nil {
 		return nil, nil, errParameter
 	}
-	if s, _ = t.createNoop(ctx); s != nil {
+	if s, c = t.createNoop(ctx); s != nil {
 		return
 	}
 	ds := newLocalSpan(t)

@@ -39,7 +39,7 @@ func Test_defaultSpan_SetOperationName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := &defaultSpan{}
 			ds.SetOperationName(tt.args.name)
-			if ds.operationName != tt.args.name {
+			if ds.OperationName != tt.args.name {
 				t.Error("operation name is different")
 			}
 		})
@@ -55,7 +55,7 @@ func Test_defaultSpan_SetPeer(t *testing.T) {
 		args args
 	}{
 		{
-			"set peer",
+			"set Peer",
 			struct{ name string }{name: "localhost:9999"},
 		},
 	}
@@ -63,8 +63,8 @@ func Test_defaultSpan_SetPeer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := &defaultSpan{}
 			ds.SetPeer(tt.args.name)
-			if ds.peer != tt.args.name {
-				t.Error("peer is different")
+			if ds.Peer != tt.args.name {
+				t.Error("Peer is different")
 			}
 		})
 	}
@@ -107,8 +107,8 @@ func Test_defaultSpan_SetSpanLayer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := &defaultSpan{}
 			ds.SetSpanLayer(tt.args.layer)
-			if ds.layer != tt.args.layer {
-				t.Error("span layer is different")
+			if ds.Layer != tt.args.layer {
+				t.Error("span Layer is different")
 			}
 		})
 	}
@@ -146,8 +146,8 @@ func Test_defaultSpan_Tag(t *testing.T) {
 			for _, a := range tt.args {
 				ds.Tag(a.key, a.value)
 			}
-			if len(ds.tags) != len(tt.args) {
-				t.Error("tags are not set property")
+			if len(ds.Tags) != len(tt.args) {
+				t.Error("Tags are not set property")
 			}
 		})
 	}
@@ -159,19 +159,19 @@ func Test_defaultSpan_Log(t *testing.T) {
 		ll   []string
 	}{
 		{
-			"set null logs",
+			"set null Logs",
 			[]string{},
 		},
 		{
-			"set logs",
+			"set Logs",
 			[]string{"name", "value", "name1", "value1"},
 		},
 		{
-			"set duplicated logs",
+			"set duplicated Logs",
 			[]string{"name", "value", "name1", "value1"},
 		},
 		{
-			"set invalid logs",
+			"set invalid Logs",
 			[]string{"name", "value", "name1"},
 		},
 	}
@@ -179,12 +179,12 @@ func Test_defaultSpan_Log(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := &defaultSpan{}
 			ds.Log(time.Now(), tt.ll...)
-			if len(ds.logs) != 1 {
-				t.Error("logs are not set property")
+			if len(ds.Logs) != 1 {
+				t.Error("Logs are not set property")
 			}
-			for _, l := range ds.logs {
+			for _, l := range ds.Logs {
 				if len(l.Data) != int(math.Ceil(float64(len(tt.ll))/2)) {
-					t.Error("logs are not set property")
+					t.Error("Logs are not set property")
 				}
 			}
 		})
@@ -213,13 +213,13 @@ func Test_defaultSpan_Error(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := &defaultSpan{}
 			ds.Error(time.Now(), tt.ll...)
-			if !ds.isError {
+			if !ds.IsError {
 				t.Error("errors are not set property")
 			}
-			if len(ds.logs) != 1 {
+			if len(ds.Logs) != 1 {
 				t.Error("errors are not set property")
 			}
-			for _, l := range ds.logs {
+			for _, l := range ds.Logs {
 				if len(l.Data) != int(math.Ceil(float64(len(tt.ll))/2)) {
 					t.Error("errors are not set property")
 				}

@@ -24,7 +24,8 @@ import (
 )
 
 func ExampleNewTracer() {
-	r, err := reporter.NewGRPCReporter("hello.com:11800")
+	// Use gRPC reporter for production
+	r, err := reporter.NewLogReporter()
 	if err != nil {
 		log.Fatalf("new reporter error %v \n", err)
 	}
@@ -33,24 +34,25 @@ func ExampleNewTracer() {
 	if err != nil {
 		log.Fatalf("create tracer error %v \n", err)
 	}
+	// This for test
+	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		log.Fatalf("create new local span error %v \n", err)
 	}
 	span.SetOperationName("invoke data")
 	span.Tag("kind", "outer")
-	time.Sleep(2 * time.Second)
+	time.Sleep(time.Second)
 	subSpan, _, err := tracer.CreateLocalSpan(ctx)
 	if err != nil {
 		log.Fatalf("create new sub local span error %v \n", err)
 	}
 	subSpan.SetOperationName("invoke inner")
 	subSpan.Log(time.Now(), "inner", "this is right")
-	time.Sleep(2 * time.Second)
+	time.Sleep(time.Second)
 	subSpan.End()
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 	span.End()
-	time.Sleep(time.Minute)
-	//fmt.Print("aa")
-	// Output: aa
+	time.Sleep(time.Second)
+	// Output:
 }
