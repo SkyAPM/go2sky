@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+Package propagation holds the required function signatures for Injection and
+Extraction. It also contains decoder and encoder of SkyWalking propagation protocol.
+*/
 package propagation
 
 import (
