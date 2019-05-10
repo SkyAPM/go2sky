@@ -42,7 +42,7 @@ var (
 	errInstanceRegister = errors.New("fail to instance service")
 )
 
-// NewGRPCReporter create a new reporter to send data to gRPC oap server
+// NewGRPCReporter create a new reporter to send data to gRPC oap server. Only one backend address is allowed.
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
 	r := &gRPCReporter{
 		logger:       log.New(os.Stderr, "go2sky-gRPC", log.LstdFlags),
