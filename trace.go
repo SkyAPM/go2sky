@@ -21,13 +21,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/pkg/errors"
-	"github.com/tetratelabs/go2sky/pkg"
+
+	"github.com/tetratelabs/go2sky/internal/tool"
 	"github.com/tetratelabs/go2sky/propagation"
 )
 
-const errParameter = pkg.Error("parameter are nil")
+const errParameter = tool.Error("parameter are nil")
 
 // Tracer is go2sky tracer implementation.
 type Tracer struct {

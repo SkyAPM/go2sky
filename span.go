@@ -18,7 +18,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/tetratelabs/go2sky/pkg"
+	"github.com/tetratelabs/go2sky/internal/tool"
 	"github.com/tetratelabs/go2sky/propagation"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 	v2 "github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2"
@@ -107,7 +107,7 @@ func (ds *defaultSpan) Log(time time.Time, ll ...string) {
 			}
 		}
 	}
-	ds.Logs = append(ds.Logs, &v2.Log{Time: pkg.Millisecond(time), Data: data})
+	ds.Logs = append(ds.Logs, &v2.Log{Time: tool.Millisecond(time), Data: data})
 }
 
 func (ds *defaultSpan) Error(time time.Time, ll ...string) {

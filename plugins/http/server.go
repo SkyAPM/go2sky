@@ -21,14 +21,14 @@ import (
 	"time"
 
 	"github.com/tetratelabs/go2sky"
-	"github.com/tetratelabs/go2sky/pkg"
+	"github.com/tetratelabs/go2sky/internal/tool"
 	"github.com/tetratelabs/go2sky/propagation"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 )
 
 const (
 	httpServerComponentID int32 = 49
-	errInvalidTracer            = pkg.Error("invalid tracer")
+	errInvalidTracer            = tool.Error("invalid tracer")
 )
 
 type handler struct {
