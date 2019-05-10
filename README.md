@@ -4,9 +4,6 @@
 
 **GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metric formats.
 
-# License
-This software is licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
-
 # Installation
 ```
 $ go get -u github.com/tetratelabs/go2sky
@@ -121,3 +118,7 @@ Plugins is integrated with specific framework, for instance, `net/http`, `gRPC`,
 are stored in `plugins` package.
 
  1. [HTTP client/server example](plugins/http/example_http_test.go)
+
+# License
+Copyright 2019 Tetrate Labs.
+This software is licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
