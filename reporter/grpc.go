@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc/connectivity"
 
 	"github.com/tetratelabs/go2sky"
-	"github.com/tetratelabs/go2sky/pkg"
+	"github.com/tetratelabs/go2sky/internal/tool"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 	v2 "github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2"
 	"github.com/tetratelabs/go2sky/reporter/grpc/register"
@@ -145,7 +145,7 @@ func (r *gRPCReporter) registerInstance(name string) error {
 			{
 				ServiceId:    r.serviceID,
 				InstanceUUID: name,
-				Time:         pkg.Millisecond(time.Now()),
+				Time:         tool.Millisecond(time.Now()),
 			},
 		},
 	}
@@ -297,7 +297,7 @@ func (r *gRPCReporter) ping() {
 				break
 			}
 			_, err := r.pingClient.DoPing(context.Background(), &register.ServiceInstancePingPkg{
-				Time:                pkg.Millisecond(time.Now()),
+				Time:                tool.Millisecond(time.Now()),
 				ServiceInstanceId:   r.instanceID,
 				ServiceInstanceUUID: r.instanceName,
 			})

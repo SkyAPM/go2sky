@@ -17,9 +17,9 @@ package go2sky
 import (
 	"sync/atomic"
 
+	"github.com/tetratelabs/go2sky/internal/idgen"
+	"github.com/tetratelabs/go2sky/internal/tool"
 	"github.com/tetratelabs/go2sky/propagation"
-
-	"github.com/tetratelabs/go2sky/pkg"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
 	v2 "github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2"
 )
@@ -98,11 +98,11 @@ func (s *segmentSpanImpl) Refs() []*propagation.SpanContext {
 }
 
 func (s *segmentSpanImpl) StartTime() int64 {
-	return pkg.Millisecond(s.defaultSpan.StartTime)
+	return tool.Millisecond(s.defaultSpan.StartTime)
 }
 
 func (s *segmentSpanImpl) EndTime() int64 {
-	return pkg.Millisecond(s.defaultSpan.EndTime)
+	return tool.Millisecond(s.defaultSpan.EndTime)
 }
 
 func (s *segmentSpanImpl) OperationName() string {
@@ -159,7 +159,7 @@ func (s *segmentSpanImpl) createSegmentContext(parent segmentSpan) {
 		if len(s.defaultSpan.Refs) > 0 {
 			s.TraceID = s.defaultSpan.Refs[0].TraceID
 		} else {
-			s.TraceID = pkg.GenerateGlobalID()
+			s.TraceID = idgen.GenerateGlobalID()
 		}
 	} else {
 		s.SegmentContext = parent.context()
@@ -184,7 +184,7 @@ func (rs *rootSegmentSpan) End() {
 }
 
 func (rs *rootSegmentSpan) createRootSegmentContext(parent segmentSpan) {
-	rs.SegmentID = pkg.GenerateScopedGlobalID(int64(rs.tracer.instanceID))
+	rs.SegmentID = idgen.GenerateScopedGlobalID(int64(rs.tracer.instanceID))
 	i := int32(0)
 	rs.spanIDGenerator = &i
 	rs.SpanID = i
