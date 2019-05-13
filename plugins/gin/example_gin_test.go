@@ -15,12 +15,14 @@
 package gin
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/tetratelabs/go2sky"
+	h "github.com/tetratelabs/go2sky/plugins/http"
 	"github.com/tetratelabs/go2sky/reporter"
 	"log"
-	"net/http"
-	"net/http/httptest"
+	. "net/http"
+	"sync"
 )
 
 
@@ -32,7 +34,7 @@ func ExampleNewGinServerMiddleware() {
 	}
 	defer re.Close()
 
-	tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(re))
+	tracer, err := go2sky.NewTracer("gin-server", go2sky.WithReporter(re))
 	if err != nil {
 		log.Fatalf("create tracer error %v \n", err)
 	}
@@ -43,12 +45,35 @@ func ExampleNewGinServerMiddleware() {
 
 	r.GET("/user/:name", func(c *gin.Context) {
 		name := c.Param("name")
-		c.String(http.StatusOK, "Hello %s", name)
+		c.String(StatusOK, "Hello %s", name)
 	})
 
-	req := httptest.NewRequest("GET", "/user/skywalking", nil)
-	w := httptest.NewRecorder()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go  r.Run()
+	go func() {
+		request(tracer)
+		wg.Done()
+	}()
+	wg.Wait()
+	// Output:
 
-	r.ServeHTTP(w, req)
+}
 
+
+func request(tracer *go2sky.Tracer){
+	// call end service
+	client, err := h.NewClient(tracer)
+	if err != nil {
+		log.Fatalf("create client error %v \n", err)
+	}
+	request, err := NewRequest("GET", fmt.Sprintf("%s/user/gin", "http://127.0.0.1:8080"), nil)
+	if err != nil {
+		log.Fatalf("unable to create http request: %+v\n", err)
+	}
+	res, err := client.Do(request)
+	if err != nil {
+		log.Fatalf("unable to do http request: %+v\n", err)
+	}
+	_ = res.Body.Close()
 }
