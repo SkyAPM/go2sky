@@ -32,7 +32,7 @@ const (
 	httpServerComponentID int32 = 49
 )
 
-
+//Middleware gin middleware return HandlerFunc  with tracing.
 func  Middleware(tracer *go2sky.Tracer) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if tracer != nil {
