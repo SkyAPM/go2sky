@@ -21,6 +21,7 @@ package gin
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -33,11 +34,47 @@ const (
 	httpServerComponentID int32 = 49
 )
 
-//Middleware gin middleware return HandlerFunc  with tracing.
-func Middleware(tracer *go2sky.Tracer) gin.HandlerFunc {
-	return func(c *gin.Context) {
+type routeInfo struct {
+	operationName string
+}
 
-		operationName := fmt.Sprintf("/%s%s", c.Request.Method, c.HandlerName())
+type middleware struct {
+	routeMap     map[string]map[string]routeInfo
+	routeMapOnce sync.Once
+}
+
+//Middleware gin middleware return HandlerFunc  with tracing.
+func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
+	if engine == nil || tracer == nil {
+		return nil
+	}
+	m := new(middleware)
+
+	return func(c *gin.Context) {
+		m.routeMapOnce.Do(func() {
+			routes := engine.Routes()
+			rm := make(map[string]map[string]routeInfo)
+			for _, r := range routes {
+				mm := rm[r.Method]
+				if mm == nil {
+					mm = make(map[string]routeInfo)
+					rm[r.Method] = mm
+				}
+				mm[r.Handler] = routeInfo{
+					operationName: fmt.Sprintf("/%s%s", r.Method, r.Path),
+				}
+				m.routeMap = rm
+			}
+		})
+		var operationName string
+		handlerName := c.HandlerName()
+		if routeInfo, ok := m.routeMap[c.Request.Method][handlerName]; ok {
+			operationName = routeInfo.operationName
+		}
+		if operationName == "" {
+			c.Next()
+			return
+		}
 		span, ctx, err := tracer.CreateEntrySpan(c.Request.Context(), operationName, func() (string, error) {
 			return c.Request.Header.Get(propagation.Header), nil
 		})

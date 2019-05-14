@@ -28,7 +28,7 @@ import (
 
 func ExampleMiddleware() {
 	// Use gRPC reporter for production
-	re, err := reporter.NewLogReporter()
+	re, err := reporter.NewGRPCReporter("192.168.199.17:11800")
 	if err != nil {
 		log.Fatalf("new reporter error %v \n", err)
 	}
@@ -41,16 +41,14 @@ func ExampleMiddleware() {
 	tracer.WaitUntilRegister()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(Middleware(tracer))
-
+	r.Use(Middleware(r, tracer))
 	r.GET("/user/:name", func(c *gin.Context) {
 		name := c.Param("name")
 		c.String(200, "Hello %s", name)
 	})
 
 	go func() {
-		g := gin.Default()
-		if err := http.ListenAndServe(":8080", g); err != nil {
+		if err := http.ListenAndServe(":8080", r); err != nil {
 			// you probably have to PANIC here, most of the cases this situation is a not-going
 			panic(err)
 		}
@@ -61,7 +59,7 @@ func ExampleMiddleware() {
 		request(tracer)
 		wg.Done()
 	}()
-	wg.Wait()
+	go wg.Wait()
 	// Output:
 
 }
