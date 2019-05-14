@@ -25,7 +25,6 @@ import (
 	"sync"
 )
 
-
 func ExampleNewGinServerMiddleware() {
 	// Use gRPC reporter for production
 	re, err := reporter.NewLogReporter()
@@ -40,7 +39,7 @@ func ExampleNewGinServerMiddleware() {
 	}
 	tracer.WaitUntilRegister()
 	gin.SetMode(gin.ReleaseMode)
-	r :=gin.New()
+	r := gin.New()
 	r.Use(Middleware(tracer))
 
 	r.GET("/user/:name", func(c *gin.Context) {
@@ -50,7 +49,7 @@ func ExampleNewGinServerMiddleware() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go  r.Run()
+	go r.Run()
 	go func() {
 		request(tracer)
 		wg.Done()
@@ -60,8 +59,7 @@ func ExampleNewGinServerMiddleware() {
 
 }
 
-
-func request(tracer *go2sky.Tracer){
+func request(tracer *go2sky.Tracer) {
 	// call end service
 	client, err := h.NewClient(tracer)
 	if err != nil {

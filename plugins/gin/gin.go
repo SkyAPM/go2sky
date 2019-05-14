@@ -33,33 +33,32 @@ const (
 )
 
 //Middleware gin middleware return HandlerFunc  with tracing.
-func  Middleware(tracer *go2sky.Tracer) gin.HandlerFunc {
+func Middleware(tracer *go2sky.Tracer) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if tracer != nil {
-			operationName :=fmt.Sprintf("/%s%s", c.Request.Method, c.Request.URL.Path)
-			span, ctx, err :=tracer.CreateEntrySpan(c.Request.Context(),operationName,func() (string, error) {
-				return c.Request.Header.Get(propagation.Header), nil
-			})
-			if err != nil {
-				c.Next()
-				return
-			}
-			span.SetComponent(httpServerComponentID)
-			span.Tag(go2sky.TagHTTPMethod,c.Request.Method)
-			span.Tag(go2sky.TagURL, fmt.Sprintf("%s%s", c.Request.Host, c.Request.URL.Path))
-			span.SetSpanLayer(common.SpanLayer_Http)
 
-			c.Request = c.Request.WithContext(ctx)
-
+		operationName := fmt.Sprintf("/%s%s", c.Request.Method, c.HandlerName())
+		span, ctx, err := tracer.CreateEntrySpan(c.Request.Context(), operationName, func() (string, error) {
+			return c.Request.Header.Get(propagation.Header), nil
+		})
+		if err != nil {
 			c.Next()
-
-			if len(c.Errors) > 0 {
-				span.Error(time.Now(), c.Errors.String())
-			}
-
-			span.Tag(go2sky.TagStatusCode, strconv.Itoa(c.Writer.Status()))
-			span.End()
+			return
 		}
+		span.SetComponent(httpServerComponentID)
+		span.Tag(go2sky.TagHTTPMethod, c.Request.Method)
+		span.Tag(go2sky.TagURL, fmt.Sprintf("%s%s", c.Request.Host, c.Request.URL.Path))
+		span.SetSpanLayer(common.SpanLayer_Http)
+
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Next()
+
+		if len(c.Errors) > 0 {
+			span.Error(time.Now(), c.Errors.String())
+		}
+
+		span.Tag(go2sky.TagStatusCode, strconv.Itoa(c.Writer.Status()))
+		span.End()
 
 	}
 }
