@@ -16,16 +16,17 @@ package gin
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/tetratelabs/go2sky"
 	h "github.com/tetratelabs/go2sky/plugins/http"
 	"github.com/tetratelabs/go2sky/reporter"
-	"log"
-	. "net/http"
-	"sync"
 )
 
-func ExampleNewGinServerMiddleware() {
+func ExampleMiddleware() {
 	// Use gRPC reporter for production
 	re, err := reporter.NewLogReporter()
 	if err != nil {
@@ -44,12 +45,18 @@ func ExampleNewGinServerMiddleware() {
 
 	r.GET("/user/:name", func(c *gin.Context) {
 		name := c.Param("name")
-		c.String(StatusOK, "Hello %s", name)
+		c.String(200, "Hello %s", name)
 	})
 
+	go func() {
+		g := gin.Default()
+		if err := http.ListenAndServe(":8080", g); err != nil {
+			// you probably have to PANIC here, most of the cases this situation is a not-going
+			panic(err)
+		}
+	}()
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go r.Run()
 	go func() {
 		request(tracer)
 		wg.Done()
@@ -65,7 +72,7 @@ func request(tracer *go2sky.Tracer) {
 	if err != nil {
 		log.Fatalf("create client error %v \n", err)
 	}
-	request, err := NewRequest("GET", fmt.Sprintf("%s/user/gin", "http://127.0.0.1:8080"), nil)
+	request, err := http.NewRequest("GET", fmt.Sprintf("%s/user/gin", "http://127.0.0.1:8080"), nil)
 	if err != nil {
 		log.Fatalf("unable to create http request: %+v\n", err)
 	}

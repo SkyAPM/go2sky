@@ -20,12 +20,13 @@ package gin
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/tetratelabs/go2sky"
 	"github.com/tetratelabs/go2sky/propagation"
 	"github.com/tetratelabs/go2sky/reporter/grpc/common"
-	"strconv"
-	"time"
 )
 
 const (
