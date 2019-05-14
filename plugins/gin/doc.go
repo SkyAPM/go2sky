@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package http contains several client/server http plugin which can be used for integration with net/http.
+Package Gin is a HTTP web framework written in Go (Golang) plugin which can be used for integration with Gin http server.
 */
 
 package gin

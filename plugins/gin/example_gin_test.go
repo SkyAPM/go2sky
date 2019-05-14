@@ -28,7 +28,7 @@ import (
 
 func ExampleMiddleware() {
 	// Use gRPC reporter for production
-	re, err := reporter.NewGRPCReporter("192.168.199.17:11800")
+	re, err := reporter.NewLogReporter()
 	if err != nil {
 		log.Fatalf("new reporter error %v \n", err)
 	}
