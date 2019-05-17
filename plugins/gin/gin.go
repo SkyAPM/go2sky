@@ -72,8 +72,7 @@ func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 			operationName = routeInfo.operationName
 		}
 		if operationName == "" {
-			c.Next()
-			return
+			operationName = fmt.Sprintf("/%s", c.Request.Method)
 		}
 		span, ctx, err := tracer.CreateEntrySpan(c.Request.Context(), operationName, func() (string, error) {
 			return c.Request.Header.Get(propagation.Header), nil
