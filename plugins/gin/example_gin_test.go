@@ -41,6 +41,7 @@ func ExampleMiddleware() {
 	tracer.WaitUntilRegister()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	//Use go2sky middleware with tracing
 	r.Use(Middleware(r, tracer))
 	r.GET("/user/:name", func(c *gin.Context) {
 		name := c.Param("name")
@@ -49,23 +50,22 @@ func ExampleMiddleware() {
 
 	go func() {
 		if err := http.ListenAndServe(":8080", r); err != nil {
-			// you probably have to PANIC here, most of the cases this situation is a not-going
 			panic(err)
 		}
 	}()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		request(tracer)
-		wg.Done()
 	}()
-	go wg.Wait()
+	wg.Wait()
 	// Output:
 
 }
 
 func request(tracer *go2sky.Tracer) {
-	// call end service
+	//NewClient returns an HTTP Client with tracer
 	client, err := h.NewClient(tracer)
 	if err != nil {
 		log.Fatalf("create client error %v \n", err)

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package Gin is a HTTP web framework written in Go (Golang) plugin which can be used for integration with Gin http server.
-*/
+/*Package Gin is a HTTP web framework written in Go (Golang) plugin which can be used for integration with Gin http server.*/
 
 package gin

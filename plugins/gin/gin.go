@@ -61,7 +61,7 @@ func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 					rm[r.Method] = mm
 				}
 				mm[r.Handler] = routeInfo{
-					operationName: fmt.Sprintf("/%s%s", r.Method, r.Path),
+					operationName: c.Request.Host + c.Request.URL.Path,
 				}
 				m.routeMap = rm
 			}
@@ -72,7 +72,7 @@ func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 			operationName = routeInfo.operationName
 		}
 		if operationName == "" {
-			operationName = fmt.Sprintf("/%s", c.Request.Method)
+			operationName = c.Request.Method
 		}
 		span, ctx, err := tracer.CreateEntrySpan(c.Request.Context(), operationName, func() (string, error) {
 			return c.Request.Header.Get(propagation.Header), nil
