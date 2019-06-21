@@ -17,7 +17,6 @@
 package gin
 
 import (
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -44,7 +43,9 @@ type middleware struct {
 //Middleware gin middleware return HandlerFunc  with tracing.
 func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 	if engine == nil || tracer == nil {
-		return nil
+		return func(c *gin.Context) {
+			c.Next()
+		}
 	}
 	m := new(middleware)
 
@@ -81,7 +82,7 @@ func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 		}
 		span.SetComponent(httpServerComponentID)
 		span.Tag(go2sky.TagHTTPMethod, c.Request.Method)
-		span.Tag(go2sky.TagURL, fmt.Sprintf("%s%s", c.Request.Host, c.Request.URL.Path))
+		span.Tag(go2sky.TagURL, c.Request.Host+c.Request.URL.Path)
 		span.SetSpanLayer(common.SpanLayer_Http)
 
 		c.Request = c.Request.WithContext(ctx)
