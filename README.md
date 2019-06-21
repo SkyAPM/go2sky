@@ -122,5 +122,4 @@ are stored in `plugins` package.
  1. [HTTP client/server example](plugins/http/example_http_test.go)
 
 # License
-Copyright 2019 Tetrate Labs.
-This software is licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
+Apache License 2.0. See [LICENSE](LICENSE) file for details.
