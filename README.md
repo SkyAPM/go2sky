@@ -1,6 +1,6 @@
 # GO2Sky
 
-[![CircleCI](https://circleci.com/gh/tetratelabs/go2sky.svg?style=svg&circle-token=1336c221dca48dbfe15beb4242439fe41d2e755f)](https://circleci.com/gh/tetratelabs/go2sky)
+[![CircleCI](https://circleci.com/gh/SkyAPM/go2sky.svg?style=svg)](https://circleci.com/gh/SkyAPM/go2sky)
 [![GoDoc](https://godoc.org/github.com/tetratelabs/go2sky?status.svg)](https://godoc.org/github.com/tetratelabs/go2sky)
 
 
