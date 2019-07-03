@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/tetratelabs/go2sky?status.svg)](https://godoc.org/github.com/tetratelabs/go2sky)
 
 
-**GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metric formats.
+**GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metrics formats.
 
 # Installation
 ```
