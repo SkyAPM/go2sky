@@ -19,6 +19,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -140,12 +141,31 @@ func (r *gRPCReporter) registerService(name string) error {
 }
 
 func (r *gRPCReporter) registerInstance(name string) error {
+	var props []*common.KeyStringValuePair
+
+	if os.Getpid() > 0 {
+		kv := &common.KeyStringValuePair{
+			Key:   "process_no",
+			Value: strconv.Itoa(os.Getpid()),
+		}
+		props = append(props, kv)
+	}
+	if hs, err := os.Hostname(); err == nil {
+		if hs != "" {
+			kv := &common.KeyStringValuePair{
+				Key:   "host_name",
+				Value: hs,
+			}
+			props = append(props, kv)
+		}
+	}
 	in := &register.ServiceInstances{
 		Instances: []*register.ServiceInstance{
 			{
 				ServiceId:    r.serviceID,
 				InstanceUUID: name,
 				Time:         tool.Millisecond(time.Now()),
+				Properties:   props,
 			},
 		},
 	}
