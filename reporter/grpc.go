@@ -148,7 +148,7 @@ func (r *gRPCReporter) registerInstance(name string) error {
 			Key:   "process_no",
 			Value: strconv.Itoa(os.Getpid()),
 		}
-		props =  append(props,kv)
+		props = append(props, kv)
 	}
 	if hs, err := os.Hostname(); err == nil {
 		if hs != "" {
