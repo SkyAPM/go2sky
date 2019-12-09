@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tetratelabs/go2sky/reporter/grpc/common"
+	"github.com/SkyAPM/go2sky/reporter/grpc/common"
 )
 
 type createFunc func() (Span, context.Context, error)

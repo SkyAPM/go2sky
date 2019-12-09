@@ -10,7 +10,7 @@ executors:
   build:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/tetratelabs/go2sky
+    working_directory: /go/src/github.com/SkyAPM/go2sky
 
 jobs:
   verify:

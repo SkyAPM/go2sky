@@ -7,7 +7,7 @@ GRPC_PATH := $(GO2SKY_GO)/reporter/grpc
 
 .PHONY: test
 test:
-	go test -v -race -cover `go list ./... | grep -v github.com/tetratelabs/go2sky/reporter/grpc`
+	go test -v -race -cover `go list ./... | grep -v github.com/SkyAPM/go2sky/reporter/grpc`
 
 .PHONY: proto-gen
 proto-gen:
@@ -22,11 +22,11 @@ proto-gen:
 mock-gen:
 	cd $(GRPC_PATH)/register && \
 	  mkdir -p mock_register && \
-	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/register RegisterClient > mock_register/Register.mock.go && \
-	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/register ServiceInstancePingClient > mock_register/InstancePing.mock.go
+	  mockgen github.com/SkyAPM/go2sky/reporter/grpc/register RegisterClient > mock_register/Register.mock.go && \
+	  mockgen github.com/SkyAPM/go2sky/reporter/grpc/register ServiceInstancePingClient > mock_register/InstancePing.mock.go
 	cd $(GRPC_PATH)/language-agent-v2 && \
     	  mkdir -p mock_trace && \
-    	  mockgen github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2 TraceSegmentReportServiceClient > mock_trace/trace.mock.go
+    	  mockgen github.com/SkyAPM/go2sky/reporter/grpc/language-agent-v2 TraceSegmentReportServiceClient > mock_trace/trace.mock.go
 
 LINTER := bin/golangci-lint
 $(LINTER):

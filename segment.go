@@ -17,11 +17,11 @@ package go2sky
 import (
 	"sync/atomic"
 
-	"github.com/tetratelabs/go2sky/internal/idgen"
-	"github.com/tetratelabs/go2sky/internal/tool"
-	"github.com/tetratelabs/go2sky/propagation"
-	"github.com/tetratelabs/go2sky/reporter/grpc/common"
-	v2 "github.com/tetratelabs/go2sky/reporter/grpc/language-agent-v2"
+	"github.com/SkyAPM/go2sky/internal/idgen"
+	"github.com/SkyAPM/go2sky/internal/tool"
+	"github.com/SkyAPM/go2sky/propagation"
+	"github.com/SkyAPM/go2sky/reporter/grpc/common"
+	v2 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent-v2"
 )
 
 func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segmentSpan) {

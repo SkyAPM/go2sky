@@ -23,8 +23,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/tetratelabs/go2sky/internal/tool"
-	"github.com/tetratelabs/go2sky/propagation"
+	"github.com/SkyAPM/go2sky/internal/tool"
+	"github.com/SkyAPM/go2sky/propagation"
 )
 
 const errParameter = tool.Error("parameter are nil")
