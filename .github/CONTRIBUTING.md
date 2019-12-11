@@ -13,7 +13,7 @@ All Golang code checked into this repo must conform to:
   > Note that `goimports` is a strict superset of `go fmt`.
 
   Import blocks must have three sections: golang standard library imports, third party imports, and first party imports (other Go2Sky code). Each section must be separated from the others by a blank line.
-  This can be enforced by running it as follows (make sure you configure your IDE to automatically use this): `goimports -local github.com/tetratelabs/go2sky`
+  This can be enforced by running it as follows (make sure you configure your IDE to automatically use this): `goimports -local github.com/SkyAPM/go2sky`
   
 - [golangci-lint](https://github.com/golangci/golangci-lint). All linter warnings are treated as errors and code with linter warnings may not be checked in. Supressions of linter warnings is allowed at the discretion of a PR's reviewers.
 

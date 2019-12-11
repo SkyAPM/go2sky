@@ -1,4 +1,4 @@
-module github.com/tetratelabs/go2sky
+module github.com/SkyAPM/go2sky
 
 go 1.12
 

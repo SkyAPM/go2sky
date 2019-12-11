@@ -6,8 +6,8 @@ package register
 import (
 	context "context"
 	fmt "fmt"
+	common "github.com/SkyAPM/go2sky/reporter/grpc/common"
 	proto "github.com/golang/protobuf/proto"
-	common "github.com/tetratelabs/go2sky/reporter/grpc/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
