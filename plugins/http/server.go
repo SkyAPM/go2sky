@@ -122,6 +122,7 @@ func (rww *responseWriterWrapper) Write(bytes []byte) (int, error) {
 
 func (rww *responseWriterWrapper) WriteHeader(statusCode int) {
 	rww.statusCode = statusCode
+	rww.w.WriteHeader(statusCode)
 }
 
 func getOperationName(name string, r *http.Request) string {
