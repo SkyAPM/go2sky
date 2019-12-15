@@ -44,13 +44,14 @@ func ExampleMiddleware() {
 	tracer.WaitUntilRegister()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+
+	//Use go2sky middleware with tracing
+	r.Use(Middleware(r, tracer))
+
 	r.GET("/user/:name", func(c *gin.Context) {
 		name := c.Param("name")
 		c.String(200, "Hello %s", name)
 	})
-
-	//Use go2sky middleware with tracing
-	r.Use(Middleware(r, tracer))
 
 	go func() {
 		if err := http.ListenAndServe(":8080", r); err != nil {
