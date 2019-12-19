@@ -41,6 +41,14 @@ passing `context.Background()`. We must also be sure to end this span, which wil
 span, ctx, err := tracer.CreateLocalSpan(context.Background())
 ```
 
+## Get Global TraceID
+
+Get the `TraceID` of the `activeSpan` in the `Context`.
+
+```go
+go2sky.TraceID(ctx)
+```
+
 ## Create a sub span
 
 A sub span created as the children of root span links to its parent with `Context`.

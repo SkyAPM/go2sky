@@ -18,6 +18,8 @@
 package go2sky
 
 import (
+	"fmt"
+	"strings"
 	"sync/atomic"
 
 	"github.com/SkyAPM/go2sky/internal/idgen"
@@ -52,6 +54,14 @@ type SegmentContext struct {
 	collect         chan<- ReportedSpan
 	refNum          *int32
 	spanIDGenerator *int32
+}
+
+func (ctx SegmentContext) GetReadableGlobalTraceID() string {
+	ii := make([]string, len(ctx.TraceID))
+	for i, v := range ctx.TraceID {
+		ii[i] = fmt.Sprint(v)
+	}
+	return strings.Join(ii, ".")
 }
 
 // ReportedSpan is accessed by Reporter to load reported data
