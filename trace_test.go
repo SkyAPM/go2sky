@@ -107,6 +107,43 @@ func verifySpans(t *testing.T, span ReportedSpan, subSpan ReportedSpan) {
 	}
 }
 
+func TestTrace_TraceID(t *testing.T) {
+	// activeSpan == nil
+	traceID := TraceID(context.Background())
+	verifyTraceID(t, EmptyTraceID, traceID)
+
+	// activeSpan == NoopSpan
+	reporter := &mockRegisterReporter{
+		success: false,
+	}
+	tracer, _ := NewTracer("service", WithReporter(reporter))
+	_, ctx, err := tracer.CreateLocalSpan(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+	traceID = TraceID(ctx)
+	verifyTraceID(t, NoopTraceID, traceID)
+
+	// activeSpan == segmentSpan
+	reporter = &mockRegisterReporter{
+		success: true,
+	}
+	tracer, _ = NewTracer("service", WithReporter(reporter))
+	tracer.WaitUntilRegister()
+	span, ctx, err := tracer.CreateLocalSpan(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+	traceID = TraceID(ctx)
+	verifyTraceID(t, span.(segmentSpan).context().GetReadableGlobalTraceID(), traceID)
+}
+
+func verifyTraceID(t *testing.T, expectTraceID string, actualTraceID string) {
+	if expectTraceID != actualTraceID {
+		t.Errorf("expectTraceID: %v, actualTraceID: %v", expectTraceID, actualTraceID)
+	}
+}
+
 type mockRegisterReporter struct {
 	success bool
 	wg      sync.WaitGroup

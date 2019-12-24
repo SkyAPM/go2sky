@@ -30,7 +30,11 @@ import (
 	"github.com/SkyAPM/go2sky/propagation"
 )
 
-const errParameter = tool.Error("parameter are nil")
+const (
+	errParameter = tool.Error("parameter are nil")
+	EmptyTraceID = "N/A"
+	NoopTraceID  = "[Ignored Trace]"
+)
 
 // Tracer is go2sky tracer implementation.
 type Tracer struct {
@@ -234,4 +238,16 @@ type Reporter interface {
 	Register(service string, instance string) (int32, int32, error)
 	Send(spans []ReportedSpan)
 	Close()
+}
+
+func TraceID(ctx context.Context) string {
+	activeSpan := ctx.Value(ctxKeyInstance)
+	if activeSpan == nil {
+		return EmptyTraceID
+	}
+	span, ok := activeSpan.(segmentSpan)
+	if ok {
+		return span.context().GetReadableGlobalTraceID()
+	}
+	return NoopTraceID
 }
