@@ -34,6 +34,8 @@ const (
 	errParameter = tool.Error("parameter are nil")
 	EmptyTraceID = "N/A"
 	NoopTraceID  = "[Ignored Trace]"
+	// -1 represent the object doesn't exist.
+	Inexistence = -1
 )
 
 // Tracer is go2sky tracer implementation.
@@ -193,17 +195,36 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	spanContext.ParentSegmentID = span.Context().SegmentID
 	spanContext.NetworkAddress = peer
 	spanContext.ParentServiceInstanceID = t.instanceID
-	spanContext.EntryServiceInstanceID = t.instanceID
-	spanContext.EntryEndpoint = operationName
-	spanContext.ParentEndpoint = operationName
+
+	// EntryEndpoint
+	firstSpan := span.Context().FirstSpan
+	firstSpanOperationName := firstSpan.GetOperationName()
 	ref, ok := ctx.Value(refKeyInstance).(*propagation.SpanContext)
+	var entryEndpoint = ""
+	var entryServiceInstanceID int32 = 0
 	if ok && ref != nil {
 		spanContext.Sample = ref.Sample
-		spanContext.ParentEndpoint = ref.ParentEndpoint
-		spanContext.EntryServiceInstanceID = ref.EntryServiceInstanceID
-		spanContext.EntryEndpoint = ref.EntryEndpoint
-		spanContext.EntryEndpointID = ref.EntryEndpointID
+		entryEndpoint = ref.EntryEndpoint
+		entryServiceInstanceID = ref.EntryServiceInstanceID
+	} else {
+		if firstSpan.IsEntry() {
+			entryEndpoint = firstSpanOperationName
+		} else {
+			spanContext.EntryEndpointID = Inexistence
+		}
+		entryServiceInstanceID = t.instanceID
 	}
+	spanContext.EntryServiceInstanceID = entryServiceInstanceID
+	if entryEndpoint != "" {
+		spanContext.EntryEndpoint = entryEndpoint
+	}
+	// ParentEndpoint
+	if firstSpan.IsEntry() && firstSpanOperationName != "" {
+		spanContext.ParentEndpoint = firstSpanOperationName
+	} else {
+		spanContext.ParentEndpointID = Inexistence
+	}
+
 	err = injector(spanContext.EncodeSW6())
 	if err != nil {
 		return nil, err

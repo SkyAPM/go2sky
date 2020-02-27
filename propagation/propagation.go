@@ -181,7 +181,7 @@ func globalIDConvertString(id []int64) string {
 }
 
 func encodeCompressedField(id int32, text string) string {
-	if id > 0 {
+	if id != 0 {
 		return base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(id)))
 	}
 	return base64.StdEncoding.EncodeToString([]byte("#" + text))

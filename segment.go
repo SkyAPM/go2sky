@@ -54,6 +54,7 @@ type SegmentContext struct {
 	collect         chan<- ReportedSpan
 	refNum          *int32
 	spanIDGenerator *int32
+	FirstSpan       Span `json:"-"`
 }
 
 func (ctx SegmentContext) GetReadableGlobalTraceID() string {
@@ -179,6 +180,9 @@ func (s *segmentSpanImpl) createSegmentContext(parent segmentSpan) {
 		s.ParentSegmentID = s.SegmentID
 		s.ParentSpanID = s.SpanID
 		s.SpanID = atomic.AddInt32(s.Context().spanIDGenerator, 1)
+	}
+	if s.SegmentContext.FirstSpan == nil {
+		s.SegmentContext.FirstSpan = s
 	}
 }
 

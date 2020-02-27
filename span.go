@@ -42,6 +42,7 @@ const (
 // Span interface as common span specification
 type Span interface {
 	SetOperationName(string)
+	GetOperationName() string
 	SetPeer(string)
 	SetSpanLayer(common.SpanLayer)
 	SetComponent(int32)
@@ -49,6 +50,8 @@ type Span interface {
 	Log(time.Time, ...string)
 	Error(time.Time, ...string)
 	End()
+	IsEntry() bool
+	IsExit() bool
 }
 
 func newLocalSpan(t *Tracer) *defaultSpan {
@@ -78,6 +81,10 @@ type defaultSpan struct {
 
 func (ds *defaultSpan) SetOperationName(name string) {
 	ds.OperationName = name
+}
+
+func (ds *defaultSpan) GetOperationName() string {
+	return ds.OperationName
 }
 
 func (ds *defaultSpan) SetPeer(peer string) {
@@ -120,6 +127,14 @@ func (ds *defaultSpan) Error(time time.Time, ll ...string) {
 
 func (ds *defaultSpan) End() {
 	ds.EndTime = time.Now()
+}
+
+func (ds *defaultSpan) IsEntry() bool {
+	return ds.SpanType == SpanTypeEntry
+}
+
+func (ds *defaultSpan) IsExit() bool {
+	return ds.SpanType == SpanTypeExit
 }
 
 // SpanOption allows for functional options to adjust behaviour
