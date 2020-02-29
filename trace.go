@@ -196,6 +196,7 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	spanContext.NetworkAddress = peer
 	spanContext.ParentServiceInstanceID = t.instanceID
 
+	// Since 6.6.0, if first span is not entry span, then this is an internal segment(no RPC), rather than an endpoint.
 	// EntryEndpoint
 	firstSpan := span.Context().FirstSpan
 	firstSpanOperationName := firstSpan.GetOperationName()
