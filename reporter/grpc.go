@@ -162,6 +162,11 @@ func (r *gRPCReporter) registerInstance(name string) error {
 			props = append(props, kv)
 		}
 	}
+	language := &common.KeyStringValuePair{
+		Key:   "language",
+		Value: "go",
+	}
+	props = append(props, language)
 	in := &register.ServiceInstances{
 		Instances: []*register.ServiceInstance{
 			{

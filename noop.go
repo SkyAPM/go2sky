@@ -29,6 +29,10 @@ type NoopSpan struct {
 func (*NoopSpan) SetOperationName(string) {
 }
 
+func (*NoopSpan) GetOperationName() string {
+	return ""
+}
+
 func (*NoopSpan) SetPeer(string) {
 }
 
@@ -48,4 +52,12 @@ func (*NoopSpan) Error(time.Time, ...string) {
 }
 
 func (*NoopSpan) End() {
+}
+
+func (*NoopSpan) IsEntry() bool {
+	return false
+}
+
+func (*NoopSpan) IsExit() bool {
+	return false
 }
