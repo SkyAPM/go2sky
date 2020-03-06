@@ -21,6 +21,9 @@ GRPC_PATH := $(GO2SKY_GO)/reporter/grpc
 
 .DEFAULT_GOAL := test
 
+.PHONY deps
+deps:
+    go get -v -t -d ./...
 
 .PHONY: test
 test:
