@@ -1,6 +1,6 @@
 # GO2Sky
 
-[![CircleCI](https://circleci.com/gh/SkyAPM/go2sky.svg?style=svg)](https://circleci.com/gh/SkyAPM/go2sky)
+[![Build](https://github.com/SkyAPM/go2sky/workflows/Build/badge.svg?branch=master)](https://github.com/SkyAPM/go2sky/actions?query=branch%3Amaster+event%3Apush+workflow%3ABuild)
 [![GoDoc](https://godoc.org/github.com/SkyAPM/go2sky?status.svg)](https://godoc.org/github.com/SkyAPM/go2sky)
 
 

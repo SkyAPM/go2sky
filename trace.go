@@ -202,7 +202,7 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	firstSpanOperationName := firstSpan.GetOperationName()
 	ref, ok := ctx.Value(refKeyInstance).(*propagation.SpanContext)
 	var entryEndpoint = ""
-	var entryServiceInstanceID int32 = 0
+	var entryServiceInstanceID int32
 	if ok && ref != nil {
 		spanContext.Sample = ref.Sample
 		entryEndpoint = ref.EntryEndpoint
