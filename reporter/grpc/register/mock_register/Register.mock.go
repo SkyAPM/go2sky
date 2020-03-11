@@ -37,7 +37,7 @@ func (m *MockRegisterClient) EXPECT() *MockRegisterClientMockRecorder {
 }
 
 // DoEndpointRegister mocks base method
-func (m *MockRegisterClient) DoEndpointRegister(arg0 context.Context, arg1 *register.Enpoints, arg2 ...grpc.CallOption) (*register.EndpointMapping, error) {
+func (m *MockRegisterClient) DoEndpointRegister(arg0 context.Context, arg1 *register.Endpoints, arg2 ...grpc.CallOption) (*register.EndpointMapping, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
