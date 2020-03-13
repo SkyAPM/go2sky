@@ -129,6 +129,8 @@ are stored in `plugins` package.
 
  1. [HTTP client/server example](plugins/http/example_http_test.go)
  1. [gin example](plugins/gin/example_gin_test.go)
+ 1. [go-resty example](plugins/http/example_go_resty_test.go)
+
 
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.
