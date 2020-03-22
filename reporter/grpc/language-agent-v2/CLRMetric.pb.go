@@ -9,8 +9,6 @@ import (
 	common "github.com/SkyAPM/go2sky/reporter/grpc/common"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -76,9 +74,7 @@ func init() {
 	proto.RegisterType((*CLRMetricCollection)(nil), "CLRMetricCollection")
 }
 
-func init() {
-	proto.RegisterFile("language-agent-v2/CLRMetric.proto", fileDescriptor_1f032372dea03c68)
-}
+func init() { proto.RegisterFile("language-agent-v2/CLRMetric.proto", fileDescriptor_1f032372dea03c68) }
 
 var fileDescriptor_1f032372dea03c68 = []byte{
 	// 287 bytes of a gzipped FileDescriptorProto
@@ -104,11 +100,11 @@ var fileDescriptor_1f032372dea03c68 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // CLRMetricReportServiceClient is the client API for CLRMetricReportService service.
 //
@@ -118,10 +114,10 @@ type CLRMetricReportServiceClient interface {
 }
 
 type cLRMetricReportServiceClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewCLRMetricReportServiceClient(cc grpc.ClientConnInterface) CLRMetricReportServiceClient {
+func NewCLRMetricReportServiceClient(cc *grpc.ClientConn) CLRMetricReportServiceClient {
 	return &cLRMetricReportServiceClient{cc}
 }
 
@@ -137,14 +133,6 @@ func (c *cLRMetricReportServiceClient) Collect(ctx context.Context, in *CLRMetri
 // CLRMetricReportServiceServer is the server API for CLRMetricReportService service.
 type CLRMetricReportServiceServer interface {
 	Collect(context.Context, *CLRMetricCollection) (*common.Commands, error)
-}
-
-// UnimplementedCLRMetricReportServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedCLRMetricReportServiceServer struct {
-}
-
-func (*UnimplementedCLRMetricReportServiceServer) Collect(ctx context.Context, req *CLRMetricCollection) (*common.Commands, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Collect not implemented")
 }
 
 func RegisterCLRMetricReportServiceServer(s *grpc.Server, srv CLRMetricReportServiceServer) {

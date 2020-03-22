@@ -9,8 +9,6 @@ import (
 	common "github.com/SkyAPM/go2sky/reporter/grpc/common"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -76,9 +74,7 @@ func init() {
 	proto.RegisterType((*JVMMetricCollection)(nil), "JVMMetricCollection")
 }
 
-func init() {
-	proto.RegisterFile("language-agent-v2/JVMMetric.proto", fileDescriptor_a5bd38fe036677f3)
-}
+func init() { proto.RegisterFile("language-agent-v2/JVMMetric.proto", fileDescriptor_a5bd38fe036677f3) }
 
 var fileDescriptor_a5bd38fe036677f3 = []byte{
 	// 288 bytes of a gzipped FileDescriptorProto
@@ -104,11 +100,11 @@ var fileDescriptor_a5bd38fe036677f3 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // JVMMetricReportServiceClient is the client API for JVMMetricReportService service.
 //
@@ -118,10 +114,10 @@ type JVMMetricReportServiceClient interface {
 }
 
 type jVMMetricReportServiceClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewJVMMetricReportServiceClient(cc grpc.ClientConnInterface) JVMMetricReportServiceClient {
+func NewJVMMetricReportServiceClient(cc *grpc.ClientConn) JVMMetricReportServiceClient {
 	return &jVMMetricReportServiceClient{cc}
 }
 
@@ -137,14 +133,6 @@ func (c *jVMMetricReportServiceClient) Collect(ctx context.Context, in *JVMMetri
 // JVMMetricReportServiceServer is the server API for JVMMetricReportService service.
 type JVMMetricReportServiceServer interface {
 	Collect(context.Context, *JVMMetricCollection) (*common.Commands, error)
-}
-
-// UnimplementedJVMMetricReportServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedJVMMetricReportServiceServer struct {
-}
-
-func (*UnimplementedJVMMetricReportServiceServer) Collect(ctx context.Context, req *JVMMetricCollection) (*common.Commands, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Collect not implemented")
 }
 
 func RegisterJVMMetricReportServiceServer(s *grpc.Server, srv JVMMetricReportServiceServer) {

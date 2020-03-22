@@ -359,9 +359,7 @@ func init() {
 	proto.RegisterType((*GC)(nil), "GC")
 }
 
-func init() {
-	proto.RegisterFile("common/JVM.proto", fileDescriptor_42f5f61b58cf3158)
-}
+func init() { proto.RegisterFile("common/JVM.proto", fileDescriptor_42f5f61b58cf3158) }
 
 var fileDescriptor_42f5f61b58cf3158 = []byte{
 	// 511 bytes of a gzipped FileDescriptorProto

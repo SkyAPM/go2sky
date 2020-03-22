@@ -204,9 +204,7 @@ func init() {
 	proto.RegisterType((*UniqueId)(nil), "UniqueId")
 }
 
-func init() {
-	proto.RegisterFile("common/trace-common.proto", fileDescriptor_f5d7d2e503402948)
-}
+func init() { proto.RegisterFile("common/trace-common.proto", fileDescriptor_f5d7d2e503402948) }
 
 var fileDescriptor_f5d7d2e503402948 = []byte{
 	// 376 bytes of a gzipped FileDescriptorProto

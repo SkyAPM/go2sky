@@ -9,8 +9,6 @@ import (
 	common "github.com/SkyAPM/go2sky/reporter/grpc/common"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -84,9 +82,7 @@ func init() {
 	proto.RegisterType((*ServiceInstancePingPkg)(nil), "ServiceInstancePingPkg")
 }
 
-func init() {
-	proto.RegisterFile("register/InstancePing.proto", fileDescriptor_c10bfdff83d834ed)
-}
+func init() { proto.RegisterFile("register/InstancePing.proto", fileDescriptor_c10bfdff83d834ed) }
 
 var fileDescriptor_c10bfdff83d834ed = []byte{
 	// 272 bytes of a gzipped FileDescriptorProto
@@ -111,11 +107,11 @@ var fileDescriptor_c10bfdff83d834ed = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // ServiceInstancePingClient is the client API for ServiceInstancePing service.
 //
@@ -125,10 +121,10 @@ type ServiceInstancePingClient interface {
 }
 
 type serviceInstancePingClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewServiceInstancePingClient(cc grpc.ClientConnInterface) ServiceInstancePingClient {
+func NewServiceInstancePingClient(cc *grpc.ClientConn) ServiceInstancePingClient {
 	return &serviceInstancePingClient{cc}
 }
 
@@ -144,14 +140,6 @@ func (c *serviceInstancePingClient) DoPing(ctx context.Context, in *ServiceInsta
 // ServiceInstancePingServer is the server API for ServiceInstancePing service.
 type ServiceInstancePingServer interface {
 	DoPing(context.Context, *ServiceInstancePingPkg) (*common.Commands, error)
-}
-
-// UnimplementedServiceInstancePingServer can be embedded to have forward compatible implementations.
-type UnimplementedServiceInstancePingServer struct {
-}
-
-func (*UnimplementedServiceInstancePingServer) DoPing(ctx context.Context, req *ServiceInstancePingPkg) (*common.Commands, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DoPing not implemented")
 }
 
 func RegisterServiceInstancePingServer(s *grpc.Server, srv ServiceInstancePingServer) {

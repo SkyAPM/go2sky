@@ -9,8 +9,6 @@ import (
 	common "github.com/SkyAPM/go2sky/reporter/grpc/common"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -723,9 +721,7 @@ func init() {
 	proto.RegisterType((*ServiceAndNetworkAddressMapping)(nil), "ServiceAndNetworkAddressMapping")
 }
 
-func init() {
-	proto.RegisterFile("register/Register.proto", fileDescriptor_c38a4def3f450915)
-}
+func init() { proto.RegisterFile("register/Register.proto", fileDescriptor_c38a4def3f450915) }
 
 var fileDescriptor_c38a4def3f450915 = []byte{
 	// 749 bytes of a gzipped FileDescriptorProto
@@ -780,11 +776,11 @@ var fileDescriptor_c38a4def3f450915 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // RegisterClient is the client API for Register service.
 //
@@ -798,10 +794,10 @@ type RegisterClient interface {
 }
 
 type registerClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewRegisterClient(cc grpc.ClientConnInterface) RegisterClient {
+func NewRegisterClient(cc *grpc.ClientConn) RegisterClient {
 	return &registerClient{cc}
 }
 
@@ -857,26 +853,6 @@ type RegisterServer interface {
 	DoEndpointRegister(context.Context, *Endpoints) (*EndpointMapping, error)
 	DoNetworkAddressRegister(context.Context, *NetAddresses) (*NetAddressMapping, error)
 	DoServiceAndNetworkAddressMappingRegister(context.Context, *ServiceAndNetworkAddressMappings) (*common.Commands, error)
-}
-
-// UnimplementedRegisterServer can be embedded to have forward compatible implementations.
-type UnimplementedRegisterServer struct {
-}
-
-func (*UnimplementedRegisterServer) DoServiceRegister(ctx context.Context, req *Services) (*ServiceRegisterMapping, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DoServiceRegister not implemented")
-}
-func (*UnimplementedRegisterServer) DoServiceInstanceRegister(ctx context.Context, req *ServiceInstances) (*ServiceInstanceRegisterMapping, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DoServiceInstanceRegister not implemented")
-}
-func (*UnimplementedRegisterServer) DoEndpointRegister(ctx context.Context, req *Endpoints) (*EndpointMapping, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DoEndpointRegister not implemented")
-}
-func (*UnimplementedRegisterServer) DoNetworkAddressRegister(ctx context.Context, req *NetAddresses) (*NetAddressMapping, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DoNetworkAddressRegister not implemented")
-}
-func (*UnimplementedRegisterServer) DoServiceAndNetworkAddressMappingRegister(ctx context.Context, req *ServiceAndNetworkAddressMappings) (*common.Commands, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DoServiceAndNetworkAddressMappingRegister not implemented")
 }
 
 func RegisterRegisterServer(s *grpc.Server, srv RegisterServer) {
