@@ -25,6 +25,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 
@@ -83,6 +84,25 @@ func Test_e2e(t *testing.T) {
 			t.Error("null segment")
 		}
 	}
+}
+
+func TestGRPCReporter_Close(t *testing.T) {
+	serviceName, _, instance, _, reporter := createMockReporter(t)
+	reporter.sendCh = make(chan *common.UpstreamSegment, 1)
+	tracer, err := go2sky.NewTracer(serviceName, go2sky.WithReporter(reporter), go2sky.WithInstance(instance))
+	if err != nil {
+		t.Error(err)
+	}
+	tracer.WaitUntilRegister()
+	entry, _, err := tracer.CreateEntrySpan(context.Background(), "/close", func() (s string, err error) {
+		return header, nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	reporter.Close()
+	entry.End()
+	time.Sleep(time.Second)
 }
 
 func createMockReporter(t *testing.T) (string, int32, string, int32, *gRPCReporter) {

@@ -264,6 +264,12 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 		r.logger.Printf("marshal segment object err %v", err)
 		return
 	}
+	defer func() {
+		// recover the panic caused by close sendCh
+		if err := recover(); err != nil {
+			r.logger.Printf("reporter segment err %v", err)
+		}
+	}()
 	segment.Segment = b
 	select {
 	case r.sendCh <- segment:
