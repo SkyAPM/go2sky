@@ -20,6 +20,7 @@
 package gin
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -63,10 +64,10 @@ func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 					rm[r.Method] = mm
 				}
 				mm[r.Handler] = routeInfo{
-					operationName: c.Request.Host + c.Request.URL.Path,
+					operationName: fmt.Sprintf("/%s%s", r.Method, r.Path),
 				}
-				m.routeMap = rm
 			}
+			m.routeMap = rm
 		})
 		var operationName string
 		handlerName := c.HandlerName()
