@@ -215,9 +215,7 @@ func init() {
 	proto.RegisterType((*ClrThread)(nil), "ClrThread")
 }
 
-func init() {
-	proto.RegisterFile("common/CLR.proto", fileDescriptor_a10d56830892247a)
-}
+func init() { proto.RegisterFile("common/CLR.proto", fileDescriptor_a10d56830892247a) }
 
 var fileDescriptor_a10d56830892247a = []byte{
 	// 395 bytes of a gzipped FileDescriptorProto
