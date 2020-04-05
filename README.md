@@ -99,15 +99,15 @@ upstream service.
 `Entry` and `Exit` spans make sense to OAP analysis which generates topology map and service metrics.
 
 ```go
-//Extract context from HTTP request header `sw6`
+//Extract context from HTTP request header `sw8`
 span, ctx, err := h.tracer.CreateEntrySpan(r.Context(), "/api/login", func() (string, error) {
-		return r.Header.Get("sw6"), nil
+		return r.Header.Get("sw8"), nil
 })
 
 // Some operation
 ...
 
-// Inject context into HTTP request header `sw6`
+// Inject context into HTTP request header `sw8`
 span, err := t.tracer.CreateExitSpan(req.Context(), "/service/validate", "tomcat-service:8080", func(header string) error {
 		req.Header.Set(propagation.Header, header)
 		return nil

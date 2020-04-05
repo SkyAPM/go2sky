@@ -42,7 +42,6 @@ func ExampleNewServerMiddleware() {
 	if err != nil {
 		log.Fatalf("create tracer error %v \n", err)
 	}
-	tracer.WaitUntilRegister()
 
 	sm, err := NewServerMiddleware(tracer)
 	if err != nil {

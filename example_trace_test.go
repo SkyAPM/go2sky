@@ -38,7 +38,6 @@ func ExampleNewTracer() {
 		log.Fatalf("create tracer error %v \n", err)
 	}
 	// This for test
-	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		log.Fatalf("create new local span error %v \n", err)

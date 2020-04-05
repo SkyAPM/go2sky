@@ -19,39 +19,31 @@ package reporter
 
 import (
 	"context"
-	"errors"
 	"log"
 	"os"
-	"strconv"
 	"time"
-
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
 	"github.com/SkyAPM/go2sky/reporter/grpc/common"
-	v2 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent-v2"
-	"github.com/SkyAPM/go2sky/reporter/grpc/register"
+	agentv3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 )
 
 const (
-	maxSendQueueSize    int32 = 30000
-	defaultPingInterval       = 20 * time.Second
-)
-
-var (
-	errServiceRegister  = errors.New("fail to register service")
-	errInstanceRegister = errors.New("fail to instance service")
+	maxSendQueueSize     int32 = 30000
+	defaultCheckInterval       = 20 * time.Second
+	defaultLogPrefix           = "go2sky-gRPC"
 )
 
 // NewGRPCReporter create a new reporter to send data to gRPC oap server. Only one backend address is allowed.
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
 	r := &gRPCReporter{
-		logger:       log.New(os.Stderr, "go2sky-gRPC", log.LstdFlags),
-		sendCh:       make(chan *common.UpstreamSegment, maxSendQueueSize),
-		pingInterval: defaultPingInterval,
+		logger:        log.New(os.Stderr, defaultLogPrefix, log.LstdFlags),
+		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
+		checkInterval: defaultCheckInterval,
 	}
 	for _, o := range opts {
 		o(r)
@@ -61,9 +53,8 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		return nil, err
 	}
 	r.conn = conn
-	r.registerClient = register.NewRegisterClient(conn)
-	r.pingClient = register.NewServiceInstancePingClient(conn)
-	r.traceClient = v2.NewTraceSegmentReportServiceClient(r.conn)
+	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
+	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
 	return r, nil
 }
 
@@ -78,116 +69,37 @@ func WithLogger(logger *log.Logger) GRPCReporterOption {
 	}
 }
 
-// WithPingInterval setup ping interval
-func WithPingInterval(interval time.Duration) GRPCReporterOption {
+// WithCheckInterval setup service and endpoint registry check interval
+func WithCheckInterval(interval time.Duration) GRPCReporterOption {
 	return func(r *gRPCReporter) {
-		r.pingInterval = interval
+		r.checkInterval = interval
+	}
+}
+
+// WithInstanceProps setup service instance properties eg: org=SkyAPM
+func WithInstanceProps(props map[string]string) GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.instanceProps = props
 	}
 }
 
 type gRPCReporter struct {
-	serviceID      int32
-	instanceID     int32
-	instanceName   string
-	logger         *log.Logger
-	sendCh         chan *common.UpstreamSegment
-	registerClient register.RegisterClient
-	conn           *grpc.ClientConn
-	traceClient    v2.TraceSegmentReportServiceClient
-	pingClient     register.ServiceInstancePingClient
-	pingInterval   time.Duration
+	service          string
+	instance         string
+	instanceProps    map[string]string
+	logger           *log.Logger
+	sendCh           chan *agentv3.SegmentObject
+	conn             *grpc.ClientConn
+	traceClient      agentv3.TraceSegmentReportServiceClient
+	managementClient managementv3.ManagementServiceClient
+	checkInterval    time.Duration
 }
 
-func (r *gRPCReporter) Register(service string, instance string) (int32, int32, error) {
-	r.retryRegister(func() error {
-		return r.registerService(service)
-	})
-	r.retryRegister(func() error {
-		return r.registerInstance(instance)
-	})
+func (r *gRPCReporter) Boot(service string, instance string) {
+	r.service = service
+	r.instance = instance
 	r.initSendPipeline()
-	r.ping()
-	return r.serviceID, r.instanceID, nil
-}
-
-type retryFunction func() error
-
-func (r *gRPCReporter) retryRegister(f retryFunction) {
-	for {
-		err := f()
-		if err == nil {
-			break
-		}
-		r.logger.Printf("register error %v \n", err)
-		time.Sleep(time.Second)
-	}
-}
-
-func (r *gRPCReporter) registerService(name string) error {
-	in := &register.Services{
-		Services: []*register.Service{
-			{
-				ServiceName: name,
-			},
-		},
-	}
-	mapping, err := r.registerClient.DoServiceRegister(context.Background(), in)
-	if err != nil {
-		return err
-	}
-	if len(mapping.Services) < 1 {
-		return errServiceRegister
-	}
-	r.serviceID = mapping.Services[0].Value
-	r.logger.Printf("the id of service '%s' is %d", name, r.serviceID)
-	return nil
-}
-
-func (r *gRPCReporter) registerInstance(name string) error {
-	var props []*common.KeyStringValuePair
-
-	if os.Getpid() > 0 {
-		kv := &common.KeyStringValuePair{
-			Key:   "process_no",
-			Value: strconv.Itoa(os.Getpid()),
-		}
-		props = append(props, kv)
-	}
-	if hs, err := os.Hostname(); err == nil {
-		if hs != "" {
-			kv := &common.KeyStringValuePair{
-				Key:   "host_name",
-				Value: hs,
-			}
-			props = append(props, kv)
-		}
-	}
-	language := &common.KeyStringValuePair{
-		Key:   "language",
-		Value: "go",
-	}
-	props = append(props, language)
-	in := &register.ServiceInstances{
-		Instances: []*register.ServiceInstance{
-			{
-				ServiceId:    r.serviceID,
-				InstanceUUID: name,
-				Time:         tool.Millisecond(time.Now()),
-				Properties:   props,
-			},
-		},
-	}
-	mapping, err := r.registerClient.DoServiceInstanceRegister(context.Background(), in)
-	if err != nil {
-		return err
-	}
-	if len(mapping.ServiceInstances) < 1 {
-		return errInstanceRegister
-	}
-	r.instanceID = mapping.ServiceInstances[0].Value
-	r.instanceName = name
-	r.logger.Printf("the id of instance '%s' id is %d", name, r.instanceID)
-	return nil
+	r.check()
 }
 
 func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
@@ -196,24 +108,17 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 		return
 	}
 	rootSpan := spans[spanSize-1]
-	segment := &common.UpstreamSegment{
-		GlobalTraceIds: []*common.UniqueId{
-			{
-				IdParts: rootSpan.Context().TraceID,
-			},
-		},
-	}
-	segmentObject := &v2.SegmentObject{
-		ServiceId:         r.serviceID,
-		ServiceInstanceId: r.instanceID,
-		TraceSegmentId: &common.UniqueId{
-			IdParts: rootSpan.Context().SegmentID,
-		},
-		Spans: make([]*v2.SpanObjectV2, spanSize),
+	rootCtx := rootSpan.Context()
+	segmentObject := &agentv3.SegmentObject{
+		TraceId:         rootCtx.TraceID,
+		TraceSegmentId:  rootCtx.SegmentID,
+		Spans:           make([]*agentv3.SpanObject, spanSize),
+		Service:         r.service,
+		ServiceInstance: r.instance,
 	}
 	for i, s := range spans {
 		spanCtx := s.Context()
-		segmentObject.Spans[i] = &v2.SpanObjectV2{
+		segmentObject.Spans[i] = &agentv3.SpanObject{
 			SpanId:        spanCtx.SpanID,
 			ParentSpanId:  spanCtx.ParentSpanID,
 			StartTime:     s.StartTime(),
@@ -222,47 +127,37 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			Peer:          s.Peer(),
 			SpanType:      s.SpanType(),
 			SpanLayer:     s.SpanLayer(),
+			ComponentId:   s.ComponentID(),
 			IsError:       s.IsError(),
 			Tags:          s.Tags(),
 			Logs:          s.Logs(),
-			ComponentId:   s.ComponentID(),
 		}
-		srr := make([]*v2.SegmentReference, 0)
+		srr := make([]*agentv3.SegmentReference, 0)
 		if i == (spanSize-1) && spanCtx.ParentSpanID > -1 {
-			srr = append(srr, &v2.SegmentReference{
-				ParentSpanId: spanCtx.ParentSpanID,
-				ParentTraceSegmentId: &common.UniqueId{
-					IdParts: spanCtx.ParentSegmentID,
-				},
-				ParentServiceInstanceId: r.instanceID,
-				RefType:                 common.RefType_CrossThread,
+			srr = append(srr, &agentv3.SegmentReference{
+				RefType:               agentv3.RefType_CrossThread,
+				TraceId:               spanCtx.TraceID,
+				ParentTraceSegmentId:  spanCtx.ParentSegmentID,
+				ParentSpanId:          spanCtx.ParentSpanID,
+				ParentService:         r.service,
+				ParentServiceInstance: r.instance,
 			})
 		}
 		if len(s.Refs()) > 0 {
 			for _, tc := range s.Refs() {
-				srr = append(srr, &v2.SegmentReference{
-					ParentSpanId: tc.ParentSpanID,
-					ParentTraceSegmentId: &common.UniqueId{
-						IdParts: tc.ParentSegmentID,
-					},
-					ParentServiceInstanceId: tc.ParentServiceInstanceID,
-					EntryEndpoint:           tc.EntryEndpoint,
-					EntryEndpointId:         tc.EntryEndpointID,
-					EntryServiceInstanceId:  tc.EntryServiceInstanceID,
-					NetworkAddress:          tc.NetworkAddress,
-					NetworkAddressId:        tc.NetworkAddressID,
-					ParentEndpoint:          tc.ParentEndpoint,
-					ParentEndpointId:        tc.ParentEndpointID,
-					RefType:                 common.RefType_CrossProcess,
+				srr = append(srr, &agentv3.SegmentReference{
+					RefType:                  agentv3.RefType_CrossProcess,
+					TraceId:                  spanCtx.TraceID,
+					ParentTraceSegmentId:     tc.ParentSegmentID,
+					ParentSpanId:             tc.ParentSpanID,
+					ParentService:            tc.ParentService,
+					ParentServiceInstance:    tc.ParentServiceInstance,
+					ParentEndpoint:           tc.ParentEndpoint,
+					NetworkAddressUsedAtPeer: tc.AddressUsedAtClient,
 				})
 			}
 		}
 		segmentObject.Spans[i].Refs = srr
-	}
-	b, err := proto.Marshal(segmentObject)
-	if err != nil {
-		r.logger.Printf("marshal segment object err %v", err)
-		return
 	}
 	defer func() {
 		// recover the panic caused by close sendCh
@@ -270,9 +165,8 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			r.logger.Printf("reporter segment err %v", err)
 		}
 	}()
-	segment.Segment = b
 	select {
-	case r.sendCh <- segment:
+	case r.sendCh <- segmentObject:
 	default:
 		r.logger.Printf("reach max send buffer")
 	}
@@ -314,32 +208,97 @@ func (r *gRPCReporter) initSendPipeline() {
 	}()
 }
 
-func (r *gRPCReporter) closeStream(stream v2.TraceSegmentReportService_CollectClient) {
+func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_CollectClient) {
 	err := stream.CloseSend()
 	if err != nil {
 		r.logger.Printf("send closing error %v", err)
 	}
 }
 
-func (r *gRPCReporter) ping() {
-	if r.pingInterval < 0 || r.pingClient == nil {
+func (r *gRPCReporter) check() {
+	if r.checkInterval < 0 || r.managementClient == nil {
 		return
 	}
 	go func() {
+		instancePropertiesSubmitted := false
 		for {
 			if r.conn.GetState() == connectivity.Shutdown {
 				break
 			}
-			_, err := r.pingClient.DoPing(context.Background(), &register.ServiceInstancePingPkg{
-				Time:                tool.Millisecond(time.Now()),
-				ServiceInstanceId:   r.instanceID,
-				ServiceInstanceUUID: r.instanceName,
-			})
-			if err != nil {
-				r.logger.Printf("pinging error %v", err)
+
+			if !instancePropertiesSubmitted {
+				props := buildOSInfo()
+				if r.instanceProps != nil {
+					for k, v := range r.instanceProps {
+						props = append(props, &common.KeyStringValuePair{
+							Key:   k,
+							Value: v,
+						})
+					}
+				}
+				_, err := r.managementClient.ReportInstanceProperties(context.Background(), &managementv3.InstanceProperties{
+					Service:         r.service,
+					ServiceInstance: r.instance,
+					Properties:      props,
+				})
+				if err != nil {
+					r.logger.Printf("report instance properties error %v", err)
+					time.Sleep(r.checkInterval)
+					continue
+				}
+				instancePropertiesSubmitted = true
 			}
-			time.Sleep(r.pingInterval)
+
+			_, err := r.managementClient.KeepAlive(context.Background(), &managementv3.InstancePingPkg{
+				Service:         r.service,
+				ServiceInstance: r.instance,
+			})
+
+			if err != nil {
+				r.logger.Printf("send keep alive signal error %v", err)
+			}
+			time.Sleep(r.checkInterval)
 		}
 	}()
+}
 
+func buildOSInfo() (props []*common.KeyStringValuePair) {
+	processNo := tool.ProcessNo()
+	if processNo != "" {
+		kv := &common.KeyStringValuePair{
+			Key:   "Process No.",
+			Value: processNo,
+		}
+		props = append(props, kv)
+	}
+
+	hostname := &common.KeyStringValuePair{
+		Key:   "hostname",
+		Value: tool.HostName(),
+	}
+	props = append(props, hostname)
+
+	language := &common.KeyStringValuePair{
+		Key:   "language",
+		Value: "go",
+	}
+	props = append(props, language)
+
+	osName := &common.KeyStringValuePair{
+		Key:   "OS Name",
+		Value: tool.OSName(),
+	}
+	props = append(props, osName)
+
+	ipv4s := tool.AllIPV4()
+	if len(ipv4s) > 0 {
+		for _, ipv4 := range ipv4s {
+			kv := &common.KeyStringValuePair{
+				Key:   "ipv4",
+				Value: ipv4,
+			}
+			props = append(props, kv)
+		}
+	}
+	return
 }

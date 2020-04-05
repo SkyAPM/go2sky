@@ -15,49 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package go2sky
+package http
 
 import (
-	"time"
+	"log"
 
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	"github.com/SkyAPM/go2sky"
+	"github.com/go-resty/resty/v2"
 )
 
-type NoopSpan struct {
-}
-
-func (*NoopSpan) SetOperationName(string) {
-}
-
-func (*NoopSpan) GetOperationName() string {
-	return ""
-}
-
-func (*NoopSpan) SetPeer(string) {
-}
-
-func (*NoopSpan) SetSpanLayer(v3.SpanLayer) {
-}
-
-func (*NoopSpan) SetComponent(int32) {
-}
-
-func (*NoopSpan) Tag(Tag, string) {
-}
-
-func (*NoopSpan) Log(time.Time, ...string) {
-}
-
-func (*NoopSpan) Error(time.Time, ...string) {
-}
-
-func (*NoopSpan) End() {
-}
-
-func (*NoopSpan) IsEntry() bool {
-	return false
-}
-
-func (*NoopSpan) IsExit() bool {
-	return false
+// NewGoResty returns a resty Client with tracer
+func NewGoResty(tracer *go2sky.Tracer, options ...ClientOption) *resty.Client {
+	hc, err := NewClient(tracer, options...)
+	if err != nil {
+		log.Fatalf("create client error %v \n", err)
+	}
+	return resty.NewWithClient(hc)
 }

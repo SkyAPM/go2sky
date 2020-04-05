@@ -23,13 +23,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/pkg/errors"
-
 	"github.com/SkyAPM/go2sky/propagation"
-)
-
-var (
-	errRegister = errors.New("register error")
 )
 
 func TestTracerInit(t *testing.T) {
@@ -46,7 +40,6 @@ func TestTracer_CreateLocalSpan(t *testing.T) {
 		success: true,
 	}
 	tracer, _ := NewTracer("service", WithReporter(reporter))
-	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -66,7 +59,6 @@ func TestTracer_CreateLocalSpanAsync(t *testing.T) {
 		success: true,
 	}
 	tracer, _ := NewTracer("service", WithReporter(reporter))
-	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -113,10 +105,7 @@ func TestTrace_TraceID(t *testing.T) {
 	verifyTraceID(t, EmptyTraceID, traceID)
 
 	// activeSpan == NoopSpan
-	reporter := &mockRegisterReporter{
-		success: false,
-	}
-	tracer, _ := NewTracer("service", WithReporter(reporter))
+	tracer, _ := NewTracer("service")
 	_, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -125,17 +114,16 @@ func TestTrace_TraceID(t *testing.T) {
 	verifyTraceID(t, NoopTraceID, traceID)
 
 	// activeSpan == segmentSpan
-	reporter = &mockRegisterReporter{
+	reporter := &mockRegisterReporter{
 		success: true,
 	}
 	tracer, _ = NewTracer("service", WithReporter(reporter))
-	tracer.WaitUntilRegister()
 	span, ctx, err := tracer.CreateLocalSpan(context.Background())
 	if err != nil {
 		t.Error(err)
 	}
 	traceID = TraceID(ctx)
-	verifyTraceID(t, span.(segmentSpan).context().GetReadableGlobalTraceID(), traceID)
+	verifyTraceID(t, span.(segmentSpan).context().TraceID, traceID)
 }
 
 func verifyTraceID(t *testing.T, expectTraceID string, actualTraceID string) {
@@ -158,13 +146,9 @@ func (r *mockRegisterReporter) Send(spans []ReportedSpan) {
 func (r *mockRegisterReporter) Close() {
 }
 
-func (r *mockRegisterReporter) Register(service string, instance string) (int32, int32, error) {
+func (r *mockRegisterReporter) Boot(service string, instance string) {
 	r.wg = sync.WaitGroup{}
 	r.wg.Add(1)
-	if r.success {
-		return 1, 1, nil
-	}
-	return 0, 0, errRegister
 }
 
 func (r *mockRegisterReporter) wait() {

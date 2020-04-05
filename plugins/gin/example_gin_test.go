@@ -41,7 +41,6 @@ func ExampleMiddleware() {
 	if err != nil {
 		log.Fatalf("create tracer error %v \n", err)
 	}
-	tracer.WaitUntilRegister()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 
@@ -69,7 +68,7 @@ func ExampleMiddleware() {
 
 }
 
-func request(tracer *go2sky.Tracer) {
+func request(tracer *go2sky.Tracer, options ...h.ClientOption) {
 	//NewClient returns an HTTP Client with tracer
 	client, err := h.NewClient(tracer)
 	if err != nil {

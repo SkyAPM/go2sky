@@ -19,42 +19,50 @@ package reporter
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"math/rand"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/SkyAPM/go2sky"
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
-	"github.com/SkyAPM/go2sky/reporter/grpc/register"
-	"github.com/SkyAPM/go2sky/reporter/grpc/register/mock_register"
+	"github.com/SkyAPM/go2sky/propagation"
+	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 )
 
-const header string = "1-MTU1NTY0NDg4Mjk2Nzg2ODAwMC4wLjU5NDYzNzUyMDYzMzg3NDkwODc=" +
-	"-NS4xNTU1NjQ0ODgyOTY3ODg5MDAwLjM3NzUyMjE1NzQ0Nzk0NjM3NTg=" +
-	"-1-2-3-I2NvbS5oZWxsby5IZWxsb1dvcmxk-Iy9yZXN0L2Fh-Iy9nYXRld2F5L2Nj"
+const (
+	sample                = 1
+	traceID               = "1f2d4bf47bf711eab794acde48001122"
+	parentSegmentID       = "1e7c204a7bf711eab858acde48001122"
+	parentSpanID          = 0
+	parentService         = "service"
+	parentServiceInstance = "instance"
+	parentEndpoint        = "/foo/bar"
+	addressUsedAtClient   = "foo.svc:8787"
+)
 
-func Test_gRPCReporter_Register(t *testing.T) {
-	serviceName, serviceID, instanceName, instanceID, reporter := createMockReporter(t)
-	aServiceID, aInstanceID, err := reporter.Register(serviceName, instanceName)
-	if err != nil || serviceID != aServiceID || instanceID != aInstanceID {
-		t.Errorf("register service and instance error")
+var header string
+
+func init() {
+	scx := propagation.SpanContext{
+		Sample:                sample,
+		TraceID:               traceID,
+		ParentSegmentID:       parentSegmentID,
+		ParentSpanID:          parentSpanID,
+		ParentService:         parentService,
+		ParentServiceInstance: parentServiceInstance,
+		ParentEndpoint:        parentEndpoint,
+		AddressUsedAtClient:   addressUsedAtClient,
 	}
+	header = scx.EncodeSW8()
 }
 
 func Test_e2e(t *testing.T) {
-	serviceName, _, instance, _, reporter := createMockReporter(t)
-	reporter.sendCh = make(chan *common.UpstreamSegment, 10)
-	tracer, err := go2sky.NewTracer(serviceName, go2sky.WithReporter(reporter), go2sky.WithInstance(instance))
+	service, instance, reporter := createMockReporter()
+	reporter.sendCh = make(chan *v3.SegmentObject, 10)
+	tracer, err := go2sky.NewTracer(service, go2sky.WithReporter(reporter), go2sky.WithInstance(instance))
 	if err != nil {
 		t.Error(err)
 	}
-	tracer.WaitUntilRegister()
 	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return header, nil
 	})
@@ -62,11 +70,10 @@ func Test_e2e(t *testing.T) {
 		t.Error(err)
 	}
 	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(head string) error {
-		if head == "" {
-			t.Fail()
-		}
-		if len(strings.Split(head, "-")) != 9 {
-			t.Fail()
+		scx := propagation.SpanContext{}
+		err = scx.DecodeSW8(head)
+		if err != nil {
+			t.Fatal(err)
 		}
 		return nil
 	})
@@ -77,23 +84,22 @@ func Test_e2e(t *testing.T) {
 	entrySpan.End()
 	for s := range reporter.sendCh {
 		reporter.Close()
-		if len(s.GlobalTraceIds) != 1 && len(s.GlobalTraceIds[0].IdParts) != 3 {
-			t.Error("trace id format is incorrect")
+		if s.TraceId != traceID {
+			t.Errorf("trace id parse error")
 		}
-		if s.Segment == nil {
-			t.Error("null segment")
+		if len(s.Spans) == 0 {
+			t.Error("empty spans")
 		}
 	}
 }
 
 func TestGRPCReporter_Close(t *testing.T) {
-	serviceName, _, instance, _, reporter := createMockReporter(t)
-	reporter.sendCh = make(chan *common.UpstreamSegment, 1)
-	tracer, err := go2sky.NewTracer(serviceName, go2sky.WithReporter(reporter), go2sky.WithInstance(instance))
+	service, instance, reporter := createMockReporter()
+	reporter.sendCh = make(chan *v3.SegmentObject, 1)
+	tracer, err := go2sky.NewTracer(service, go2sky.WithReporter(reporter), go2sky.WithInstance(instance))
 	if err != nil {
 		t.Error(err)
 	}
-	tracer.WaitUntilRegister()
 	entry, _, err := tracer.CreateEntrySpan(context.Background(), "/close", func() (s string, err error) {
 		return header, nil
 	})
@@ -105,31 +111,9 @@ func TestGRPCReporter_Close(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func createMockReporter(t *testing.T) (string, int32, string, int32, *gRPCReporter) {
-	ctrl := gomock.NewController(t)
-	mockRegisterClient := mock_register.NewMockRegisterClient(ctrl)
+func createMockReporter() (string, string, *gRPCReporter) {
 	reporter := &gRPCReporter{
-		registerClient: mockRegisterClient,
-		logger:         log.New(os.Stderr, "go2sky", log.LstdFlags),
+		logger: log.New(os.Stderr, "go2sky", log.LstdFlags),
 	}
-
-	serviceID := rand.Int31()
-	serviceName := fmt.Sprintf("service-%d", serviceID)
-	mockRegisterClient.EXPECT().DoServiceRegister(
-		gomock.Any(),
-		gomock.Any(),
-	).Return(&register.ServiceRegisterMapping{Services: []*common.KeyIntValuePair{{
-		Value: serviceID,
-		Key:   serviceName,
-	}}}, nil)
-	instanceID := rand.Int31()
-	instanceName := fmt.Sprintf("instance-%d", instanceID)
-	mockRegisterClient.EXPECT().DoServiceInstanceRegister(
-		gomock.Any(),
-		gomock.Any(),
-	).Return(&register.ServiceInstanceRegisterMapping{ServiceInstances: []*common.KeyIntValuePair{{
-		Value: instanceID,
-		Key:   instanceName,
-	}}}, nil)
-	return serviceName, serviceID, instanceName, instanceID, reporter
+	return "service", "instance", reporter
 }
