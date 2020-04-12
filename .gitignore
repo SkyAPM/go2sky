@@ -14,3 +14,6 @@ bin/
 
 # IDE
 .idea/
+
+# Coverage
+coverage.txt
