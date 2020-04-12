@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
+	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 )
 
 func Test_defaultSpan_SetOperationName(t *testing.T) {
@@ -73,9 +73,9 @@ func Test_defaultSpan_SetPeer(t *testing.T) {
 	}
 }
 
-func Test_defaultSpan_SetSpanLayer(t *testing.T) {
+func Test_defaultSp_SetSpanLayer(t *testing.T) {
 	type args struct {
-		layer common.SpanLayer
+		layer v3.SpanLayer
 	}
 	tests := []struct {
 		name string
@@ -83,27 +83,27 @@ func Test_defaultSpan_SetSpanLayer(t *testing.T) {
 	}{
 		{
 			"Set SpanLayer_Unknown",
-			struct{ layer common.SpanLayer }{layer: common.SpanLayer_Unknown},
+			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Unknown},
 		},
 		{
 			"Set SpanLayer_Database",
-			struct{ layer common.SpanLayer }{layer: common.SpanLayer_Database},
+			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Database},
 		},
 		{
 			"Set SpanLayer_RPCFramework",
-			struct{ layer common.SpanLayer }{layer: common.SpanLayer_RPCFramework},
+			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_RPCFramework},
 		},
 		{
 			"Set SpanLayer_Http",
-			struct{ layer common.SpanLayer }{layer: common.SpanLayer_Http},
+			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Http},
 		},
 		{
 			"Set SpanLayer_MQ",
-			struct{ layer common.SpanLayer }{layer: common.SpanLayer_MQ},
+			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_MQ},
 		},
 		{
 			"Set SpanLayer_Cache",
-			struct{ layer common.SpanLayer }{layer: common.SpanLayer_Cache},
+			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Cache},
 		},
 	}
 	for _, tt := range tests {
@@ -226,6 +226,68 @@ func Test_defaultSpan_Error(t *testing.T) {
 				if len(l.Data) != int(math.Ceil(float64(len(tt.ll))/2)) {
 					t.Error("errors are not set property")
 				}
+			}
+		})
+	}
+}
+
+func Test_defaultSpan_Component(t *testing.T) {
+	tests := []struct {
+		name      string
+		component int32
+	}{
+		{
+			name:      "set component",
+			component: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ds := &defaultSpan{}
+			ds.SetComponent(tt.component)
+			if ds.ComponentID != tt.component {
+				t.Errorf("errors are not set property")
+			}
+		})
+	}
+}
+
+func Test_defaultSpan_SpanType(t *testing.T) {
+	tests := []struct {
+		name       string
+		spanOption SpanOption
+		isEntry    bool
+		isExit     bool
+	}{
+		{
+			name:       "set entry span",
+			spanOption: WithSpanType(SpanTypeEntry),
+			isEntry:    true,
+			isExit:     false,
+		},
+		{
+			name:       "set exit span",
+			spanOption: WithSpanType(SpanTypeExit),
+			isEntry:    false,
+			isExit:     true,
+		},
+		{
+			name:       "set local span",
+			spanOption: WithSpanType(SpanTypeLocal),
+			isEntry:    false,
+			isExit:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ds := &defaultSpan{}
+			tt.spanOption(ds)
+			if ds.IsEntry() != tt.isEntry {
+				t.Error("errors are not set property")
+			}
+			if ds.IsExit() != tt.isExit {
+				t.Error("errors are not set property")
 			}
 		})
 	}

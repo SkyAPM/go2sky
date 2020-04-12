@@ -25,12 +25,11 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/reporter"
-	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 )
 
-func Example_newGoResty() {
-	// Use gRPC reporter for production
+func ExampleNewGoResty() {
+	// Use log reporter for production
 	r, err := reporter.NewLogReporter()
 	if err != nil {
 		log.Fatalf("new reporter error %v \n", err)
@@ -41,7 +40,6 @@ func Example_newGoResty() {
 	if err != nil {
 		log.Fatalf("create tracer error %v \n", err)
 	}
-	tracer.WaitUntilRegister()
 
 	sm, err := NewServerMiddleware(tracer)
 	if err != nil {
@@ -58,7 +56,7 @@ func Example_newGoResty() {
 	router.Methods("GET").Path("/end").HandlerFunc(endFunc())
 
 	// create go-resty client
-	client := newGoResty(tracer)
+	client := NewGoResty(tracer)
 	resp, err := client.R().Get(fmt.Sprintf("%s/end", ts.URL))
 	if err != nil {
 		log.Fatalf("unable to do http request: %+v\n", err)
@@ -66,14 +64,5 @@ func Example_newGoResty() {
 
 	_ = resp.RawResponse.Body.Close()
 	time.Sleep(time.Second)
-
 	// Output:
-}
-
-func newGoResty(tracer *go2sky.Tracer) *resty.Client {
-	hc, err := NewClient(tracer)
-	if err != nil {
-		log.Fatalf("create client error %v \n", err)
-	}
-	return resty.NewWithClient(hc)
 }

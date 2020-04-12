@@ -19,11 +19,10 @@ package go2sky
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
+	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 )
 
 type createFunc func() (Span, context.Context, error)
@@ -64,25 +63,21 @@ func TestCreateNoopSpan(t *testing.T) {
 			if _, ok := s.(*NoopSpan); !ok {
 				t.Error("Should create noop span")
 			}
+			if s.IsEntry() || s.IsExit() {
+				t.Error("Should create noop span")
+			}
 		})
 	}
 }
 
 func TestNoopSpanFromBegin(t *testing.T) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	r := &registerReporter{
-		wg: wg,
-	}
-	tracer, _ := NewTracer("service", WithReporter(r))
+	tracer, _ := NewTracer("service")
 	span, ctx, _ := tracer.CreateEntrySpan(context.Background(), "entry", func() (s string, e error) {
 		return "", nil
 	})
 	if _, ok := span.(*NoopSpan); !ok {
 		t.Error("Should create noop span")
 	}
-	wg.Done()
-	tracer.WaitUntilRegister()
 	exitSpan, _ := tracer.CreateExitSpan(ctx, "exit", "localhost:8080", func(header string) error {
 		return nil
 	})
@@ -93,26 +88,11 @@ func TestNoopSpanFromBegin(t *testing.T) {
 	span.End()
 }
 
-type registerReporter struct {
-	wg *sync.WaitGroup
-}
-
-func (r *registerReporter) Send(spans []ReportedSpan) {
-}
-
-func (r *registerReporter) Close() {
-}
-
-func (r *registerReporter) Register(service string, instance string) (int32, int32, error) {
-	r.wg.Wait()
-	return 0, 0, nil
-}
-
 func TestNoopMethod(t *testing.T) {
 	n := NoopSpan{}
 	n.SetOperationName("aa")
 	n.SetPeer("localhost:1111")
-	n.SetSpanLayer(common.SpanLayer_Database)
+	n.SetSpanLayer(v3.SpanLayer_Database)
 	n.SetComponent(2)
 	n.Tag("key", "value")
 	n.Log(time.Now(), "key", "value")

@@ -19,14 +19,38 @@ package go2sky
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"testing"
+
+	"github.com/SkyAPM/go2sky/propagation"
 )
 
-const header string = "1-MTU1NTY0NDg4Mjk2Nzg2ODAwMC4wLjU5NDYzNzUyMDYzMzg3NDkwODc=" +
-	"-NS4xNTU1NjQ0ODgyOTY3ODg5MDAwLjM3NzUyMjE1NzQ0Nzk0NjM3NTg=" +
-	"-1-2-3-I2NvbS5oZWxsby5IZWxsb1dvcmxk-Iy9yZXN0L2Fh-Iy9nYXRld2F5L2Nj"
+const (
+	sample                = 1
+	traceID               = "1f2d4bf47bf711eab794acde48001122"
+	parentSegmentID       = "1e7c204a7bf711eab858acde48001122"
+	parentSpanID          = 0
+	parentService         = "service"
+	parentServiceInstance = "instance"
+	parentEndpoint        = "/foo/bar"
+	addressUsedAtClient   = "foo.svc:8787"
+)
+
+var header string
+
+func init() {
+	scx := propagation.SpanContext{
+		Sample:                sample,
+		TraceID:               traceID,
+		ParentSegmentID:       parentSegmentID,
+		ParentSpanID:          parentSpanID,
+		ParentService:         parentService,
+		ParentServiceInstance: parentServiceInstance,
+		ParentEndpoint:        parentEndpoint,
+		AddressUsedAtClient:   addressUsedAtClient,
+	}
+	header = scx.EncodeSW8()
+}
 
 func TestTracer_EntryAndExit(t *testing.T) {
 	wg := &sync.WaitGroup{}
@@ -35,7 +59,6 @@ func TestTracer_EntryAndExit(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tracer.WaitUntilRegister()
 	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return "", nil
 	})
@@ -43,10 +66,9 @@ func TestTracer_EntryAndExit(t *testing.T) {
 		t.Error(err)
 	}
 	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(head string) error {
-		if head == "" {
-			t.Fail()
-		}
-		if len(strings.Split(head, "-")) != 9 {
+		scx := propagation.SpanContext{}
+		err = scx.DecodeSW8(head)
+		if err != nil {
 			t.Fail()
 		}
 		return nil
@@ -67,7 +89,6 @@ func TestTracer_Entry(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tracer.WaitUntilRegister()
 	entrySpan, _, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return header, nil
 	})
@@ -77,8 +98,7 @@ func TestTracer_Entry(t *testing.T) {
 	entrySpan.End()
 	wg.Wait()
 	span := reporter.Spans[0]
-	if span.Context().TraceID[0] != 1555644882967868000 || span.Context().TraceID[1] != 0 ||
-		span.Context().TraceID[2] != 5946375206338749087 {
+	if span.Context().TraceID != traceID {
 		t.Fail()
 	}
 	if len(span.Refs()) != 1 {
@@ -89,41 +109,48 @@ func TestTracer_Entry(t *testing.T) {
 func TestTracer_EntryAndExitInTrace(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
-	tracer, err := NewTracer("service", WithReporter(&NoopReporter{wg: wg}))
+	tracer, err := NewTracer("service", WithInstance("instance"), WithReporter(&NoopReporter{wg: wg}))
 	if err != nil {
 		t.Error(err)
 	}
-	tracer.WaitUntilRegister()
 	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
 		return header, nil
 	})
 	if err != nil {
 		t.Error(err)
 	}
-	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(head string) error {
-		ss := strings.Split(head, "-")
-		if ss[0] != "1" {
+	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8786", func(head string) error {
+		sc := propagation.SpanContext{}
+		err = sc.DecodeSW8(head)
+		if err != nil {
 			t.Fail()
 		}
-		if ss[1] != "MTU1NTY0NDg4Mjk2Nzg2ODAwMC4wLjU5NDYzNzUyMDYzMzg3NDkwODc=" {
+
+		if sc.Sample != sample {
 			t.Fail()
 		}
-		if ss[3] != "1" {
+
+		if sc.TraceID != traceID {
 			t.Fail()
 		}
-		if ss[4] != "5" {
+
+		if sc.ParentSpanID != 1 {
 			t.Fail()
 		}
-		if ss[5] != "3" {
+
+		if sc.ParentService != "service" {
 			t.Fail()
 		}
-		if ss[6] != "I2Zvby5zdmM6ODc4Nw==" {
+
+		if sc.ParentServiceInstance != "instance" {
 			t.Fail()
 		}
-		if ss[7] != "Iy9yZXN0L2Fh" {
+
+		if sc.ParentEndpoint != "/rest/api" {
 			t.Fail()
 		}
-		if ss[8] != "Iy9yZXN0L2FwaQ==" {
+
+		if sc.AddressUsedAtClient != "foo.svc:8786" {
 			t.Fail()
 		}
 		return nil
@@ -141,8 +168,7 @@ type NoopReporter struct {
 	Spans []ReportedSpan
 }
 
-func (*NoopReporter) Register(service string, instance string) (int32, int32, error) {
-	return 2, 5, nil
+func (*NoopReporter) Boot(service string, serviceInstance string) {
 }
 
 func (r *NoopReporter) Send(spans []ReportedSpan) {
