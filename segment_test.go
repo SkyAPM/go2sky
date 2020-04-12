@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
+
+	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 )
 
 func TestSyncSegment(t *testing.T) {
@@ -101,6 +104,58 @@ func TestAsyncMultipleSegments(t *testing.T) {
 	}
 }
 
+func TestReportedSpan(t *testing.T) {
+	reportWg := &sync.WaitGroup{}
+	reportWg.Add(1)
+	mr := MockReporter{
+		WaitGroup: reportWg,
+	}
+	tracer, _ := NewTracer("service", WithInstance("instance"), WithReporter(&mr))
+	ctx := context.Background()
+	span, err := tracer.CreateExitSpan(ctx, "exit", "localhost:9999", MockInjector)
+	if err != nil {
+		t.Error(err)
+	}
+	span.SetSpanLayer(v3.SpanLayer_Http)
+	span.Error(time.Now(), "error")
+	span.Log(time.Now(), "log")
+	span.Tag(TagURL, "http://localhost:9999/exit")
+	span.SetComponent(1)
+	span.End()
+	reportWg.Wait()
+	if err := mr.Verify(1); err != nil {
+		t.Error(err)
+	}
+	reportSpan := mr.Message[0][0]
+	if reportSpan.StartTime() < 0 || reportSpan.StartTime() > reportSpan.EndTime() {
+		t.Error("errors are not start/end time")
+	}
+	if reportSpan.OperationName() != "exit" {
+		t.Error("error are not set operation name")
+	}
+	if reportSpan.Peer() != "localhost:9999" {
+		t.Error("error are not set peer")
+	}
+	if reportSpan.SpanType() != v3.SpanType_Exit {
+		t.Error("error are not set span type")
+	}
+	if reportSpan.SpanLayer() != v3.SpanLayer_Http {
+		t.Error("error are not set span layer")
+	}
+	if !reportSpan.IsError() {
+		t.Error("error are not set isError")
+	}
+	if len(reportSpan.Tags()) != 1 {
+		t.Error("error are not set tag")
+	}
+	if len(reportSpan.Logs()) != 2 {
+		t.Error("error are not set log")
+	}
+	if reportSpan.ComponentID() != 1 {
+		t.Error("error are not set component id")
+	}
+}
+
 func MockExtractor() (c string, e error) {
 	return
 }
@@ -118,7 +173,7 @@ type MockReporter struct {
 	sync.Mutex
 }
 
-func (r *MockReporter) Boot(service string, instance string) {
+func (r *MockReporter) Boot(service string, serviceInstance string) {
 
 }
 

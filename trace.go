@@ -181,7 +181,7 @@ var ctxKeyInstance = ctxKey{}
 
 //Reporter is a data transit specification
 type Reporter interface {
-	Boot(service string, instance string)
+	Boot(service string, serviceInstance string)
 	Send(spans []ReportedSpan)
 	Close()
 }

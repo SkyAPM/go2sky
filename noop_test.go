@@ -63,6 +63,9 @@ func TestCreateNoopSpan(t *testing.T) {
 			if _, ok := s.(*NoopSpan); !ok {
 				t.Error("Should create noop span")
 			}
+			if s.IsEntry() || s.IsExit() {
+				t.Error("Should create noop span")
+			}
 		})
 	}
 }

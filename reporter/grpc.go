@@ -85,7 +85,7 @@ func WithInstanceProps(props map[string]string) GRPCReporterOption {
 
 type gRPCReporter struct {
 	service          string
-	instance         string
+	serviceInstance  string
 	instanceProps    map[string]string
 	logger           *log.Logger
 	sendCh           chan *agentv3.SegmentObject
@@ -95,9 +95,9 @@ type gRPCReporter struct {
 	checkInterval    time.Duration
 }
 
-func (r *gRPCReporter) Boot(service string, instance string) {
+func (r *gRPCReporter) Boot(service string, serviceInstance string) {
 	r.service = service
-	r.instance = instance
+	r.serviceInstance = serviceInstance
 	r.initSendPipeline()
 	r.check()
 }
@@ -114,7 +114,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 		TraceSegmentId:  rootCtx.SegmentID,
 		Spans:           make([]*agentv3.SpanObject, spanSize),
 		Service:         r.service,
-		ServiceInstance: r.instance,
+		ServiceInstance: r.serviceInstance,
 	}
 	for i, s := range spans {
 		spanCtx := s.Context()
@@ -140,7 +140,7 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 				ParentTraceSegmentId:  spanCtx.ParentSegmentID,
 				ParentSpanId:          spanCtx.ParentSpanID,
 				ParentService:         r.service,
-				ParentServiceInstance: r.instance,
+				ParentServiceInstance: r.serviceInstance,
 			})
 		}
 		if len(s.Refs()) > 0 {
@@ -173,7 +173,18 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 }
 
 func (r *gRPCReporter) Close() {
-	close(r.sendCh)
+	if r.sendCh != nil {
+		close(r.sendCh)
+	}
+	r.closeGRPCConn()
+}
+
+func (r *gRPCReporter) closeGRPCConn() {
+	if r.conn != nil {
+		if err := r.conn.Close(); err != nil {
+			r.logger.Print(err)
+		}
+	}
 }
 
 func (r *gRPCReporter) initSendPipeline() {
@@ -198,11 +209,7 @@ func (r *gRPCReporter) initSendPipeline() {
 				}
 			}
 			r.closeStream(stream)
-			if r.conn != nil {
-				if err := r.conn.Close(); err != nil {
-					r.logger.Print(err)
-				}
-			}
+			r.closeGRPCConn()
 			break
 		}
 	}()
@@ -215,8 +222,26 @@ func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_Coll
 	}
 }
 
+func (r *gRPCReporter) reportInstanceProperties() (err error) {
+	props := buildOSInfo()
+	if r.instanceProps != nil {
+		for k, v := range r.instanceProps {
+			props = append(props, &common.KeyStringValuePair{
+				Key:   k,
+				Value: v,
+			})
+		}
+	}
+	_, err = r.managementClient.ReportInstanceProperties(context.Background(), &managementv3.InstanceProperties{
+		Service:         r.service,
+		ServiceInstance: r.serviceInstance,
+		Properties:      props,
+	})
+	return err
+}
+
 func (r *gRPCReporter) check() {
-	if r.checkInterval < 0 || r.managementClient == nil {
+	if r.checkInterval < 0 || r.conn == nil || r.managementClient == nil {
 		return
 	}
 	go func() {
@@ -227,22 +252,9 @@ func (r *gRPCReporter) check() {
 			}
 
 			if !instancePropertiesSubmitted {
-				props := buildOSInfo()
-				if r.instanceProps != nil {
-					for k, v := range r.instanceProps {
-						props = append(props, &common.KeyStringValuePair{
-							Key:   k,
-							Value: v,
-						})
-					}
-				}
-				_, err := r.managementClient.ReportInstanceProperties(context.Background(), &managementv3.InstanceProperties{
-					Service:         r.service,
-					ServiceInstance: r.instance,
-					Properties:      props,
-				})
+				err := r.reportInstanceProperties()
 				if err != nil {
-					r.logger.Printf("report instance properties error %v", err)
+					r.logger.Printf("report serviceInstance properties error %v", err)
 					time.Sleep(r.checkInterval)
 					continue
 				}
@@ -251,7 +263,7 @@ func (r *gRPCReporter) check() {
 
 			_, err := r.managementClient.KeepAlive(context.Background(), &managementv3.InstancePingPkg{
 				Service:         r.service,
-				ServiceInstance: r.instance,
+				ServiceInstance: r.serviceInstance,
 			})
 
 			if err != nil {

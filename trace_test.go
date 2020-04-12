@@ -146,7 +146,7 @@ func (r *mockRegisterReporter) Send(spans []ReportedSpan) {
 func (r *mockRegisterReporter) Close() {
 }
 
-func (r *mockRegisterReporter) Boot(service string, instance string) {
+func (r *mockRegisterReporter) Boot(service string, serviceInstance string) {
 	r.wg = sync.WaitGroup{}
 	r.wg.Add(1)
 }
