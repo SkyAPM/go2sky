@@ -31,7 +31,7 @@ import (
 var (
 	grpc        bool
 	oapServer   string
-	upstreamUrl string
+	upstreamURL string
 	listenAddr  string
 	serviceName string
 
@@ -41,13 +41,13 @@ var (
 func init() {
 	flag.BoolVar(&grpc, "grpc", false, "use grpc reporter")
 	flag.StringVar(&oapServer, "oap-server", "127.0.0.1:11800", "oap server address")
-	flag.StringVar(&upstreamUrl, "upstream-url", "upstream-service", "upstream service url")
+	flag.StringVar(&upstreamURL, "upstream-url", "upstream-service", "upstream service url")
 	flag.StringVar(&listenAddr, "listen-addr", ":8080", "listen address")
 	flag.StringVar(&serviceName, "service-name", "go2sky", "service name")
 }
 
 func ServerHTTP(writer http.ResponseWriter, request *http.Request) {
-	clientReq, err := http.NewRequest(http.MethodPost, upstreamUrl, nil)
+	clientReq, err := http.NewRequest(http.MethodPost, upstreamURL, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Printf("unable to create http request error: %v \n", err)
