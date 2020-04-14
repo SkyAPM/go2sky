@@ -1,6 +1,7 @@
 # GO2Sky
 
 [![Build](https://github.com/SkyAPM/go2sky/workflows/Build/badge.svg?branch=master)](https://github.com/SkyAPM/go2sky/actions?query=branch%3Amaster+event%3Apush+workflow%3ABuild)
+[![Coverage](https://codecov.io/gh/SkyAPM/go2sky/branch/master/graph/badge.svg)](https://codecov.io/gh/SkyAPM/go2sky)
 [![GoDoc](https://godoc.org/github.com/SkyAPM/go2sky?status.svg)](https://godoc.org/github.com/SkyAPM/go2sky)
 
 
