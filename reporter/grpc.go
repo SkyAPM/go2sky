@@ -29,8 +29,8 @@ import (
 	agentv3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
