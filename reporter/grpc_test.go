@@ -166,6 +166,15 @@ func TestGRPCReporterOption(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:   "with auth",
+			option: WithAuthentication("test"),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if reporter.md.Get(authKey)[0] != "test" {
+					t.Error("error are not set Authentication")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
