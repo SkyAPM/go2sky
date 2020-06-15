@@ -88,6 +88,13 @@ func WithCheckInterval(interval time.Duration) GRPCReporterOption {
 	}
 }
 
+// WithMaxSendQueueSize setup send span queue buffer length
+func WithMaxSendQueueSize(maxSendQueueSize int) GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.sendCh = make(chan *agentv3.SegmentObject, maxSendQueueSize)
+	}
+}
+
 // WithInstanceProps setup service instance properties eg: org=SkyAPM
 func WithInstanceProps(props map[string]string) GRPCReporterOption {
 	return func(r *gRPCReporter) {

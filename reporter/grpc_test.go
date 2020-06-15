@@ -155,6 +155,15 @@ func TestGRPCReporterOption(t *testing.T) {
 			},
 		},
 		{
+			name:   "with max send queue size",
+			option: WithMaxSendQueueSize(50000),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if cap(reporter.sendCh) != 50000 {
+					t.Error("error are not set WithMaxSendQueueSize")
+				}
+			},
+		},
+		{
 			name:   "with serviceInstance props",
 			option: WithInstanceProps(instanceProps),
 			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
