@@ -32,6 +32,7 @@ import (
 	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
 	"github.com/SkyAPM/go2sky/reporter/grpc/management/mock_management"
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -126,9 +127,19 @@ func TestGRPCReporter_Close(t *testing.T) {
 }
 
 func TestGRPCReporterOption(t *testing.T) {
+	// props
 	instanceProps := make(map[string]string)
 	instanceProps["org"] = "SkyAPM"
+
+	// log
 	logger := log.New(os.Stderr, "WithLogger", log.LstdFlags)
+
+	// tls
+	creds, err := credentials.NewClientTLSFromFile("../test/test-data/certs/cert.crt", "SkyAPM.org")
+	if err != nil {
+		t.Error(err)
+	}
+
 	tests := []struct {
 		name       string
 		option     GRPCReporterOption
@@ -181,6 +192,15 @@ func TestGRPCReporterOption(t *testing.T) {
 			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
 				if reporter.md.Get(authKey)[0] != "test" {
 					t.Error("error are not set Authentication")
+				}
+			},
+		},
+		{
+			name:   "with tls",
+			option: WithTransportCredentials(creds),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if reporter.creds != creds {
+					t.Error("error are not set TransportCredentials")
 				}
 			},
 		},

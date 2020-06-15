@@ -30,6 +30,7 @@ import (
 	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -37,7 +38,7 @@ const (
 	maxSendQueueSize     int32 = 30000
 	defaultCheckInterval       = 20 * time.Second
 	defaultLogPrefix           = "go2sky-gRPC"
-	authKey            = "Authentication"
+	authKey                    = "Authentication"
 )
 
 // NewGRPCReporter create a new reporter to send data to gRPC oap server. Only one backend address is allowed.
@@ -50,7 +51,16 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	for _, o := range opts {
 		o(r)
 	}
-	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) //TODO add TLS
+
+	var credsDialOption grpc.DialOption
+	if r.creds != nil {
+		// use tls
+		credsDialOption = grpc.WithTransportCredentials(r.creds)
+	} else {
+		credsDialOption = grpc.WithInsecure()
+	}
+
+	conn, err := grpc.Dial(serverAddr, credsDialOption)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +102,17 @@ func WithInstanceProps(props map[string]string) GRPCReporterOption {
 	}
 }
 
+// WithTransportCredentials setup transport layer security
+func WithTransportCredentials(creds credentials.TransportCredentials) GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.creds = creds
+	}
+}
+
+// WithAuthentication used Authentication for gRPC
 func WithAuthentication(auth string) GRPCReporterOption {
 	return func(r *gRPCReporter) {
-		r.md = metadata.New( map[string]string{authKey: auth})
+		r.md = metadata.New(map[string]string{authKey: auth})
 	}
 }
 
@@ -108,7 +126,9 @@ type gRPCReporter struct {
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
 	checkInterval    time.Duration
-	md  metadata.MD;
+
+	md    metadata.MD
+	creds credentials.TransportCredentials
 }
 
 func (r *gRPCReporter) Boot(service string, serviceInstance string) {

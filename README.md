@@ -17,14 +17,15 @@ The API of this project is still evolving. The use of vendoring tool is recommen
 # Quickstart
 
 By completing this quickstart, you will learn how to trace local methods. For more details, please view 
-[the example](example_trace_test.go)
+[the example](example_trace_test.go).
 
 ## Configuration
 
 GO2Sky can export traces to Apache SkyWalking OAP server or local logger. In the following example, we configure GO2Sky to export to OAP server, 
-which is listening on `oap-skywalking` port `11800`, and all of the spans from this program will be associated with a service name `example`.
+which is listening on `oap-skywalking` port `11800`, and all the spans from this program will be associated with a service name `example`. 
+`reporter.GRPCReporter` can also adjust the behavior through `reporter.GRPCReporterOption`, [view all](docs/GRPC-Reporter-Option.md).
  
- ```go
+```go
 r, err := reporter.NewGRPCReporter("oap-skywalking:11800")
 if err != nil {
     log.Fatalf("new reporter error %v \n", err)
