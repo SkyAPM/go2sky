@@ -95,7 +95,7 @@ func WithInstanceProps(props map[string]string) GRPCReporterOption {
 	}
 }
 
-// WithTransportCredentials use transport layer security
+// WithTransportCredentials setup transport layer security
 func WithTransportCredentials(creds credentials.TransportCredentials) GRPCReporterOption {
 	return func(r *gRPCReporter) {
 		r.creds = creds
@@ -119,8 +119,8 @@ type gRPCReporter struct {
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
 	checkInterval    time.Duration
-	md               metadata.MD
 
+	md    metadata.MD
 	creds credentials.TransportCredentials
 }
 
