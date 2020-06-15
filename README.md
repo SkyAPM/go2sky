@@ -23,7 +23,7 @@ By completing this quickstart, you will learn how to trace local methods. For mo
 
 GO2Sky can export traces to Apache SkyWalking OAP server or local logger. In the following example, we configure GO2Sky to export to OAP server, 
 which is listening on `oap-skywalking` port `11800`, and all the spans from this program will be associated with a service name `example`. 
-If you use `grpc.gRPCReporter`, you can also set custom options through `grpc.GRPCReporterOption`, [view all](docs/GRPC-Reporter-Option.md).
+`grpc.GRPCReporter` can also adjust the behavior through `grpc.GRPCReporterOption`, [view all](docs/GRPC-Reporter-Option.md).
  
  ```go
 r, err := reporter.NewGRPCReporter("oap-skywalking:11800")
