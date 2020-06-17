@@ -6,6 +6,7 @@
 | ---------- | --- |
 | `reporter.WithLogger` |  setup logger for gRPC reporter |
 | `reporter.WithCheckInterval` |  setup service and endpoint registry check interval |
+| `reporter.WithMaxSendQueueSize` | setup send span queue buffer length |
 | `reporter.WithInstanceProps` |  setup service instance properties eg: org=SkyAPM |
 | `reporter.WithTransportCredentials` |  setup transport layer security |
 | `reporter.WithAuthentication` |  used Authentication for gRPC |
