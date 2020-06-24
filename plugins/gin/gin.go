@@ -31,10 +31,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	httpServerComponentID int32 = 49
-)
-
 type routeInfo struct {
 	operationName string
 }
@@ -84,7 +80,7 @@ func Middleware(engine *gin.Engine, tracer *go2sky.Tracer) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		span.SetComponent(httpServerComponentID)
+		span.SetComponent(go2sky.ComponentIDHttpServer)
 		span.Tag(go2sky.TagHTTPMethod, c.Request.Method)
 		span.Tag(go2sky.TagURL, c.Request.Host+c.Request.URL.Path)
 		span.SetSpanLayer(v3.SpanLayer_Http)

@@ -16,6 +16,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.5.1 // indirect
+	github.com/teambition/gear v1.21.2
 	github.com/ugorji/go v1.1.4 // indirect
 	google.golang.org/grpc v1.27.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
