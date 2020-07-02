@@ -24,8 +24,6 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/gorilla/mux"
-
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/reporter"
 )
@@ -53,18 +51,12 @@ func ExampleNewServerMiddleware() {
 		log.Fatalf("create client error %v \n", err)
 	}
 
-	router := mux.NewRouter()
-
 	// create test server
-	ts := httptest.NewServer(sm(router))
+	ts := httptest.NewServer(sm(endFunc()))
 	defer ts.Close()
 
-	// add handlers
-	router.Methods("GET").Path("/middle").HandlerFunc(middleFunc(client, ts.URL))
-	router.Methods("POST").Path("/end").HandlerFunc(endFunc())
-
 	// call end service
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/middle", ts.URL), nil)
+	request, err := http.NewRequest("POST", fmt.Sprintf("%s/end", ts.URL), nil)
 	if err != nil {
 		log.Fatalf("unable to create http request: %+v\n", err)
 	}
@@ -76,33 +68,6 @@ func ExampleNewServerMiddleware() {
 	time.Sleep(time.Second)
 
 	// Output:
-}
-
-func middleFunc(client *http.Client, url string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("middle func called with method: %s\n", r.Method)
-
-		// do some operation
-		time.Sleep(100 * time.Millisecond)
-
-		newRequest, err := http.NewRequest("POST", url+"/end", nil)
-		if err != nil {
-			log.Printf("unable to create client: %+v\n", err)
-			http.Error(w, err.Error(), 500)
-			return
-		}
-
-		//Link the context of entry and exit spans
-		newRequest = newRequest.WithContext(r.Context())
-
-		res, err := client.Do(newRequest)
-		if err != nil {
-			log.Printf("call to end fund returned error: %+v\n", err)
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		_ = res.Body.Close()
-	}
 }
 
 func endFunc() http.HandlerFunc {

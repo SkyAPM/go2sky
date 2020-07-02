@@ -1,0 +1,76 @@
+# Licensed to SkyAPM org under one or more contributor
+# license agreements. See the NOTICE file distributed with
+# this work for additional information regarding copyright
+# ownership. SkyAPM org licenses this file to you under
+# the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+import os
+import sys
+
+ignored_chars = '//\n \t'
+
+ignored_paths = [
+    "reporter/grpc"
+]
+
+license_header = ' '.join(
+    [
+        line.strip(ignored_chars) for line in """
+        // Licensed to SkyAPM org under one or more contributor
+        // license agreements. See the NOTICE file distributed with
+        // this work for additional information regarding copyright
+        // ownership. SkyAPM org licenses this file to you under
+        // the Apache License, Version 2.0 (the "License"); you may
+        // not use this file except in compliance with the License.
+        // You may obtain a copy of the License at
+        //
+        //     http://www.apache.org/licenses/LICENSE-2.0
+        //
+        // Unless required by applicable law or agreed to in writing,
+        // software distributed under the License is distributed on an
+        // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+        // KIND, either express or implied.  See the License for the
+        // specific language governing permissions and limitations
+        // under the License.
+        """.splitlines()
+    ]
+).strip(ignored_chars)
+
+
+def walk_through_dir(d) -> bool:
+    checked = True
+    for root, sub_dirs, files in os.walk(d):
+        ignored = False
+        for ignored_path in ignored_paths:
+            if root.__contains__(ignored_path):
+                ignored = True
+                break
+        if ignored:
+            continue
+
+        for filename in files:
+            if not filename.endswith(".go"):
+                continue
+
+            file_path = os.path.join(root, filename)
+            with open(file_path, 'r') as f:
+                header = ' '.join([line.strip(ignored_chars) for line in f.readlines() if line.startswith('//')]).strip()
+                print('%s license header in file: %s' % ('✅' if header.startswith(license_header) else '❌', file_path))
+                checked &= header.startswith(license_header)
+    return checked
+
+
+if __name__ == "__main__":
+    if not walk_through_dir("./"):
+        sys.exit(1)
