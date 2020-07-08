@@ -124,7 +124,7 @@ They are defined as constant in root package with prefix `Tag`.
 
 ## Plugins
 
-Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugin).
+Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugins).
 
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.
