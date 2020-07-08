@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Build
+name: License
 
 on:
   pull_request:
@@ -24,20 +24,15 @@ on:
       - master
 
 jobs:
-  build:
-    name: Build
+  License:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.12
-        uses: actions/setup-go@v1
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
         with:
-          go-version: 1.12
-        id: go
+          python-version: 3.7
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-      - name: Get dependencies
-        run: make deps
-      - name: Lint
-        run: make lint
-      - name: Test
-        run: make test && bash <(curl -s https://codecov.io/bash)
+      - name: Check license header
+        run: make license
+

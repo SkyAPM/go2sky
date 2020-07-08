@@ -33,6 +33,8 @@ const (
 	errInvalidTracer = tool.Error("invalid tracer")
 )
 
+const componentIDGOHttpServer = 5004
+
 type handler struct {
 	tracer    *go2sky.Tracer
 	name      string
@@ -88,7 +90,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	span.SetComponent(go2sky.ComponentIDHttpServer)
+	span.SetComponent(componentIDGOHttpServer)
 	for k, v := range h.extraTags {
 		span.Tag(go2sky.Tag(k), v)
 	}
