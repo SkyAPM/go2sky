@@ -60,9 +60,6 @@ func (s *RandomSampler) init() {
 }
 
 func NewRandomSampler(samplingRate float64) *RandomSampler {
-	if samplingRate < 0.0 || samplingRate > 1.0 {
-		return nil
-	}
 	s := &RandomSampler{
 		samplingRate: samplingRate,
 	}
