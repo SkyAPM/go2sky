@@ -18,13 +18,12 @@
 package go2sky
 
 import (
-	"github.com/SkyAPM/go2sky/internal/idgen"
 	"testing"
 )
 
 func TestConstSampler_IsSampled(t *testing.T) {
 	sampler := NewConstSampler(true)
-	traceID, _ := idgen.GenerateGlobalID()
+	traceID := "54c51134ed0811ea83eaf45c899f4597"
 	operationName := "op"
 	sampled := sampler.IsSampled(traceID, operationName)
 	if sampled != true {
@@ -41,7 +40,7 @@ func TestRandomSampler_IsSampled(t *testing.T) {
 	randomSampler := NewRandomSampler(0.5)
 	//just for test case
 	randomSampler.Threshold = 100
-	traceID, _ := idgen.GenerateGlobalID()
+	traceID := "github.com/SkyAPM/go2sky/internal/idgen"
 	operationName := "op"
 	sampled := randomSampler.IsSampled(traceID, operationName)
 	if sampled != true {
