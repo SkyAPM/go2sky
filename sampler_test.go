@@ -39,7 +39,7 @@ func TestConstSampler_IsSampled(t *testing.T) {
 func TestRandomSampler_IsSampled(t *testing.T) {
 	randomSampler := NewRandomSampler(0.5)
 	//just for test case
-	randomSampler.Threshold = 100
+	randomSampler.threshold = 100
 	traceID := "github.com/SkyAPM/go2sky/internal/idgen"
 	operationName := "op"
 	sampled := randomSampler.IsSampled(traceID, operationName)

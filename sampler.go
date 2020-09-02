@@ -46,17 +46,17 @@ func (s *ConstSampler) IsSampled(traceID string, operation string) bool {
 type RandomSampler struct {
 	samplingRate float64
 	rand         *rand.Rand
-	Threshold    int
+	threshold    int
 }
 
 // IsSampled implements IsSampled() of Sampler.
 func (s *RandomSampler) IsSampled(traceID string, operation string) bool {
-	return s.Threshold >= s.rand.Intn(100)
+	return s.threshold >= s.rand.Intn(100)
 }
 
 func (s *RandomSampler) init() {
 	s.rand = rand.New(rand.NewSource(time.Now().Unix()))
-	s.Threshold = int(s.samplingRate * 100)
+	s.threshold = int(s.samplingRate * 100)
 }
 
 func NewRandomSampler(samplingRate float64) *RandomSampler {
