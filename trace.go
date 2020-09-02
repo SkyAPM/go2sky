@@ -40,6 +40,7 @@ type Tracer struct {
 	reporter Reporter
 	// 0 not init 1 init
 	initFlag int32
+	sampler  Sampler
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -69,6 +70,10 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 		}
 		t.reporter.Boot(t.service, t.instance)
 		t.initFlag = 1
+	}
+
+	if t.sampler == nil {
+		t.sampler = NewConstSampler(true)
 	}
 	return t, nil
 }

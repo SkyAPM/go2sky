@@ -237,7 +237,11 @@ func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 				break
 			}
 		}
-		s.tracer.reporter.Send(append(s.segment, s))
+		//check need send segment with sample service
+		sampled := s.tracer.sampler.IsSampled(s.TraceID, s.FirstSpan.GetOperationName())
+		if sampled {
+			s.tracer.reporter.Send(append(s.segment, s))
+		}
 	}()
 	return s
 }
