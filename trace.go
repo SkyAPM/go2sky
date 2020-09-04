@@ -98,6 +98,17 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extr
 			return
 		}
 	}
+	// Try to sample when it is not force sample
+	if refSc == nil || refSc.Sample != 1 {
+		// Force sample
+		sampled := t.sampler.IsSampled("", operationName)
+		if !sampled {
+			// Filter by sample just return noop span
+			s = &NoopSpan{}
+			nCtx = context.WithValue(ctx, ctxKeyInstance, s)
+			return
+		}
+	}
 	s, nCtx, err = t.CreateLocalSpan(ctx, WithContext(refSc), WithSpanType(SpanTypeEntry))
 	if err != nil {
 		return
