@@ -35,3 +35,10 @@ func WithSpanType(spanType SpanType) SpanOption {
 		s.SpanType = spanType
 	}
 }
+
+// WithOperationName setup span OperationName of a span
+func WithOperationName(operationName string) SpanOption {
+	return func(s *defaultSpan) {
+		s.OperationName = operationName
+	}
+}
