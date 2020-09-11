@@ -125,7 +125,7 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	// Try to sample when it is not force sample
 	if parentSpan == nil && !isForceSample {
 		// Force sample
-		sampled := t.sampler.IsSampled("", ds.OperationName)
+		sampled := t.sampler.IsSampled(ds.OperationName)
 		if !sampled {
 			// Filter by sample just return noop span
 			s = &NoopSpan{}
@@ -150,6 +150,10 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit))
 	if err != nil {
 		return nil, err
+	}
+	_, ok := interface{}(s).(NoopSpan)
+	if ok {
+		return nil, errors.New("span type is wrong")
 	}
 	s.SetOperationName(operationName)
 	s.SetPeer(peer)

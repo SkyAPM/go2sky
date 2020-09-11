@@ -23,7 +23,7 @@ import (
 )
 
 type Sampler interface {
-	IsSampled(traceID string, operation string) (sampled bool)
+	IsSampled(operation string) (sampled bool)
 }
 
 type ConstSampler struct {
@@ -39,7 +39,7 @@ func NewConstSampler(sample bool) *ConstSampler {
 }
 
 // IsSampled implements IsSampled() of Sampler.
-func (s *ConstSampler) IsSampled(traceID string, operation string) bool {
+func (s *ConstSampler) IsSampled(operation string) bool {
 	return s.decision
 }
 
@@ -50,7 +50,7 @@ type RandomSampler struct {
 }
 
 // IsSampled implements IsSampled() of Sampler.
-func (s *RandomSampler) IsSampled(traceID string, operation string) bool {
+func (s *RandomSampler) IsSampled(operation string) bool {
 	return s.threshold >= s.rand.Intn(100)
 }
 

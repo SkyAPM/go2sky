@@ -23,14 +23,13 @@ import (
 
 func TestConstSampler_IsSampled(t *testing.T) {
 	sampler := NewConstSampler(true)
-	traceID := "54c51134ed0811ea83eaf45c899f4597"
 	operationName := "op"
-	sampled := sampler.IsSampled(traceID, operationName)
+	sampled := sampler.IsSampled(operationName)
 	if sampled != true {
 		t.Errorf("const sampler should be sampled")
 	}
 	samplerNegative := NewConstSampler(false)
-	sampledNegative := samplerNegative.IsSampled(traceID, operationName)
+	sampledNegative := samplerNegative.IsSampled(operationName)
 	if sampledNegative != false {
 		t.Errorf("const sampler should not be sampled")
 	}
@@ -40,9 +39,8 @@ func TestRandomSampler_IsSampled(t *testing.T) {
 	randomSampler := NewRandomSampler(0.5)
 	//just for test case
 	randomSampler.threshold = 100
-	traceID := "github.com/SkyAPM/go2sky/internal/idgen"
 	operationName := "op"
-	sampled := randomSampler.IsSampled(traceID, operationName)
+	sampled := randomSampler.IsSampled(operationName)
 	if sampled != true {
 		t.Errorf("const sampler should be sampled")
 	}
