@@ -156,7 +156,6 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 		// Ignored, there is no need to inject SW8 in the request header
 		return &noopSpan, nil
 	}
-	
 	s.SetPeer(peer)
 	spanContext := &propagation.SpanContext{}
 	span, ok := s.(ReportedSpan)
