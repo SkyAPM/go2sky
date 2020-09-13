@@ -151,9 +151,10 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	if err != nil {
 		return nil, err
 	}
-	_, ok := interface{}(s).(NoopSpan)
+	noopSpan, ok := interface{}(s).(NoopSpan)
 	if ok {
-		return nil, errors.New("span type is wrong")
+		// Ignored, there is no need to inject SW8 in the request header
+		return &noopSpan, nil
 	}
 	s.SetOperationName(operationName)
 	s.SetPeer(peer)
