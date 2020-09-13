@@ -40,6 +40,7 @@ type Tracer struct {
 	reporter Reporter
 	// 0 not init 1 init
 	initFlag int32
+	sampler  Sampler
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -70,6 +71,10 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 		t.reporter.Boot(t.service, t.instance)
 		t.initFlag = 1
 	}
+
+	if t.sampler == nil {
+		t.sampler = NewConstSampler(true)
+	}
 	return t, nil
 }
 
@@ -93,11 +98,10 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extr
 			return
 		}
 	}
-	s, nCtx, err = t.CreateLocalSpan(ctx, WithContext(refSc), WithSpanType(SpanTypeEntry))
+	s, nCtx, err = t.CreateLocalSpan(ctx, WithContext(refSc), WithSpanType(SpanTypeEntry), WithOperationName(operationName))
 	if err != nil {
 		return
 	}
-	s.SetOperationName(operationName)
 	return
 }
 
@@ -117,6 +121,17 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 	if !ok {
 		parentSpan = nil
 	}
+	isForceSample := len(ds.Refs) > 0
+	// Try to sample when it is not force sample
+	if parentSpan == nil && !isForceSample {
+		// Force sample
+		sampled := t.sampler.IsSampled(ds.OperationName)
+		if !sampled {
+			// Filter by sample just return noop span
+			s = &NoopSpan{}
+			return s, context.WithValue(ctx, ctxKeyInstance, s), nil
+		}
+	}
 	s, err = newSegmentSpan(ds, parentSpan)
 	if err != nil {
 		return nil, nil, err
@@ -132,11 +147,15 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	if s, _ := t.createNoop(ctx); s != nil {
 		return s, nil
 	}
-	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit))
+	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit), WithOperationName(operationName))
 	if err != nil {
 		return nil, err
 	}
-	s.SetOperationName(operationName)
+	noopSpan, ok := interface{}(s).(NoopSpan)
+	if ok {
+		// Ignored, there is no need to inject SW8 in the request header
+		return &noopSpan, nil
+	}
 	s.SetPeer(peer)
 	spanContext := &propagation.SpanContext{}
 	span, ok := s.(ReportedSpan)

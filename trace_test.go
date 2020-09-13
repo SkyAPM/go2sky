@@ -181,7 +181,7 @@ func TestNewTracer(t *testing.T) {
 				service string
 				opts    []TracerOption
 			}{service: "test", opts: nil},
-			&Tracer{service: "test"},
+			&Tracer{service: "test", sampler: NewConstSampler(true)},
 			false,
 		},
 	}

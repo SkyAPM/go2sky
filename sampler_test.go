@@ -17,32 +17,31 @@
 
 package go2sky
 
-// WithReporter setup report pipeline for tracer
-func WithReporter(reporter Reporter) TracerOption {
-	return func(t *Tracer) {
-		t.reporter = reporter
+import (
+	"testing"
+)
+
+func TestConstSampler_IsSampled(t *testing.T) {
+	sampler := NewConstSampler(true)
+	operationName := "op"
+	sampled := sampler.IsSampled(operationName)
+	if sampled != true {
+		t.Errorf("const sampler should be sampled")
+	}
+	samplerNegative := NewConstSampler(false)
+	sampledNegative := samplerNegative.IsSampled(operationName)
+	if sampledNegative != false {
+		t.Errorf("const sampler should not be sampled")
 	}
 }
 
-// WithInstance setup instance identify
-func WithInstance(instance string) TracerOption {
-	return func(t *Tracer) {
-		t.instance = instance
-	}
-}
-
-// WithSampler setup sampler
-func WithSampler(samplingRate float64) TracerOption {
-	return func(t *Tracer) {
-		var sampler Sampler
-		//check const sampler
-		if samplingRate <= 0 {
-			sampler = NewConstSampler(false)
-		} else if samplingRate >= 1.0 {
-			sampler = NewConstSampler(true)
-		} else {
-			sampler = NewRandomSampler(samplingRate)
-		}
-		t.sampler = sampler
+func TestRandomSampler_IsSampled(t *testing.T) {
+	randomSampler := NewRandomSampler(0.5)
+	//just for test case
+	randomSampler.threshold = 100
+	operationName := "op"
+	sampled := randomSampler.IsSampled(operationName)
+	if sampled != true {
+		t.Errorf("const sampler should be sampled")
 	}
 }
