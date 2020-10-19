@@ -99,7 +99,7 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 	if err != nil {
 		return t.delegated.RoundTrip(req)
 	}
-	defer span.End()
+
 	span.SetComponent(componentIDGOHttpClient)
 	for k, v := range t.extraTags {
 		span.Tag(go2sky.Tag(k), v)
@@ -116,5 +116,6 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 	if res.StatusCode >= http.StatusBadRequest {
 		span.Error(time.Now(), "Errors on handling client")
 	}
+	span.End()
 	return res, nil
 }
