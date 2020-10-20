@@ -110,12 +110,14 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 	res, err = t.delegated.RoundTrip(req)
 	if err != nil {
 		span.Error(time.Now(), err.Error())
+		span.End()
 		return
 	}
 	span.Tag(go2sky.TagStatusCode, strconv.Itoa(res.StatusCode))
 	if res.StatusCode >= http.StatusBadRequest {
 		span.Error(time.Now(), "Errors on handling client")
 	}
+
 	span.End()
 	return res, nil
 }
