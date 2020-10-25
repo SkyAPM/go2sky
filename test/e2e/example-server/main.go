@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/SkyAPM/go2sky"
 	httpPlugin "github.com/SkyAPM/go2sky/plugins/http"
@@ -47,6 +48,8 @@ func init() {
 }
 
 func ServerHTTP(writer http.ResponseWriter, request *http.Request) {
+	time.Sleep(time.Duration(500) * time.Millisecond)
+
 	clientReq, err := http.NewRequest(http.MethodPost, upstreamURL, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
