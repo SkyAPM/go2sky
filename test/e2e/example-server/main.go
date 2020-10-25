@@ -48,7 +48,7 @@ func init() {
 }
 
 func ServerHTTP(writer http.ResponseWriter, request *http.Request) {
-	time.Sleep(time.Duration(100)*time.Millisecond)
+	time.Sleep(time.Duration(300)*time.Millisecond)
 
 	clientReq, err := http.NewRequest(http.MethodPost, upstreamURL, nil)
 	if err != nil {
