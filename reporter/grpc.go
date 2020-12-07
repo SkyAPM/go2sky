@@ -19,6 +19,7 @@ package reporter
 
 import (
 	"context"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -252,8 +253,8 @@ func (r *gRPCReporter) initSendPipeline() {
 }
 
 func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_CollectClient) {
-	err := stream.CloseSend()
-	if err != nil {
+	_, err := stream.CloseAndRecv()
+	if err != nil && err != io.EOF {
 		r.logger.Printf("send closing error %v", err)
 	}
 }
