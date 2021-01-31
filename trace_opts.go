@@ -46,3 +46,10 @@ func WithSampler(samplingRate float64) TracerOption {
 		t.sampler = sampler
 	}
 }
+
+// WithCustomSampler setup custom sampler
+func WithCustomSampler(sampler Sampler) TracerOption {
+	return func(t *Tracer) {
+		t.sampler = sampler
+	}
+}
