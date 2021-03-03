@@ -1,0 +1,58 @@
+segmentItems:
+  - serviceName: provider
+    segmentSize: 1
+    segments:
+      - segmentId: not null
+        spans:
+          - operationName: /GET/sayhi
+            operationId: 0
+            parentSpanId: -1
+            spanId: 0
+            spanLayer: Http
+            tags:
+              - key: http.method
+                value: GET
+              - key: url
+                value: '127.0.0.1:38080/sayhi'
+              - key: status_code
+                value: '200'
+            refs:
+              - parentEndpoint: /GET/sayhi
+                networkAddress: 127.0.0.1:38080
+                refType: CrossProcess
+                parentSpanId: 0
+                parentTraceSegmentId: not null
+                parentServiceInstance: not null
+                parentService: consumer
+                traceId: not null
+            startTime: gt 0
+            endTime: gt 0
+            componentId: 5004
+            spanType: Entry
+            isError: false
+            peer: ''
+            skipAnalysis: false
+  - serviceName: consumer
+    segmentSize: 1
+    segments:
+      - segmentId: not null
+        spans:
+          - operationName: /GET/sayhi
+            operationId: 0
+            parentSpanId: -1
+            spanId: 0
+            spanLayer: Http
+            tags:
+              - key: http.method
+                value: GET
+              - key: url
+                value: http://127.0.0.1:38080/sayhi
+              - key: status_code
+                value: '200'
+            startTime: gt 0
+            endTime: gt 0
+            componentId: 5005
+            spanType: Exit
+            isError: false
+            peer: 127.0.0.1:38080
+            skipAnalysis: false
