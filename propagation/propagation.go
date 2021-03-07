@@ -31,9 +31,12 @@ import (
 )
 
 const (
-	Header     string = "sw8"
-	headerLen  int    = 8
-	splitToken string = "-"
+	Header                        string = "sw8"
+	HeaderCorrelation             string = "sw8-correlation"
+	headerLen                     int    = 8
+	splitToken                    string = "-"
+	correlationSplitToken         string = ","
+	correlationKeyValueSplitToken string = ":"
 )
 
 var (
@@ -43,22 +46,56 @@ var (
 
 // Extractor is a tool specification which define how to
 // extract trace parent context from propagation context
-type Extractor func() (string, error)
+type Extractor func(headerKey string) (string, error)
 
 // Injector is a tool specification which define how to
 // inject trace context into propagation context
-type Injector func(header string) error
+type Injector func(headerKey, headerValue string) error
 
 // SpanContext defines propagation specification of SkyWalking
 type SpanContext struct {
-	TraceID               string `json:"trace_id"`
-	ParentSegmentID       string `json:"parent_segment_id"`
-	ParentService         string `json:"parent_service"`
-	ParentServiceInstance string `json:"parent_service_instance"`
-	ParentEndpoint        string `json:"parent_endpoint"`
-	AddressUsedAtClient   string `json:"address_used_at_client"`
-	ParentSpanID          int32  `json:"parent_span_id"`
-	Sample                int8   `json:"sample"`
+	TraceID               string            `json:"trace_id"`
+	ParentSegmentID       string            `json:"parent_segment_id"`
+	ParentService         string            `json:"parent_service"`
+	ParentServiceInstance string            `json:"parent_service_instance"`
+	ParentEndpoint        string            `json:"parent_endpoint"`
+	AddressUsedAtClient   string            `json:"address_used_at_client"`
+	ParentSpanID          int32             `json:"parent_span_id"`
+	Sample                int8              `json:"sample"`
+	CorrelationContext    map[string]string `json:"correlation_context"`
+	Valid                 bool              `json:"valid"`
+}
+
+// Decode all SpanContext data from Extractor
+func (tc *SpanContext) Decode(extractor Extractor) error {
+	tc.Valid = false
+	// sw8
+	err := tc.decode(extractor, Header, tc.DecodeSW8)
+	if err != nil {
+		return err
+	}
+
+	// correlation
+	err = tc.decode(extractor, HeaderCorrelation, tc.DecodeSW8Correlation)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Encode all SpanContext data to Injector
+func (tc *SpanContext) Encode(injector Injector) error {
+	// sw8
+	err := injector(Header, tc.EncodeSW8())
+	if err != nil {
+		return err
+	}
+	// correlation
+	err = injector(HeaderCorrelation, tc.EncodeSW8Correlation())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DecodeSW6 converts string header to SpanContext
@@ -103,6 +140,7 @@ func (tc *SpanContext) DecodeSW8(header string) error {
 	if err != nil {
 		return errors.Wrap(err, "network address parse error")
 	}
+	tc.Valid = true
 	return nil
 }
 
@@ -120,6 +158,46 @@ func (tc *SpanContext) EncodeSW8() string {
 	}, "-")
 }
 
+// DecodeSW8Correlation converts correlation string header to SpanContext
+func (tc *SpanContext) DecodeSW8Correlation(header string) error {
+	tc.CorrelationContext = make(map[string]string)
+	if header == "" {
+		return nil
+	}
+
+	hh := strings.Split(header, correlationSplitToken)
+	for inx := range hh {
+		keyValues := strings.Split(hh[inx], correlationKeyValueSplitToken)
+		if len(keyValues) != 2 {
+			continue
+		}
+		decodedKey, err := decodeBase64(keyValues[0])
+		if err != nil {
+			continue
+		}
+		decodedValue, err := decodeBase64(keyValues[1])
+		if err != nil {
+			continue
+		}
+
+		tc.CorrelationContext[decodedKey] = decodedValue
+	}
+	return nil
+}
+
+// EncodeSW8Correlation converts correlation to string header
+func (tc *SpanContext) EncodeSW8Correlation() string {
+	if len(tc.CorrelationContext) == 0 {
+		return ""
+	}
+
+	content := make([]string, 0, len(tc.CorrelationContext))
+	for k, v := range tc.CorrelationContext {
+		content = append(content, fmt.Sprintf("%s%s%s", encodeBase64(k), correlationKeyValueSplitToken, encodeBase64(v)))
+	}
+	return strings.Join(content, correlationSplitToken)
+}
+
 func stringConvertInt32(str string) (int32, error) {
 	i, err := strconv.ParseInt(str, 0, 32)
 	return int32(i), err
@@ -135,4 +213,19 @@ func decodeBase64(str string) (string, error) {
 
 func encodeBase64(str string) string {
 	return base64.StdEncoding.EncodeToString([]byte(str))
+}
+
+func (tc *SpanContext) decode(extractor Extractor, headerKey string, decoder func(header string) error) error {
+	val, err := extractor(headerKey)
+	if err != nil {
+		return err
+	}
+	if val == "" {
+		return nil
+	}
+	err = decoder(val)
+	if err != nil {
+		return err
+	}
+	return nil
 }

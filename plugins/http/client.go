@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/SkyAPM/go2sky"
-	"github.com/SkyAPM/go2sky/propagation"
 	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 )
 
@@ -92,8 +91,8 @@ type transport struct {
 }
 
 func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error) {
-	span, err := t.tracer.CreateExitSpan(req.Context(), getOperationName(t.name, req), req.Host, func(header string) error {
-		req.Header.Set(propagation.Header, header)
+	span, err := t.tracer.CreateExitSpan(req.Context(), getOperationName(t.name, req), req.Host, func(key, value string) error {
+		req.Header.Set(key, value)
 		return nil
 	})
 	if err != nil {

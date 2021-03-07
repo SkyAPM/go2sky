@@ -67,6 +67,22 @@ A sub span created as the children of root span links to its parent with `Contex
 subSpan, newCtx, err := tracer.CreateLocalSpan(ctx)
 ```
 
+## Get correlation
+
+Get custom data from tracing context.
+
+```go
+value := go2sky.GetCorrelation(ctx, key)
+```
+
+## Put correlation
+
+Put custom data to tracing context.
+
+```go
+go2sky.PutCorrelation(ctx, key, value)
+```
+
 ## End span
 
 We must end the spans so they becomes available for sending to the backend by a reporter.
@@ -109,16 +125,16 @@ upstream service.
 
 ```go
 //Extract context from HTTP request header `sw8`
-span, ctx, err := tracer.CreateEntrySpan(r.Context(), "/api/login", func() (string, error) {
-		return r.Header.Get("sw8"), nil
+span, ctx, err := tracer.CreateEntrySpan(r.Context(), "/api/login", func(key string) (string, error) {
+		return r.Header.Get(key), nil
 })
 
 // Some operation
 ...
 
 // Inject context into HTTP request header `sw8`
-span, err := tracer.CreateExitSpan(req.Context(), "/service/validate", "tomcat-service:8080", func(header string) error {
-		req.Header.Set(propagation.Header, header)
+span, err := tracer.CreateExitSpan(req.Context(), "/service/validate", "tomcat-service:8080", func(key, value string) error {
+		req.Header.Set(key, value)
 		return nil
 })
 ```

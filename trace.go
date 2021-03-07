@@ -86,17 +86,13 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extr
 	if s, nCtx = t.createNoop(ctx); s != nil {
 		return
 	}
-	header, err := extractor()
+	var refSc = &propagation.SpanContext{}
+	err = refSc.Decode(extractor)
 	if err != nil {
 		return
 	}
-	var refSc *propagation.SpanContext
-	if header != "" {
-		refSc = &propagation.SpanContext{}
-		err = refSc.DecodeSW8(header)
-		if err != nil {
-			return
-		}
+	if !refSc.Valid {
+		refSc = nil
 	}
 	s, nCtx, err = t.CreateLocalSpan(ctx, WithContext(refSc), WithSpanType(SpanTypeEntry), WithOperationName(operationName))
 	if err != nil {
@@ -172,8 +168,9 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 	spanContext.ParentServiceInstance = t.instance
 	spanContext.ParentEndpoint = firstSpan.GetOperationName()
 	spanContext.AddressUsedAtClient = peer
+	spanContext.CorrelationContext = span.Context().CorrelationContext
 
-	err = injector(spanContext.EncodeSW8())
+	err = spanContext.Encode(injector)
 	if err != nil {
 		return nil, err
 	}
