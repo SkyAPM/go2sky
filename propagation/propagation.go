@@ -62,8 +62,8 @@ type SpanContext struct {
 	AddressUsedAtClient   string            `json:"address_used_at_client"`
 	ParentSpanID          int32             `json:"parent_span_id"`
 	Sample                int8              `json:"sample"`
-	CorrelationContext    map[string]string `json:"correlation_context"`
 	Valid                 bool              `json:"valid"`
+	CorrelationContext    map[string]string `json:"correlation_context"`
 }
 
 // Decode all SpanContext data from Extractor

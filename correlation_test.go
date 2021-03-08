@@ -28,6 +28,11 @@ import (
 	"github.com/SkyAPM/go2sky/reporter"
 )
 
+const (
+	correlationTestKey   = "test-key"
+	correlationTestValue = "test-value"
+)
+
 func TestGetCorrelation_WithTracingContest(t *testing.T) {
 	tests := []struct {
 		name string
@@ -48,12 +53,12 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 			extracted: make(map[string]string),
 			correlateContext: func() map[string]string {
 				m := make(map[string]string)
-				m["test-key"] = "test-value"
+				m[correlationTestKey] = correlationTestValue
 				return m
 			}(),
 			want: func() map[string]string {
 				m := make(map[string]string)
-				m["test-key"] = "test-value"
+				m[correlationTestKey] = correlationTestValue
 				return m
 			}(),
 		},
@@ -77,12 +82,12 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 			}(),
 			correlateContext: func() map[string]string {
 				m := make(map[string]string)
-				m["test-key"] = "test-value"
+				m[correlationTestKey] = correlationTestValue
 				return m
 			}(),
 			want: func() map[string]string {
 				m := make(map[string]string)
-				m["test-key"] = "test-value"
+				m[correlationTestKey] = correlationTestValue
 				m["test1"] = "t1"
 				return m
 			}(),
@@ -112,7 +117,7 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 
 			// put customize correlation context
 			for key, value := range tt.correlateContext {
-				if !go2sky.PutCorrelation(ctx, key, value) {
+				if success := go2sky.PutCorrelation(ctx, key, value); !success {
 					t.Errorf("put correlation failed")
 				}
 			}
