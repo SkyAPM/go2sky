@@ -136,7 +136,7 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 
 			// export context
 			scx := propagation.SpanContext{}
-			tracer.CreateExitSpan(ctx, "test-exit", "127.0.0.1:8080", func(headerKey, headerValue string) error {
+			_, err := tracer.CreateExitSpan(ctx, "test-exit", "127.0.0.1:8080", func(headerKey, headerValue string) error {
 				if headerKey == propagation.HeaderCorrelation {
 					err = scx.DecodeSW8Correlation(headerValue)
 					if err != nil {
@@ -145,6 +145,9 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 				}
 				return nil
 			})
+			if err != nil {
+				t.Fail()
+			}
 			reflect.DeepEqual(scx, tt.want)
 		})
 	}
