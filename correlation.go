@@ -19,16 +19,17 @@ package go2sky
 
 import "context"
 
-func PutCorrelation(ctx context.Context, key, value string) {
+func PutCorrelation(ctx context.Context, key, value string) bool {
 	activeSpan := ctx.Value(ctxKeyInstance)
 	if activeSpan == nil {
-		return
+		return false
 	}
 
 	span, ok := activeSpan.(segmentSpan)
 	if ok {
 		span.context().CorrelationContext[key] = value
 	}
+	return ok
 }
 
 func GetCorrelation(ctx context.Context, key string) string {

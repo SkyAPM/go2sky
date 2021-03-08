@@ -80,7 +80,7 @@ value := go2sky.GetCorrelation(ctx, key)
 Put custom data to tracing context.
 
 ```go
-go2sky.PutCorrelation(ctx, key, value)
+success := go2sky.PutCorrelation(ctx, key, value)
 ```
 
 ## End span

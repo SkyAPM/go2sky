@@ -112,7 +112,9 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 
 			// put customize correlation context
 			for key, value := range tt.correlateContext {
-				go2sky.PutCorrelation(ctx, key, value)
+				if !go2sky.PutCorrelation(ctx, key, value) {
+					t.Errorf("put correlation failed")
+				}
 			}
 
 			// put sample local span
@@ -149,7 +151,11 @@ func TestGetCorrelation_WithEmptyContext(t *testing.T) {
 		t.Errorf("should be empty value")
 	}
 
-	go2sky.PutCorrelation(context.Background(), "empty-key", "empty-value")
+	success := go2sky.PutCorrelation(context.Background(), "empty-key", "empty-value")
+	if success {
+		t.Errorf("put correlation key should be failed")
+	}
+
 	emptyValue = go2sky.GetCorrelation(context.Background(), "empty-key")
 	if emptyValue != "" {
 		t.Errorf("should be empty value")
