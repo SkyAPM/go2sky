@@ -181,7 +181,10 @@ func TestNewTracer(t *testing.T) {
 				service string
 				opts    []TracerOption
 			}{service: "test", opts: nil},
-			&Tracer{service: "test", sampler: NewConstSampler(true)},
+			&Tracer{service: "test", sampler: NewConstSampler(true), correlation: &CorrelationConfig{
+				MaxKeyCount:  3,
+				MaxValueSize: 128,
+			}},
 			false,
 		},
 	}

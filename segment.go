@@ -81,6 +81,7 @@ type ReportedSpan interface {
 type segmentSpan interface {
 	Span
 	context() SegmentContext
+	tracer() *Tracer
 	segmentRegister() bool
 }
 
@@ -149,6 +150,10 @@ func (s *segmentSpanImpl) ComponentID() int32 {
 
 func (s *segmentSpanImpl) context() SegmentContext {
 	return s.SegmentContext
+}
+
+func (s *segmentSpanImpl) tracer() *Tracer {
+	return s.defaultSpan.tracer
 }
 
 func (s *segmentSpanImpl) segmentRegister() bool {
@@ -241,7 +246,7 @@ func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 				break
 			}
 		}
-		s.tracer.reporter.Send(append(s.segment, s))
+		s.tracer().reporter.Send(append(s.segment, s))
 	}()
 	return s
 }

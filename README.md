@@ -42,6 +42,11 @@ You can also create tracer with sampling rate.
 tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r), go2sky.WithSampler(0.5))
 ```
 
+Also could customize correlation context config.
+```go
+tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r), go2sky.WithSampler(0.5), go2sky.WithCorrelation(3, 128))
+```
+
 ## Create span
 
 To create a span in a trace, we used the `Tracer` to start a new span. We indicate this as the root span because of 

@@ -39,8 +39,9 @@ type Tracer struct {
 	instance string
 	reporter Reporter
 	// 0 not init 1 init
-	initFlag int32
-	sampler  Sampler
+	initFlag    int32
+	sampler     Sampler
+	correlation *CorrelationConfig
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -56,6 +57,8 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 		service:  service,
 		initFlag: 0,
 	}
+	// default correlation config
+	t.correlation = &CorrelationConfig{MaxKeyCount: 3, MaxValueSize: 128}
 	for _, opt := range opts {
 		opt(t)
 	}

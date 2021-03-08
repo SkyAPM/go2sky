@@ -34,6 +34,11 @@ const (
 )
 
 func TestGetCorrelation_WithTracingContest(t *testing.T) {
+	verifyPutResult := func(ctx context.Context, key, value string, result bool, t *testing.T) {
+		if success := go2sky.PutCorrelation(ctx, key, value); success != result {
+			t.Errorf("put correlation result is not right: %t", success)
+		}
+	}
 	tests := []struct {
 		name string
 		// extract from context
@@ -41,7 +46,7 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 		// extract correlation context
 		extracted map[string]string
 		// put correlation
-		correlateContext map[string]string
+		customCase func(ctx context.Context, t *testing.T)
 		// after exported correaltion context
 		want map[string]string
 	}{
@@ -51,11 +56,9 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 				return "", nil
 			},
 			extracted: make(map[string]string),
-			correlateContext: func() map[string]string {
-				m := make(map[string]string)
-				m[correlationTestKey] = correlationTestValue
-				return m
-			}(),
+			customCase: func(ctx context.Context, t *testing.T) {
+				verifyPutResult(ctx, correlationTestKey, correlationTestValue, true, t)
+			},
 			want: func() map[string]string {
 				m := make(map[string]string)
 				m[correlationTestKey] = correlationTestValue
@@ -80,15 +83,49 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 				m["test1"] = "t1"
 				return m
 			}(),
-			correlateContext: func() map[string]string {
-				m := make(map[string]string)
-				m[correlationTestKey] = correlationTestValue
-				return m
-			}(),
+			customCase: func(ctx context.Context, t *testing.T) {
+				verifyPutResult(ctx, correlationTestKey, correlationTestValue, true, t)
+			},
 			want: func() map[string]string {
 				m := make(map[string]string)
 				m[correlationTestKey] = correlationTestValue
 				m["test1"] = "t1"
+				return m
+			}(),
+		},
+		{
+			name: "empty context with put bound judge",
+			extractor: func(headerKey string) (string, error) {
+				return "", nil
+			},
+			customCase: func(ctx context.Context, t *testing.T) {
+				// empty key
+				verifyPutResult(ctx, "", "123", false, t)
+
+				// remove key
+				verifyPutResult(ctx, correlationTestKey, correlationTestValue, true, t)
+				verifyPutResult(ctx, correlationTestKey, "", true, t)
+				if go2sky.GetCorrelation(ctx, correlationTestKey) != "" {
+					t.Errorf("correlation test key should be null")
+				}
+
+				// out of max value size
+				verifyPutResult(ctx, "test-key", "1234567890123456", false, t)
+
+				// out of key count
+				verifyPutResult(ctx, "test-key1", "123", true, t)
+				verifyPutResult(ctx, "test-key2", "123", true, t)
+				verifyPutResult(ctx, "test-key3", "123", true, t)
+				verifyPutResult(ctx, "test-key4", "123", false, t)
+
+				// exists key
+				verifyPutResult(ctx, "test-key1", "123456", true, t)
+			},
+			want: func() map[string]string {
+				m := make(map[string]string)
+				m["test-key1"] = "123456"
+				m["test-key2"] = "123"
+				m["test-key3"] = "123"
 				return m
 			}(),
 		},
@@ -102,25 +139,23 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			tracer, _ := go2sky.NewTracer("correlationTest", go2sky.WithReporter(r), go2sky.WithSampler(1))
+			tracer, _ := go2sky.NewTracer("correlationTest", go2sky.WithReporter(r), go2sky.WithSampler(1), go2sky.WithCorrelation(3, 10))
 
 			// create entry span from extractor
 			span, ctx, _ := tracer.CreateEntrySpan(ctx, "test-entry", tt.extractor)
 			defer span.End()
 
 			// verify extracted context is same
-			for key, value := range tt.extracted {
-				if go2sky.GetCorrelation(ctx, key) != value {
-					t.Errorf("error get previous correlation value, current is: %s", go2sky.GetCorrelation(ctx, key))
+			if tt.extracted != nil {
+				for key, value := range tt.extracted {
+					if go2sky.GetCorrelation(ctx, key) != value {
+						t.Errorf("error get previous correlation value, current is: %s", go2sky.GetCorrelation(ctx, key))
+					}
 				}
 			}
 
-			// put customize correlation context
-			for key, value := range tt.correlateContext {
-				if success := go2sky.PutCorrelation(ctx, key, value); !success {
-					t.Errorf("put correlation failed")
-				}
-			}
+			// custom case
+			tt.customCase(ctx, t)
 
 			// put sample local span
 			span, ctx, _ = tracer.CreateLocalSpan(ctx)
