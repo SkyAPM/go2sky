@@ -72,17 +72,19 @@ func Test_e2e(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
+	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func(key string) (string, error) {
 		return header, nil
 	})
 	if err != nil {
 		t.Error(err)
 	}
-	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(head string) error {
+	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(key, value string) error {
 		scx := propagation.SpanContext{}
-		err = scx.DecodeSW8(head)
-		if err != nil {
-			t.Fatal(err)
+		if key == propagation.Header {
+			err = scx.DecodeSW8(value)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 		return nil
 	})
@@ -115,7 +117,7 @@ func TestGRPCReporter_Close(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	entry, _, err := tracer.CreateEntrySpan(context.Background(), "/close", func() (s string, err error) {
+	entry, _, err := tracer.CreateEntrySpan(context.Background(), "/close", func(key string) (s string, err error) {
 		return header, nil
 	})
 	if err != nil {

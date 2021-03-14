@@ -156,11 +156,11 @@ func TestReportedSpan(t *testing.T) {
 	}
 }
 
-func MockExtractor() (c string, e error) {
+func MockExtractor(key string) (c string, e error) {
 	return
 }
 
-func MockInjector(string) (e error) {
+func MockInjector(key, value string) (e error) {
 	return
 }
 

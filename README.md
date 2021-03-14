@@ -42,6 +42,11 @@ You can also create tracer with sampling rate.
 tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r), go2sky.WithSampler(0.5))
 ```
 
+Also could customize correlation context config.
+```go
+tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r), go2sky.WithSampler(0.5), go2sky.WithCorrelation(3, 128))
+```
+
 ## Create span
 
 To create a span in a trace, we used the `Tracer` to start a new span. We indicate this as the root span because of 
@@ -65,6 +70,22 @@ A sub span created as the children of root span links to its parent with `Contex
 
 ```go
 subSpan, newCtx, err := tracer.CreateLocalSpan(ctx)
+```
+
+## Get correlation
+
+Get custom data from tracing context.
+
+```go
+value := go2sky.GetCorrelation(ctx, key)
+```
+
+## Put correlation
+
+Put custom data to tracing context.
+
+```go
+success := go2sky.PutCorrelation(ctx, key, value)
 ```
 
 ## End span
@@ -109,16 +130,16 @@ upstream service.
 
 ```go
 //Extract context from HTTP request header `sw8`
-span, ctx, err := tracer.CreateEntrySpan(r.Context(), "/api/login", func() (string, error) {
-		return r.Header.Get("sw8"), nil
+span, ctx, err := tracer.CreateEntrySpan(r.Context(), "/api/login", func(key string) (string, error) {
+		return r.Header.Get(key), nil
 })
 
 // Some operation
 ...
 
 // Inject context into HTTP request header `sw8`
-span, err := tracer.CreateExitSpan(req.Context(), "/service/validate", "tomcat-service:8080", func(header string) error {
-		req.Header.Set(propagation.Header, header)
+span, err := tracer.CreateExitSpan(req.Context(), "/service/validate", "tomcat-service:8080", func(key, value string) error {
+		req.Header.Set(key, value)
 		return nil
 })
 ```
