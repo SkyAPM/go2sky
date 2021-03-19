@@ -59,17 +59,26 @@ func TestTracer_EntryAndExit(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
+	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func(key string) (string, error) {
 		return "", nil
 	})
 	if err != nil {
 		t.Error(err)
 	}
-	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(head string) error {
+	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8787", func(key, value string) error {
 		scx := propagation.SpanContext{}
-		err = scx.DecodeSW8(head)
-		if err != nil {
-			t.Fail()
+		if key == propagation.Header {
+			err = scx.DecodeSW8(value)
+			if err != nil {
+				t.Fail()
+			}
+		}
+
+		if key == propagation.HeaderCorrelation {
+			err = scx.DecodeSW8Correlation(value)
+			if err != nil {
+				t.Fail()
+			}
 		}
 		return nil
 	})
@@ -89,7 +98,7 @@ func TestTracer_Entry(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	entrySpan, _, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
+	entrySpan, _, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func(key string) (string, error) {
 		return header, nil
 	})
 	if err != nil {
@@ -113,50 +122,59 @@ func TestTracer_EntryAndExitInTrace(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func() (string, error) {
+	entrySpan, ctx, err := tracer.CreateEntrySpan(context.Background(), "/rest/api", func(key string) (string, error) {
 		return header, nil
 	})
 	if err != nil {
 		t.Error(err)
 	}
-	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8786", func(head string) error {
-		sc := propagation.SpanContext{}
-		err = sc.DecodeSW8(head)
-		if err != nil {
-			t.Fail()
+	sc := propagation.SpanContext{}
+	exitSpan, err := tracer.CreateExitSpan(ctx, "/foo/bar", "foo.svc:8786", func(key, value string) error {
+		if key == propagation.Header {
+			err = sc.DecodeSW8(value)
+			if err != nil {
+				t.Fail()
+			}
 		}
 
-		if sc.Sample != sample {
-			t.Fail()
-		}
-
-		if sc.TraceID != traceID {
-			t.Fail()
-		}
-
-		if sc.ParentSpanID != 1 {
-			t.Fail()
-		}
-
-		if sc.ParentService != "service" {
-			t.Fail()
-		}
-
-		if sc.ParentServiceInstance != "instance" {
-			t.Fail()
-		}
-
-		if sc.ParentEndpoint != "/rest/api" {
-			t.Fail()
-		}
-
-		if sc.AddressUsedAtClient != "foo.svc:8786" {
-			t.Fail()
+		if key == propagation.HeaderCorrelation {
+			err = sc.DecodeSW8Correlation(value)
+			if err != nil {
+				t.Fail()
+			}
 		}
 		return nil
 	})
 	if err != nil {
 		t.Error(err)
+	}
+
+	if sc.Sample != sample {
+		t.Fail()
+	}
+
+	if sc.TraceID != traceID {
+		t.Fail()
+	}
+
+	if sc.ParentSpanID != 1 {
+		t.Fail()
+	}
+
+	if sc.ParentService != "service" {
+		t.Fail()
+	}
+
+	if sc.ParentServiceInstance != "instance" {
+		t.Fail()
+	}
+
+	if sc.ParentEndpoint != "/rest/api" {
+		t.Fail()
+	}
+
+	if sc.AddressUsedAtClient != "foo.svc:8786" {
+		t.Fail()
 	}
 	exitSpan.End()
 	entrySpan.End()

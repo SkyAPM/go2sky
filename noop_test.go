@@ -36,7 +36,7 @@ func TestCreateNoopSpan(t *testing.T) {
 		{
 			"Entry",
 			func() (Span, context.Context, error) {
-				return tracer.CreateEntrySpan(context.Background(), "entry", func() (s string, e error) {
+				return tracer.CreateEntrySpan(context.Background(), "entry", func(key string) (s string, e error) {
 					return "", nil
 				})
 			},
@@ -44,7 +44,7 @@ func TestCreateNoopSpan(t *testing.T) {
 		{
 			"Exit",
 			func() (s Span, c context.Context, err error) {
-				s, err = tracer.CreateExitSpan(context.Background(), "exit", "localhost:8080", func(header string) error {
+				s, err = tracer.CreateExitSpan(context.Background(), "exit", "localhost:8080", func(key, value string) error {
 					return nil
 				})
 				return
@@ -72,13 +72,13 @@ func TestCreateNoopSpan(t *testing.T) {
 
 func TestNoopSpanFromBegin(t *testing.T) {
 	tracer, _ := NewTracer("service")
-	span, ctx, _ := tracer.CreateEntrySpan(context.Background(), "entry", func() (s string, e error) {
+	span, ctx, _ := tracer.CreateEntrySpan(context.Background(), "entry", func(key string) (s string, e error) {
 		return "", nil
 	})
 	if _, ok := span.(*NoopSpan); !ok {
 		t.Error("Should create noop span")
 	}
-	exitSpan, _ := tracer.CreateExitSpan(ctx, "exit", "localhost:8080", func(header string) error {
+	exitSpan, _ := tracer.CreateExitSpan(ctx, "exit", "localhost:8080", func(key, value string) error {
 		return nil
 	})
 	if _, ok := exitSpan.(*NoopSpan); !ok {
