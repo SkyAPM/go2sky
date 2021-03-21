@@ -120,10 +120,8 @@ func (p *TestPlugin) Run(t *testing.T) {
 	// step4. validate expected data
 	p.validateExpectedData(ctx, t)
 
-	defer cancel()
-	defer func() {
-		for _, terminateFunc := range p.terminateFuncs {
-			terminateFunc()
-		}
-	}()
+	cancel()
+	for _, terminateFunc := range p.terminateFuncs {
+		terminateFunc()
+	}
 }

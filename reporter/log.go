@@ -33,7 +33,7 @@ type logReporter struct {
 	logger *log.Logger
 }
 
-func (lr *logReporter) Boot(service string, serviceInstance string) {
+func (lr *logReporter) Boot(_, _ string) {
 
 }
 

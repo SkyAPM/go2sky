@@ -35,7 +35,7 @@ func WithInstance(instance string) TracerOption {
 func WithSampler(samplingRate float64) TracerOption {
 	return func(t *Tracer) {
 		var sampler Sampler
-		//check const sampler
+		// check const sampler
 		if samplingRate <= 0 {
 			sampler = NewConstSampler(false)
 		} else if samplingRate >= 1.0 {

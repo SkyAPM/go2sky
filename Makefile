@@ -52,7 +52,7 @@ mock-gen:
 
 LINTER := bin/golangci-lint
 $(LINTER):
-	wget -q -O- https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.20.1
+	wget -q -O- https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.38.0
 
 .PHONY: lint
 lint: $(LINTER) ./golangci.yml  ## Run the linters

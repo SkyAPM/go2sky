@@ -31,6 +31,7 @@ import (
 	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
 	"github.com/SkyAPM/go2sky/reporter/grpc/management/mock_management"
+
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/credentials"
 )
@@ -47,6 +48,8 @@ const (
 
 	mockService         = "service"
 	mockServiceInstance = "serviceInstance"
+
+	org = "SkyAPM"
 )
 
 var header string
@@ -129,7 +132,7 @@ func TestGRPCReporter_Close(t *testing.T) {
 func TestGRPCReporterOption(t *testing.T) {
 	// props
 	instanceProps := make(map[string]string)
-	instanceProps["org"] = "SkyAPM"
+	instanceProps["org"] = org
 
 	// log
 	logger := log.New(os.Stderr, "WithLogger", log.LstdFlags)
@@ -172,7 +175,7 @@ func TestGRPCReporterOption(t *testing.T) {
 				if value, ok = reporter.instanceProps["org"]; !ok {
 					t.Error("error are not set instanceProps")
 				}
-				if value != "SkyAPM" {
+				if value != org {
 					t.Error("error are not set instanceProps")
 				}
 			},
@@ -217,7 +220,7 @@ func TestGRPCReporterOption(t *testing.T) {
 
 func TestGRPCReporter_reportInstanceProperties(t *testing.T) {
 	customProps := make(map[string]string)
-	customProps["org"] = "SkyAPM"
+	customProps["org"] = org
 	osProps := buildOSInfo()
 	for k, v := range customProps {
 		osProps = append(osProps, &common.KeyStringValuePair{

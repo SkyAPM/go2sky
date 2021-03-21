@@ -27,7 +27,7 @@ import (
 	"testing"
 )
 
-func (p *TestPlugin) validateExpectedData(ctx context.Context, t *testing.T) {
+func (p *TestPlugin) validateExpectedData(_ context.Context, t *testing.T) {
 	client := http.Client{}
 
 	expectedDataFile, err := os.Open(p.expectedDataFile)

@@ -199,7 +199,7 @@ func (rs *rootSegmentSpan) End() {
 	}()
 }
 
-func (rs *rootSegmentSpan) createRootSegmentContext(parent segmentSpan) (err error) {
+func (rs *rootSegmentSpan) createRootSegmentContext(_ segmentSpan) (err error) {
 	rs.SegmentID, err = idgen.GenerateGlobalID()
 	if err != nil {
 		return err

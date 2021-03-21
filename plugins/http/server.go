@@ -46,7 +46,7 @@ type handler struct {
 type ServerOption func(*handler)
 
 // Tag adds extra tag to server spans.
-func WithServerTag(key string, value string) ServerOption {
+func WithServerTag(key, value string) ServerOption {
 	return func(h *handler) {
 		if h.extraTags == nil {
 			h.extraTags = make(map[string]string)

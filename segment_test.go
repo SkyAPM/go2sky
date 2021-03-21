@@ -173,7 +173,7 @@ type MockReporter struct {
 	sync.Mutex
 }
 
-func (r *MockReporter) Boot(service string, serviceInstance string) {
+func (r *MockReporter) Boot(_, _ string) {
 
 }
 

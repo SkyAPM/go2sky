@@ -87,7 +87,7 @@ func TestTracer_CreateLocalSpanAsync(t *testing.T) {
 	}
 }
 
-func verifySpans(t *testing.T, span ReportedSpan, subSpan ReportedSpan) {
+func verifySpans(t *testing.T, span, subSpan ReportedSpan) {
 	if !reflect.DeepEqual(subSpan.Context().TraceID, span.Context().TraceID) {
 		t.Errorf("trace id is different %v %v", subSpan.Context().TraceID, span.Context().TraceID)
 	}
@@ -126,7 +126,7 @@ func TestTrace_TraceID(t *testing.T) {
 	verifyTraceID(t, span.(segmentSpan).context().TraceID, traceID)
 }
 
-func verifyTraceID(t *testing.T, expectTraceID string, actualTraceID string) {
+func verifyTraceID(t *testing.T, expectTraceID, actualTraceID string) {
 	if expectTraceID != actualTraceID {
 		t.Errorf("expectTraceID: %v, actualTraceID: %v", expectTraceID, actualTraceID)
 	}
@@ -146,7 +146,7 @@ func (r *mockRegisterReporter) Send(spans []ReportedSpan) {
 func (r *mockRegisterReporter) Close() {
 }
 
-func (r *mockRegisterReporter) Boot(service string, serviceInstance string) {
+func (r *mockRegisterReporter) Boot(_, _ string) {
 	r.wg = sync.WaitGroup{}
 	r.wg.Add(1)
 }

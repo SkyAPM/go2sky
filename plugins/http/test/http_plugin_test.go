@@ -38,7 +38,7 @@ func TestRun(t *testing.T) {
 				return err
 			}
 
-			listen, err := net.Listen("tcp", ":38080")
+			listen, err := net.Listen("tcp", "127.0.0.1:38080")
 			if err != nil {
 				return err
 			}

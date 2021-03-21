@@ -47,7 +47,7 @@ func WithClientOperationName(name string) ClientOption {
 }
 
 // WithClientTag adds extra tag to client spans.
-func WithClientTag(key string, value string) ClientOption {
+func WithClientTag(key, value string) ClientOption {
 	return func(c *ClientConfig) {
 		if c.extraTags == nil {
 			c.extraTags = make(map[string]string)

@@ -29,6 +29,7 @@ import (
 	"github.com/SkyAPM/go2sky/reporter/grpc/common"
 	agentv3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
@@ -71,7 +72,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	return r, nil
 }
 
-// GRPCReporterOption allows for functional options to adjust behaviour
+// GRPCReporterOption allows for functional options to adjust behavior
 // of a gRPC reporter to be created by NewGRPCReporter
 type GRPCReporterOption func(r *gRPCReporter)
 
@@ -132,7 +133,7 @@ type gRPCReporter struct {
 	creds credentials.TransportCredentials
 }
 
-func (r *gRPCReporter) Boot(service string, serviceInstance string) {
+func (r *gRPCReporter) Boot(service, serviceInstance string) {
 	r.service = service
 	r.serviceInstance = serviceInstance
 	r.initSendPipeline()
@@ -349,5 +350,5 @@ func buildOSInfo() (props []*common.KeyStringValuePair) {
 			props = append(props, kv)
 		}
 	}
-	return
+	return props
 }
