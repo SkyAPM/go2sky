@@ -181,7 +181,10 @@ func TestNewTracer(t *testing.T) {
 				service string
 				opts    []TracerOption
 			}{service: "test", opts: nil},
-			&Tracer{service: "test", sampler: NewConstSampler(true)},
+			&Tracer{service: "test", sampler: NewConstSampler(true), correlation: &CorrelationConfig{
+				MaxKeyCount:  3,
+				MaxValueSize: 128,
+			}},
 			false,
 		},
 	}
@@ -216,7 +219,7 @@ func TestTracer_CreateEntrySpan_Parameter(t *testing.T) {
 				ctx           context.Context
 				operationName string
 				extractor     propagation.Extractor
-			}{ctx: nil, operationName: "query type", extractor: func() (s string, e error) {
+			}{ctx: nil, operationName: "query type", extractor: func(key string) (s string, e error) {
 				return "", nil
 			}},
 			true,
@@ -227,7 +230,7 @@ func TestTracer_CreateEntrySpan_Parameter(t *testing.T) {
 				ctx           context.Context
 				operationName string
 				extractor     propagation.Extractor
-			}{ctx: context.Background(), operationName: "", extractor: func() (s string, e error) {
+			}{ctx: context.Background(), operationName: "", extractor: func(key string) (s string, e error) {
 				return "", nil
 			}},
 			true,
@@ -247,7 +250,7 @@ func TestTracer_CreateEntrySpan_Parameter(t *testing.T) {
 				ctx           context.Context
 				operationName string
 				extractor     propagation.Extractor
-			}{ctx: context.Background(), operationName: "query type", extractor: func() (s string, e error) {
+			}{ctx: context.Background(), operationName: "query type", extractor: func(key string) (s string, e error) {
 				return "", nil
 			}},
 			false,
@@ -320,7 +323,7 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 				operationName string
 				peer          string
 				injector      propagation.Injector
-			}{ctx: nil, operationName: "query type", peer: "localhost:8080", injector: func(header string) error {
+			}{ctx: nil, operationName: "query type", peer: "localhost:8080", injector: func(key, value string) error {
 				return nil
 			}},
 			true,
@@ -332,7 +335,7 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 				operationName string
 				peer          string
 				injector      propagation.Injector
-			}{ctx: context.Background(), operationName: "", peer: "localhost:8080", injector: func(header string) error {
+			}{ctx: context.Background(), operationName: "", peer: "localhost:8080", injector: func(key, value string) error {
 				return nil
 			}},
 			true,
@@ -344,7 +347,7 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 				operationName string
 				peer          string
 				injector      propagation.Injector
-			}{ctx: context.Background(), operationName: "query type", peer: "", injector: func(header string) error {
+			}{ctx: context.Background(), operationName: "query type", peer: "", injector: func(key, value string) error {
 				return nil
 			}},
 			true,
@@ -366,7 +369,7 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 				operationName string
 				peer          string
 				injector      propagation.Injector
-			}{ctx: context.Background(), operationName: "query type", peer: "localhost:8080", injector: func(header string) error {
+			}{ctx: context.Background(), operationName: "query type", peer: "localhost:8080", injector: func(key, value string) error {
 				return nil
 			}},
 			false,

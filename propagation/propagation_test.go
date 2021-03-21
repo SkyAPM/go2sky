@@ -17,7 +17,10 @@
 
 package propagation
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 type fields struct {
 	TraceID               string
@@ -148,6 +151,87 @@ func TestSpanContext_EncodeSW8(t *testing.T) {
 			}
 			if got := tc.EncodeSW8(); got != tt.want {
 				t.Errorf("EncodeSW8() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSpanContext_DecodeSw8Correlation(t *testing.T) {
+	tests := []struct {
+		name string
+		args args
+		data map[string]string
+	}{
+		{
+			name: "Empty Header",
+			args: args{header: ""},
+			data: make(map[string]string),
+		},
+		{
+			name: "Insufficient Header Entities",
+			args: args{header: "dGVzdC1rZXk="},
+			data: make(map[string]string),
+		},
+		{
+			name: "normal",
+			args: args{header: "dGVzdC1rZXk=:dGVzdC12YWx1ZQ=="},
+			data: func() map[string]string {
+				m := make(map[string]string)
+				m["test-key"] = "test-value"
+				return m
+			}(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tc := &SpanContext{}
+			if err := tc.DecodeSW8Correlation(tt.args.header); err != nil {
+				t.Errorf("DecodeSW8() error = %v, wantErr %v", err, err)
+			}
+			if !reflect.DeepEqual(tc.CorrelationContext, tt.data) {
+				t.Fail()
+			}
+		})
+	}
+}
+
+func TestSpanContext_EncodeSW8Correlation(t *testing.T) {
+	tests := []struct {
+		name string
+		data map[string]string
+		want string
+	}{
+		{
+			name: "empty",
+			data: make(map[string]string),
+			want: "",
+		},
+		{
+			name: "empty value",
+			data: func() map[string]string {
+				m := make(map[string]string)
+				m["test-key"] = ""
+				return m
+			}(),
+			want: "dGVzdC1rZXk=:",
+		},
+		{
+			name: "normal",
+			data: func() map[string]string {
+				m := make(map[string]string)
+				m["test-key"] = "test-value"
+				return m
+			}(),
+			want: "dGVzdC1rZXk=:dGVzdC12YWx1ZQ==",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tc := &SpanContext{
+				CorrelationContext: tt.data,
+			}
+			if got := tc.EncodeSW8Correlation(); got != tt.want {
+				t.Errorf("EncodeSW8Correlation() = %v, want %v", got, tt.want)
 			}
 		})
 	}

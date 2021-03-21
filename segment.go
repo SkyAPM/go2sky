@@ -50,15 +50,16 @@ func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segment
 
 // SegmentContext is the context in a segment
 type SegmentContext struct {
-	TraceID         string
-	SegmentID       string
-	SpanID          int32
-	ParentSpanID    int32
-	ParentSegmentID string
-	collect         chan<- ReportedSpan
-	refNum          *int32
-	spanIDGenerator *int32
-	FirstSpan       Span `json:"-"`
+	TraceID            string
+	SegmentID          string
+	SpanID             int32
+	ParentSpanID       int32
+	ParentSegmentID    string
+	collect            chan<- ReportedSpan
+	refNum             *int32
+	spanIDGenerator    *int32
+	FirstSpan          Span `json:"-"`
+	CorrelationContext map[string]string
 }
 
 // ReportedSpan is accessed by Reporter to load reported data
@@ -80,6 +81,7 @@ type ReportedSpan interface {
 type segmentSpan interface {
 	Span
 	context() SegmentContext
+	tracer() *Tracer
 	segmentRegister() bool
 }
 
@@ -150,6 +152,10 @@ func (s *segmentSpanImpl) context() SegmentContext {
 	return s.SegmentContext
 }
 
+func (s *segmentSpanImpl) tracer() *Tracer {
+	return s.defaultSpan.tracer
+}
+
 func (s *segmentSpanImpl) segmentRegister() bool {
 	for {
 		o := atomic.LoadInt32(s.Context().refNum)
@@ -167,17 +173,20 @@ func (s *segmentSpanImpl) createSegmentContext(parent segmentSpan) (err error) {
 		s.SegmentContext = SegmentContext{}
 		if len(s.defaultSpan.Refs) > 0 {
 			s.TraceID = s.defaultSpan.Refs[0].TraceID
+			s.CorrelationContext = s.defaultSpan.Refs[0].CorrelationContext
 		} else {
 			s.TraceID, err = idgen.GenerateGlobalID()
 			if err != nil {
 				return err
 			}
+			s.CorrelationContext = make(map[string]string)
 		}
 	} else {
 		s.SegmentContext = parent.context()
 		s.ParentSegmentID = s.SegmentID
 		s.ParentSpanID = s.SpanID
 		s.SpanID = atomic.AddInt32(s.Context().spanIDGenerator, 1)
+		s.CorrelationContext = parent.context().CorrelationContext
 	}
 	if s.SegmentContext.FirstSpan == nil {
 		s.SegmentContext.FirstSpan = s
@@ -237,7 +246,7 @@ func newSegmentRoot(segmentSpan *segmentSpanImpl) *rootSegmentSpan {
 				break
 			}
 		}
-		s.tracer.reporter.Send(append(s.segment, s))
+		s.tracer().reporter.Send(append(s.segment, s))
 	}()
 	return s
 }

@@ -25,7 +25,6 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
-	"github.com/SkyAPM/go2sky/propagation"
 	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
 )
 
@@ -81,8 +80,8 @@ func NewServerMiddleware(tracer *go2sky.Tracer, options ...ServerOption) (func(h
 
 // ServeHTTP implements http.Handler.
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	span, ctx, err := h.tracer.CreateEntrySpan(r.Context(), getOperationName(h.name, r), func() (string, error) {
-		return r.Header.Get(propagation.Header), nil
+	span, ctx, err := h.tracer.CreateEntrySpan(r.Context(), getOperationName(h.name, r), func(key string) (string, error) {
+		return r.Header.Get(key), nil
 	})
 	if err != nil {
 		if h.next != nil {
