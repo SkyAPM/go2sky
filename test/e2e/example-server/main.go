@@ -49,6 +49,7 @@ func init() {
 
 func ServerHTTP(writer http.ResponseWriter, request *http.Request) {
 	time.Sleep(time.Duration(500) * time.Millisecond)
+	go2sky.PutCorrelation(request.Context(), "MIDDLE_KEY", "go2sky")
 
 	clientReq, err := http.NewRequest(http.MethodPost, upstreamURL, nil)
 	if err != nil {
