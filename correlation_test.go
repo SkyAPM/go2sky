@@ -33,7 +33,7 @@ const (
 	correlationTestValue = "test-value"
 )
 
-func TestGetCorrelation_WithTracingContest(t *testing.T) {
+func TestGetCorrelation_WithTracingContext(t *testing.T) {
 	verifyPutResult := func(ctx context.Context, key, value string, result bool, t *testing.T) {
 		if success := go2sky.PutCorrelation(ctx, key, value); success != result {
 			t.Errorf("put correlation result is not right: %t", success)

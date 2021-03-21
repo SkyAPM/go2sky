@@ -27,7 +27,7 @@ linters-settings:
     threshold: 200
   goconst:
     min-len: 2
-    min-occurrences: 2
+    min-occurrences: 5
   depguard:
     list-type: blacklist
     packages:
@@ -49,7 +49,7 @@ linters-settings:
     disabled-checks:
       - ifElseChain
   funlen:
-    lines: 100
+    lines: 160
     statements: 50
   whitespace:
     multi-if: false

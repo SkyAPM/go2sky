@@ -29,7 +29,7 @@ import (
 	framework "github.com/SkyAPM/go2sky/test/framework/plugin"
 )
 
-func TestRun(t *testing.T) {
+func TestHTTPPlugin(t *testing.T) {
 	framework.CreateTestPlugin().
 		WithExpectedDataFile("expected.data.yml").
 		AddService("provider", func(ctx context.Context, tracer *go2sky.Tracer) error {
