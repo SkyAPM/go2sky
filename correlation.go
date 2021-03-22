@@ -48,6 +48,9 @@ func PutCorrelation(ctx context.Context, key, value string) bool {
 		return false
 	}
 	correlationContext := span.context().CorrelationContext
+	if correlationContext == nil {
+		return false
+	}
 	// remove key
 	if value == "" {
 		delete(correlationContext, key)

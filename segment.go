@@ -191,6 +191,9 @@ func (s *segmentSpanImpl) createSegmentContext(parent segmentSpan) (err error) {
 	if s.SegmentContext.FirstSpan == nil {
 		s.SegmentContext.FirstSpan = s
 	}
+	if s.CorrelationContext == nil {
+		s.CorrelationContext = make(map[string]string)
+	}
 	return
 }
 

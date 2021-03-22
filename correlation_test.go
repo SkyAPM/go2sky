@@ -94,6 +94,31 @@ func TestGetCorrelation_WithTracingContest(t *testing.T) {
 			}(),
 		},
 		{
+			name: "existing context with empty correlation",
+			extractor: func(headerKey string) (string, error) {
+				if headerKey == propagation.HeaderCorrelation {
+					return "", nil
+				}
+				if headerKey == propagation.Header {
+					return "1-MWYyZDRiZjQ3YmY3MTFlYWI3OTRhY2RlNDgwMDExMjI=-MWU3YzIwNGE3YmY3MTFlYWI4NThhY2RlNDgwMDExMjI=" +
+						"-0-c2VydmljZQ==-aW5zdGFuY2U=-cHJvcGFnYXRpb24=-cHJvcGFnYXRpb246NTU2Ng==", nil
+				}
+				return "", nil
+			},
+			extracted: func() map[string]string {
+				m := make(map[string]string)
+				return m
+			}(),
+			customCase: func(ctx context.Context, t *testing.T) {
+				verifyPutResult(ctx, correlationTestKey, correlationTestValue, true, t)
+			},
+			want: func() map[string]string {
+				m := make(map[string]string)
+				m[correlationTestKey] = correlationTestValue
+				return m
+			}(),
+		},
+		{
 			name: "empty context with put bound judge",
 			extractor: func(headerKey string) (string, error) {
 				return "", nil
