@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 type createFunc func() (Span, context.Context, error)
@@ -92,7 +92,7 @@ func TestNoopMethod(t *testing.T) {
 	n := NoopSpan{}
 	n.SetOperationName("aa")
 	n.SetPeer("localhost:1111")
-	n.SetSpanLayer(v3.SpanLayer_Database)
+	n.SetSpanLayer(agentv3.SpanLayer_Database)
 	n.SetComponent(2)
 	n.Tag("key", "value")
 	n.Log(time.Now(), "key", "value")
