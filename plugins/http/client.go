@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/SkyAPM/go2sky"
-	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 const componentIDGOHttpClient = 5005
@@ -105,7 +105,7 @@ func (t *transport) RoundTrip(req *http.Request) (res *http.Response, err error)
 	}
 	span.Tag(go2sky.TagHTTPMethod, req.Method)
 	span.Tag(go2sky.TagURL, req.URL.String())
-	span.SetSpanLayer(v3.SpanLayer_Http)
+	span.SetSpanLayer(agentv3.SpanLayer_Http)
 	res, err = t.delegated.RoundTrip(req)
 	if err != nil {
 		span.Error(time.Now(), err.Error())

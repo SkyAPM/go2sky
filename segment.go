@@ -23,8 +23,8 @@ import (
 	"github.com/SkyAPM/go2sky/internal/idgen"
 	"github.com/SkyAPM/go2sky/internal/tool"
 	"github.com/SkyAPM/go2sky/propagation"
-	common "skywalking.apache.org/repo/goapi/collect/common/v3"
-	agent "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 func newSegmentSpan(defaultSpan *defaultSpan, parentSpan segmentSpan) (s segmentSpan, err error) {
@@ -70,11 +70,11 @@ type ReportedSpan interface {
 	EndTime() int64
 	OperationName() string
 	Peer() string
-	SpanType() agent.SpanType
-	SpanLayer() agent.SpanLayer
+	SpanType() agentv3.SpanType
+	SpanLayer() agentv3.SpanLayer
 	IsError() bool
-	Tags() []*common.KeyStringValuePair
-	Logs() []*agent.Log
+	Tags() []*commonv3.KeyStringValuePair
+	Logs() []*agentv3.Log
 	ComponentID() int32
 }
 
@@ -124,11 +124,11 @@ func (s *segmentSpanImpl) Peer() string {
 	return s.defaultSpan.Peer
 }
 
-func (s *segmentSpanImpl) SpanType() agent.SpanType {
-	return agent.SpanType(s.defaultSpan.SpanType)
+func (s *segmentSpanImpl) SpanType() agentv3.SpanType {
+	return agentv3.SpanType(s.defaultSpan.SpanType)
 }
 
-func (s *segmentSpanImpl) SpanLayer() agent.SpanLayer {
+func (s *segmentSpanImpl) SpanLayer() agentv3.SpanLayer {
 	return s.defaultSpan.Layer
 }
 
@@ -136,11 +136,11 @@ func (s *segmentSpanImpl) IsError() bool {
 	return s.defaultSpan.IsError
 }
 
-func (s *segmentSpanImpl) Tags() []*common.KeyStringValuePair {
+func (s *segmentSpanImpl) Tags() []*commonv3.KeyStringValuePair {
 	return s.defaultSpan.Tags
 }
 
-func (s *segmentSpanImpl) Logs() []*agent.Log {
+func (s *segmentSpanImpl) Logs() []*agentv3.Log {
 	return s.defaultSpan.Logs
 }
 

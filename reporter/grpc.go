@@ -30,9 +30,9 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	common "skywalking.apache.org/repo/goapi/collect/common/v3"
-	agent "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
-	management "skywalking.apache.org/repo/goapi/collect/management/v3"
+	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
 )
 
 const (
@@ -46,7 +46,7 @@ const (
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
 	r := &gRPCReporter{
 		logger:        log.New(os.Stderr, defaultLogPrefix, log.LstdFlags),
-		sendCh:        make(chan *agent.SegmentObject, maxSendQueueSize),
+		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 	}
 	for _, o := range opts {
@@ -66,8 +66,8 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		return nil, err
 	}
 	r.conn = conn
-	r.traceClient = agent.NewTraceSegmentReportServiceClient(r.conn)
-	r.managementClient = management.NewManagementServiceClient(r.conn)
+	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
+	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
 	return r, nil
 }
 
@@ -92,7 +92,7 @@ func WithCheckInterval(interval time.Duration) GRPCReporterOption {
 // WithMaxSendQueueSize setup send span queue buffer length
 func WithMaxSendQueueSize(maxSendQueueSize int) GRPCReporterOption {
 	return func(r *gRPCReporter) {
-		r.sendCh = make(chan *agent.SegmentObject, maxSendQueueSize)
+		r.sendCh = make(chan *agentv3.SegmentObject, maxSendQueueSize)
 	}
 }
 
@@ -122,10 +122,10 @@ type gRPCReporter struct {
 	serviceInstance  string
 	instanceProps    map[string]string
 	logger           *log.Logger
-	sendCh           chan *agent.SegmentObject
+	sendCh           chan *agentv3.SegmentObject
 	conn             *grpc.ClientConn
-	traceClient      agent.TraceSegmentReportServiceClient
-	managementClient management.ManagementServiceClient
+	traceClient      agentv3.TraceSegmentReportServiceClient
+	managementClient managementv3.ManagementServiceClient
 	checkInterval    time.Duration
 
 	md    metadata.MD
@@ -146,16 +146,16 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 	}
 	rootSpan := spans[spanSize-1]
 	rootCtx := rootSpan.Context()
-	segmentObject := &agent.SegmentObject{
+	segmentObject := &agentv3.SegmentObject{
 		TraceId:         rootCtx.TraceID,
 		TraceSegmentId:  rootCtx.SegmentID,
-		Spans:           make([]*agent.SpanObject, spanSize),
+		Spans:           make([]*agentv3.SpanObject, spanSize),
 		Service:         r.service,
 		ServiceInstance: r.serviceInstance,
 	}
 	for i, s := range spans {
 		spanCtx := s.Context()
-		segmentObject.Spans[i] = &agent.SpanObject{
+		segmentObject.Spans[i] = &agentv3.SpanObject{
 			SpanId:        spanCtx.SpanID,
 			ParentSpanId:  spanCtx.ParentSpanID,
 			StartTime:     s.StartTime(),
@@ -169,10 +169,10 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 			Tags:          s.Tags(),
 			Logs:          s.Logs(),
 		}
-		srr := make([]*agent.SegmentReference, 0)
+		srr := make([]*agentv3.SegmentReference, 0)
 		if i == (spanSize-1) && spanCtx.ParentSpanID > -1 {
-			srr = append(srr, &agent.SegmentReference{
-				RefType:               agent.RefType_CrossThread,
+			srr = append(srr, &agentv3.SegmentReference{
+				RefType:               agentv3.RefType_CrossThread,
 				TraceId:               spanCtx.TraceID,
 				ParentTraceSegmentId:  spanCtx.ParentSegmentID,
 				ParentSpanId:          spanCtx.ParentSpanID,
@@ -182,8 +182,8 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 		}
 		if len(s.Refs()) > 0 {
 			for _, tc := range s.Refs() {
-				srr = append(srr, &agent.SegmentReference{
-					RefType:                  agent.RefType_CrossProcess,
+				srr = append(srr, &agentv3.SegmentReference{
+					RefType:                  agentv3.RefType_CrossProcess,
 					TraceId:                  spanCtx.TraceID,
 					ParentTraceSegmentId:     tc.ParentSegmentID,
 					ParentSpanId:             tc.ParentSpanID,
@@ -252,7 +252,7 @@ func (r *gRPCReporter) initSendPipeline() {
 	}()
 }
 
-func (r *gRPCReporter) closeStream(stream agent.TraceSegmentReportService_CollectClient) {
+func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_CollectClient) {
 	_, err := stream.CloseAndRecv()
 	if err != nil && err != io.EOF {
 		r.logger.Printf("send closing error %v", err)
@@ -263,13 +263,13 @@ func (r *gRPCReporter) reportInstanceProperties() (err error) {
 	props := buildOSInfo()
 	if r.instanceProps != nil {
 		for k, v := range r.instanceProps {
-			props = append(props, &common.KeyStringValuePair{
+			props = append(props, &commonv3.KeyStringValuePair{
 				Key:   k,
 				Value: v,
 			})
 		}
 	}
-	_, err = r.managementClient.ReportInstanceProperties(metadata.NewOutgoingContext(context.Background(), r.md), &management.InstanceProperties{
+	_, err = r.managementClient.ReportInstanceProperties(metadata.NewOutgoingContext(context.Background(), r.md), &managementv3.InstanceProperties{
 		Service:         r.service,
 		ServiceInstance: r.serviceInstance,
 		Properties:      props,
@@ -298,7 +298,7 @@ func (r *gRPCReporter) check() {
 				instancePropertiesSubmitted = true
 			}
 
-			_, err := r.managementClient.KeepAlive(metadata.NewOutgoingContext(context.Background(), r.md), &management.InstancePingPkg{
+			_, err := r.managementClient.KeepAlive(metadata.NewOutgoingContext(context.Background(), r.md), &managementv3.InstancePingPkg{
 				Service:         r.service,
 				ServiceInstance: r.serviceInstance,
 			})
@@ -311,29 +311,29 @@ func (r *gRPCReporter) check() {
 	}()
 }
 
-func buildOSInfo() (props []*common.KeyStringValuePair) {
+func buildOSInfo() (props []*commonv3.KeyStringValuePair) {
 	processNo := tool.ProcessNo()
 	if processNo != "" {
-		kv := &common.KeyStringValuePair{
+		kv := &commonv3.KeyStringValuePair{
 			Key:   "Process No.",
 			Value: processNo,
 		}
 		props = append(props, kv)
 	}
 
-	hostname := &common.KeyStringValuePair{
+	hostname := &commonv3.KeyStringValuePair{
 		Key:   "hostname",
 		Value: tool.HostName(),
 	}
 	props = append(props, hostname)
 
-	language := &common.KeyStringValuePair{
+	language := &commonv3.KeyStringValuePair{
 		Key:   "language",
 		Value: "go",
 	}
 	props = append(props, language)
 
-	osName := &common.KeyStringValuePair{
+	osName := &commonv3.KeyStringValuePair{
 		Key:   "OS Name",
 		Value: tool.OSName(),
 	}
@@ -342,7 +342,7 @@ func buildOSInfo() (props []*common.KeyStringValuePair) {
 	ipv4s := tool.AllIPV4()
 	if len(ipv4s) > 0 {
 		for _, ipv4 := range ipv4s {
-			kv := &common.KeyStringValuePair{
+			kv := &commonv3.KeyStringValuePair{
 				Key:   "ipv4",
 				Value: ipv4,
 			}

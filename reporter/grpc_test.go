@@ -30,9 +30,9 @@ import (
 	mock "github.com/SkyAPM/go2sky/reporter/grpc/management/mock_management"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/credentials"
-	common "skywalking.apache.org/repo/goapi/collect/common/v3"
-	agent "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
-	management "skywalking.apache.org/repo/goapi/collect/management/v3"
+	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
 )
 
 const (
@@ -67,7 +67,7 @@ func init() {
 
 func Test_e2e(t *testing.T) {
 	reporter := createGRPCReporter()
-	reporter.sendCh = make(chan *agent.SegmentObject, 10)
+	reporter.sendCh = make(chan *agentv3.SegmentObject, 10)
 	tracer, err := go2sky.NewTracer(mockService, go2sky.WithReporter(reporter), go2sky.WithInstance(mockServiceInstance))
 	if err != nil {
 		t.Error(err)
@@ -112,7 +112,7 @@ func Test_e2e(t *testing.T) {
 
 func TestGRPCReporter_Close(t *testing.T) {
 	reporter := createGRPCReporter()
-	reporter.sendCh = make(chan *agent.SegmentObject, 1)
+	reporter.sendCh = make(chan *agentv3.SegmentObject, 1)
 	tracer, err := go2sky.NewTracer(mockService, go2sky.WithReporter(reporter), go2sky.WithInstance(mockServiceInstance))
 	if err != nil {
 		t.Error(err)
@@ -222,12 +222,12 @@ func TestGRPCReporter_reportInstanceProperties(t *testing.T) {
 	customProps["org"] = "SkyAPM"
 	osProps := buildOSInfo()
 	for k, v := range customProps {
-		osProps = append(osProps, &common.KeyStringValuePair{
+		osProps = append(osProps, &commonv3.KeyStringValuePair{
 			Key:   k,
 			Value: v,
 		})
 	}
-	instanceProperties := &management.InstanceProperties{
+	instanceProperties := &managementv3.InstanceProperties{
 		Service:         mockService,
 		ServiceInstance: mockServiceInstance,
 		Properties:      osProps,
@@ -256,13 +256,13 @@ func createGRPCReporter() *gRPCReporter {
 }
 
 type instancePropertiesMatcher struct {
-	x *management.InstanceProperties
+	x *managementv3.InstanceProperties
 }
 
 func (e instancePropertiesMatcher) Matches(x interface{}) bool {
-	var props *management.InstanceProperties
+	var props *managementv3.InstanceProperties
 	var ok bool
-	if props, ok = x.(*management.InstanceProperties); !ok {
+	if props, ok = x.(*managementv3.InstanceProperties); !ok {
 		return ok
 	}
 	if props.Service != e.x.Service {
