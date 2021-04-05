@@ -25,7 +25,7 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 const (
@@ -95,7 +95,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	span.Tag(go2sky.TagHTTPMethod, r.Method)
 	span.Tag(go2sky.TagURL, fmt.Sprintf("%s%s", r.Host, r.URL.Path))
-	span.SetSpanLayer(v3.SpanLayer_Http)
+	span.SetSpanLayer(agentv3.SpanLayer_Http)
 
 	rww := &responseWriterWrapper{w: w, statusCode: 200}
 	defer func() {

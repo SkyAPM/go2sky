@@ -29,26 +29,14 @@ deps:
 test:
 	go test -v -race -cover -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v github.com/SkyAPM/go2sky/reporter/grpc | grep -v github.com/SkyAPM/go2sky/test`
 
-.PHONY: proto-gen
-proto-gen:
-	cd $(GRPC_PATH) && \
-	  protoc common/*.proto --go_out=plugins=grpc:$(GOPATH)/src && \
-	  cp ${GOPATH}/src/github.com/SkyAPM/go2sky/reporter/grpc/common/*.go common/
-	cd $(GRPC_PATH) && \
-      protoc language-agent/*.proto --go_out=plugins=grpc:$(GOPATH)/src && \
-      cp ${GOPATH}/src/github.com/SkyAPM/go2sky/reporter/grpc/language-agent/*.go language-agent/
-	cd $(GRPC_PATH) && \
-      protoc management/*.proto --go_out=plugins=grpc:$(GOPATH)/src && \
-      cp ${GOPATH}/src/github.com/SkyAPM/go2sky/reporter/grpc/management/*.go management/
-
 .PHONY: mock-gen
 mock-gen:
 	cd $(GRPC_PATH)/language-agent && \
     	  mkdir -p mock_trace && \
-    	  mockgen github.com/SkyAPM/go2sky/reporter/grpc/language-agent TraceSegmentReportServiceClient > mock_trace/Tracing.mock.go
+    	  mockgen skywalking.apache.org/repo/goapi/collect/language/agent/v3 TraceSegmentReportServiceClient > mock_trace/Tracing.mock.go
 	cd $(GRPC_PATH)/management && \
     	  mkdir -p mock_management && \
-    	  mockgen github.com/SkyAPM/go2sky/reporter/grpc/management ManagementServiceClient > mock_management/Management.mock.go
+    	  mockgen skywalking.apache.org/repo/goapi/collect/management/v3 ManagementServiceClient > mock_management/Management.mock.go
 
 LINTER := bin/golangci-lint
 $(LINTER):

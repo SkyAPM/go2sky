@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 func TestSyncSegment(t *testing.T) {
@@ -116,7 +116,7 @@ func TestReportedSpan(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	span.SetSpanLayer(v3.SpanLayer_Http)
+	span.SetSpanLayer(agentv3.SpanLayer_Http)
 	span.Error(time.Now(), "error")
 	span.Log(time.Now(), "log")
 	span.Tag(TagURL, "http://localhost:9999/exit")
@@ -136,10 +136,10 @@ func TestReportedSpan(t *testing.T) {
 	if reportSpan.Peer() != "localhost:9999" {
 		t.Error("error are not set peer")
 	}
-	if reportSpan.SpanType() != v3.SpanType_Exit {
+	if reportSpan.SpanType() != agentv3.SpanType_Exit {
 		t.Error("error are not set span type")
 	}
-	if reportSpan.SpanLayer() != v3.SpanLayer_Http {
+	if reportSpan.SpanLayer() != agentv3.SpanLayer_Http {
 		t.Error("error are not set span layer")
 	}
 	if !reportSpan.IsError() {

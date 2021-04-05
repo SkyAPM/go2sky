@@ -26,13 +26,13 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
-	agentv3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
-	managementv3 "github.com/SkyAPM/go2sky/reporter/grpc/management"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
 )
 
 const (
@@ -263,7 +263,7 @@ func (r *gRPCReporter) reportInstanceProperties() (err error) {
 	props := buildOSInfo()
 	if r.instanceProps != nil {
 		for k, v := range r.instanceProps {
-			props = append(props, &common.KeyStringValuePair{
+			props = append(props, &commonv3.KeyStringValuePair{
 				Key:   k,
 				Value: v,
 			})
@@ -311,29 +311,29 @@ func (r *gRPCReporter) check() {
 	}()
 }
 
-func buildOSInfo() (props []*common.KeyStringValuePair) {
+func buildOSInfo() (props []*commonv3.KeyStringValuePair) {
 	processNo := tool.ProcessNo()
 	if processNo != "" {
-		kv := &common.KeyStringValuePair{
+		kv := &commonv3.KeyStringValuePair{
 			Key:   "Process No.",
 			Value: processNo,
 		}
 		props = append(props, kv)
 	}
 
-	hostname := &common.KeyStringValuePair{
+	hostname := &commonv3.KeyStringValuePair{
 		Key:   "hostname",
 		Value: tool.HostName(),
 	}
 	props = append(props, hostname)
 
-	language := &common.KeyStringValuePair{
+	language := &commonv3.KeyStringValuePair{
 		Key:   "language",
 		Value: "go",
 	}
 	props = append(props, language)
 
-	osName := &common.KeyStringValuePair{
+	osName := &commonv3.KeyStringValuePair{
 		Key:   "OS Name",
 		Value: tool.OSName(),
 	}
@@ -342,7 +342,7 @@ func buildOSInfo() (props []*common.KeyStringValuePair) {
 	ipv4s := tool.AllIPV4()
 	if len(ipv4s) > 0 {
 		for _, ipv4 := range ipv4s {
-			kv := &common.KeyStringValuePair{
+			kv := &commonv3.KeyStringValuePair{
 				Key:   "ipv4",
 				Value: ipv4,
 			}

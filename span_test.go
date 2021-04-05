@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 func Test_defaultSpan_SetOperationName(t *testing.T) {
@@ -75,7 +75,7 @@ func Test_defaultSpan_SetPeer(t *testing.T) {
 
 func Test_defaultSp_SetSpanLayer(t *testing.T) {
 	type args struct {
-		layer v3.SpanLayer
+		layer agentv3.SpanLayer
 	}
 	tests := []struct {
 		name string
@@ -83,27 +83,27 @@ func Test_defaultSp_SetSpanLayer(t *testing.T) {
 	}{
 		{
 			"Set SpanLayer_Unknown",
-			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Unknown},
+			struct{ layer agentv3.SpanLayer }{layer: agentv3.SpanLayer_Unknown},
 		},
 		{
 			"Set SpanLayer_Database",
-			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Database},
+			struct{ layer agentv3.SpanLayer }{layer: agentv3.SpanLayer_Database},
 		},
 		{
 			"Set SpanLayer_RPCFramework",
-			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_RPCFramework},
+			struct{ layer agentv3.SpanLayer }{layer: agentv3.SpanLayer_RPCFramework},
 		},
 		{
 			"Set SpanLayer_Http",
-			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Http},
+			struct{ layer agentv3.SpanLayer }{layer: agentv3.SpanLayer_Http},
 		},
 		{
 			"Set SpanLayer_MQ",
-			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_MQ},
+			struct{ layer agentv3.SpanLayer }{layer: agentv3.SpanLayer_MQ},
 		},
 		{
 			"Set SpanLayer_Cache",
-			struct{ layer v3.SpanLayer }{layer: v3.SpanLayer_Cache},
+			struct{ layer agentv3.SpanLayer }{layer: agentv3.SpanLayer_Cache},
 		},
 	}
 	for _, tt := range tests {

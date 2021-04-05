@@ -23,8 +23,8 @@ import (
 
 	"github.com/SkyAPM/go2sky/internal/tool"
 	"github.com/SkyAPM/go2sky/propagation"
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
+	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 // SpanType is used to identify entry, exit and local
@@ -39,12 +39,12 @@ const (
 	SpanTypeLocal SpanType = 2
 )
 
-// Span interface as common span specification
+// Span interface as commonv3 span specification
 type Span interface {
 	SetOperationName(string)
 	GetOperationName() string
 	SetPeer(string)
-	SetSpanLayer(v3.SpanLayer)
+	SetSpanLayer(agentv3.SpanLayer)
 	SetComponent(int32)
 	Tag(Tag, string)
 	Log(time.Time, ...string)
@@ -69,10 +69,10 @@ type defaultSpan struct {
 	EndTime       time.Time
 	OperationName string
 	Peer          string
-	Layer         v3.SpanLayer
+	Layer         agentv3.SpanLayer
 	ComponentID   int32
-	Tags          []*common.KeyStringValuePair
-	Logs          []*v3.Log
+	Tags          []*commonv3.KeyStringValuePair
+	Logs          []*agentv3.Log
 	IsError       bool
 	SpanType      SpanType
 }
@@ -90,7 +90,7 @@ func (ds *defaultSpan) SetPeer(peer string) {
 	ds.Peer = peer
 }
 
-func (ds *defaultSpan) SetSpanLayer(layer v3.SpanLayer) {
+func (ds *defaultSpan) SetSpanLayer(layer agentv3.SpanLayer) {
 	ds.Layer = layer
 }
 
@@ -99,15 +99,15 @@ func (ds *defaultSpan) SetComponent(componentID int32) {
 }
 
 func (ds *defaultSpan) Tag(key Tag, value string) {
-	ds.Tags = append(ds.Tags, &common.KeyStringValuePair{Key: string(key), Value: value})
+	ds.Tags = append(ds.Tags, &commonv3.KeyStringValuePair{Key: string(key), Value: value})
 }
 
 func (ds *defaultSpan) Log(time time.Time, ll ...string) {
-	data := make([]*common.KeyStringValuePair, 0, int32(math.Ceil(float64(len(ll))/2.0)))
-	var kvp *common.KeyStringValuePair
+	data := make([]*commonv3.KeyStringValuePair, 0, int32(math.Ceil(float64(len(ll))/2.0)))
+	var kvp *commonv3.KeyStringValuePair
 	for i, l := range ll {
 		if i%2 == 0 {
-			kvp = &common.KeyStringValuePair{}
+			kvp = &commonv3.KeyStringValuePair{}
 			data = append(data, kvp)
 			kvp.Key = l
 		} else {
@@ -116,7 +116,7 @@ func (ds *defaultSpan) Log(time time.Time, ll ...string) {
 			}
 		}
 	}
-	ds.Logs = append(ds.Logs, &v3.Log{Time: tool.Millisecond(time), Data: data})
+	ds.Logs = append(ds.Logs, &agentv3.Log{Time: tool.Millisecond(time), Data: data})
 }
 
 func (ds *defaultSpan) Error(time time.Time, ll ...string) {
