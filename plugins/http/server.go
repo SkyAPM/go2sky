@@ -25,7 +25,7 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 const (

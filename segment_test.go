@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent"
+	v3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 func TestSyncSegment(t *testing.T) {
