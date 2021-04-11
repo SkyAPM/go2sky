@@ -18,7 +18,9 @@
 package go2sky
 
 import (
+	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 )
 
@@ -64,5 +66,57 @@ func NewRandomSampler(samplingRate float64) *RandomSampler {
 		samplingRate: samplingRate,
 	}
 	s.init()
+	return s
+}
+
+type DynamicSampler struct {
+	currentRate float64
+	defaultRate float64
+	sampler     Sampler
+}
+
+// IsSampled implements IsSampled() of Sampler.
+func (s *DynamicSampler) IsSampled(operation string) bool {
+	return s.sampler.IsSampled(operation)
+}
+
+func (s *DynamicSampler) Key() string {
+	return "agent.sample_rate"
+}
+
+func (s *DynamicSampler) Notify(eventType AgentConfigEventType, newValue string) {
+	if eventType == DELETED {
+		newValue = fmt.Sprintf("%f", s.defaultRate)
+	}
+	samplingRate, err := strconv.ParseFloat(newValue, 64)
+	if err != nil {
+		return
+	}
+
+	// change sampler
+	var sampler Sampler
+	if samplingRate <= 0 {
+		sampler = NewConstSampler(false)
+	} else if samplingRate >= 1.0 {
+		sampler = NewConstSampler(true)
+	} else {
+		sampler = NewRandomSampler(samplingRate)
+	}
+	s.sampler = sampler
+	s.currentRate = samplingRate
+}
+
+func (s *DynamicSampler) Value() string {
+	return fmt.Sprintf("%f", s.currentRate)
+}
+
+func NewDynamicSampler(samplingRate float64, tracer *Tracer) *DynamicSampler {
+	s := &DynamicSampler{
+		currentRate: samplingRate,
+		defaultRate: samplingRate,
+	}
+	s.Notify(MODIFY, fmt.Sprintf("%f", samplingRate))
+	// append watcher
+	tracer.dcsWatchers = append(tracer.dcsWatchers, s)
 	return s
 }

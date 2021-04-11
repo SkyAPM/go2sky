@@ -146,7 +146,7 @@ func (r *mockRegisterReporter) Send(spans []ReportedSpan) {
 func (r *mockRegisterReporter) Close() {
 }
 
-func (r *mockRegisterReporter) Boot(service string, serviceInstance string) {
+func (r *mockRegisterReporter) Boot(service string, serviceInstance string, dcsWatchers []AgentConfigChangeWatcher) {
 	r.wg = sync.WaitGroup{}
 	r.wg.Add(1)
 }
@@ -181,10 +181,16 @@ func TestNewTracer(t *testing.T) {
 				service string
 				opts    []TracerOption
 			}{service: "test", opts: nil},
-			&Tracer{service: "test", sampler: NewConstSampler(true), correlation: &CorrelationConfig{
-				MaxKeyCount:  3,
-				MaxValueSize: 128,
-			}},
+			&Tracer{service: "test",
+				sampler: &DynamicSampler{
+					sampler:     &ConstSampler{true},
+					currentRate: 1,
+					defaultRate: 1,
+				},
+				correlation: &CorrelationConfig{
+					MaxKeyCount:  3,
+					MaxValueSize: 128,
+				}, dcsWatchers: []AgentConfigChangeWatcher{&DynamicSampler{sampler: &ConstSampler{true}, currentRate: 1, defaultRate: 1}}},
 			false,
 		},
 	}
