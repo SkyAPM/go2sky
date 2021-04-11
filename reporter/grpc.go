@@ -62,9 +62,9 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		credsDialOption = grpc.WithInsecure()
 	}
 
-	// dcs default on
-	if r.dcsInterval == 0 {
-		r.dcsInterval = time.Second * 20
+	// cds default on
+	if r.cdsInterval == 0 {
+		r.cdsInterval = time.Second * 20
 	}
 
 	conn, err := grpc.Dial(serverAddr, credsDialOption)
@@ -74,9 +74,9 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r.conn = conn
 	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
 	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
-	if r.dcsInterval > 0 {
-		r.dcsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
-		r.dcsService = go2sky.NewConfigDiscoveryService()
+	if r.cdsInterval > 0 {
+		r.cdsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
+		r.cdsService = go2sky.NewConfigDiscoveryService()
 	}
 	return r, nil
 }
@@ -127,10 +127,10 @@ func WithAuthentication(auth string) GRPCReporterOption {
 	}
 }
 
-// WithDCS setup Configuration Discovery Service to dynamic config
-func WithDCS(interval time.Duration) GRPCReporterOption {
+// WithCDS setup Configuration Discovery Service to dynamic config
+func WithCDS(interval time.Duration) GRPCReporterOption {
 	return func(r *gRPCReporter) {
-		r.dcsInterval = interval
+		r.cdsInterval = interval
 	}
 }
 
@@ -144,20 +144,20 @@ type gRPCReporter struct {
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
 	checkInterval    time.Duration
-	dcsInterval      time.Duration
-	dcsService       *go2sky.ConfigDiscoveryService
-	dcsClient        configuration.ConfigurationDiscoveryServiceClient
+	cdsInterval      time.Duration
+	cdsService       *go2sky.ConfigDiscoveryService
+	cdsClient        configuration.ConfigurationDiscoveryServiceClient
 
 	md    metadata.MD
 	creds credentials.TransportCredentials
 }
 
-func (r *gRPCReporter) Boot(service string, serviceInstance string, dcsWatchers []go2sky.AgentConfigChangeWatcher) {
+func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 	r.service = service
 	r.serviceInstance = serviceInstance
 	r.initSendPipeline()
 	r.check()
-	r.initDCS(dcsWatchers)
+	r.initCDS(cdsWatchers)
 }
 
 func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
@@ -273,13 +273,13 @@ func (r *gRPCReporter) initSendPipeline() {
 	}()
 }
 
-func (r *gRPCReporter) initDCS(dcsWatchers []go2sky.AgentConfigChangeWatcher) {
-	if r.dcsClient == nil {
+func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
+	if r.cdsClient == nil {
 		return
 	}
 
 	// bind watchers
-	r.dcsService.BindWatchers(dcsWatchers)
+	r.cdsService.BindWatchers(cdsWatchers)
 
 	// fetch config
 	go func() {
@@ -288,9 +288,9 @@ func (r *gRPCReporter) initDCS(dcsWatchers []go2sky.AgentConfigChangeWatcher) {
 				break
 			}
 
-			configurations, err := r.dcsClient.FetchConfigurations(context.Background(), &configuration.ConfigurationSyncRequest{
+			configurations, err := r.cdsClient.FetchConfigurations(context.Background(), &configuration.ConfigurationSyncRequest{
 				Service: r.service,
-				Uuid:    r.dcsService.UUID,
+				Uuid:    r.cdsService.UUID,
 			})
 
 			if err != nil {
@@ -301,7 +301,7 @@ func (r *gRPCReporter) initDCS(dcsWatchers []go2sky.AgentConfigChangeWatcher) {
 
 			if len(configurations.GetCommands()) > 0 && configurations.GetCommands()[0].Command == "ConfigurationDiscoveryCommand" {
 				command := configurations.GetCommands()[0]
-				r.dcsService.HandleCommand(command)
+				r.cdsService.HandleCommand(command)
 			}
 
 			time.Sleep(r.checkInterval)

@@ -42,7 +42,7 @@ type Tracer struct {
 	initFlag    int32
 	sampler     Sampler
 	correlation *CorrelationConfig
-	dcsWatchers []AgentConfigChangeWatcher
+	cdsWatchers []AgentConfigChangeWatcher
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -76,7 +76,7 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 			}
 			t.instance = id + "@" + tool.IPV4()
 		}
-		t.reporter.Boot(t.service, t.instance, t.dcsWatchers)
+		t.reporter.Boot(t.service, t.instance, t.cdsWatchers)
 		t.initFlag = 1
 	}
 
@@ -202,7 +202,7 @@ var ctxKeyInstance = ctxKey{}
 
 //Reporter is a data transit specification
 type Reporter interface {
-	Boot(service string, serviceInstance string, dcsWatchers []AgentConfigChangeWatcher)
+	Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher)
 	Send(spans []ReportedSpan)
 	Close()
 }

@@ -186,7 +186,7 @@ type NoopReporter struct {
 	Spans []ReportedSpan
 }
 
-func (*NoopReporter) Boot(service string, serviceInstance string, dcsWatchers []AgentConfigChangeWatcher) {
+func (*NoopReporter) Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher) {
 }
 
 func (r *NoopReporter) Send(spans []ReportedSpan) {

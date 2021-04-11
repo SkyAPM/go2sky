@@ -207,11 +207,11 @@ func TestGRPCReporterOption(t *testing.T) {
 			},
 		},
 		{
-			name:   "with dcs",
-			option: WithDCS(10),
+			name:   "with cds",
+			option: WithCDS(10),
 			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
-				if reporter.dcsInterval != 10 {
-					t.Error("error dcs interval")
+				if reporter.cdsInterval != 10 {
+					t.Error("error cds interval")
 				}
 			},
 		},

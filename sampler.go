@@ -117,6 +117,6 @@ func NewDynamicSampler(samplingRate float64, tracer *Tracer) *DynamicSampler {
 	}
 	s.Notify(MODIFY, fmt.Sprintf("%f", samplingRate))
 	// append watcher
-	tracer.dcsWatchers = append(tracer.dcsWatchers, s)
+	tracer.cdsWatchers = append(tracer.cdsWatchers, s)
 	return s
 }

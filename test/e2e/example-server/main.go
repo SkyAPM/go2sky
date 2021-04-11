@@ -81,7 +81,7 @@ func main() {
 	var report go2sky.Reporter
 	var err error
 	if grpc {
-		report, err = reporter.NewGRPCReporter(oapServer, reporter.WithDCS(10))
+		report, err = reporter.NewGRPCReporter(oapServer, reporter.WithCDS(10))
 		if err != nil {
 			log.Fatalf("crate grpc reporter error: %v \n", err)
 		}

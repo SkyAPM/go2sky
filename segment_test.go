@@ -173,7 +173,7 @@ type MockReporter struct {
 	sync.Mutex
 }
 
-func (r *MockReporter) Boot(service string, serviceInstance string, dcsWatchers []AgentConfigChangeWatcher) {
+func (r *MockReporter) Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher) {
 
 }
 

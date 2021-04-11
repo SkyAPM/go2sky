@@ -155,7 +155,7 @@ They are defined as constant in root package with prefix `Tag`.
 
 Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugins).
 
-## DCS - Dynamic Config Service
+## CDS - Configuration Discovery Service
 
 Configuration Discovery Service provides the dynamic configuration for the agent, defined in gRPC and stored in the backend.
 
