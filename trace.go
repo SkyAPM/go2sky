@@ -42,6 +42,7 @@ type Tracer struct {
 	initFlag    int32
 	sampler     Sampler
 	correlation *CorrelationConfig
+	cdsWatchers []AgentConfigChangeWatcher
 }
 
 // TracerOption allows for functional options to adjust behaviour
@@ -63,6 +64,10 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 		opt(t)
 	}
 
+	if t.sampler == nil {
+		t.sampler = NewDynamicSampler(1, t)
+	}
+
 	if t.reporter != nil {
 		if t.instance == "" {
 			id, err := idgen.UUID()
@@ -71,13 +76,10 @@ func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error)
 			}
 			t.instance = id + "@" + tool.IPV4()
 		}
-		t.reporter.Boot(t.service, t.instance)
+		t.reporter.Boot(t.service, t.instance, t.cdsWatchers)
 		t.initFlag = 1
 	}
 
-	if t.sampler == nil {
-		t.sampler = NewConstSampler(true)
-	}
 	return t, nil
 }
 
@@ -200,7 +202,7 @@ var ctxKeyInstance = ctxKey{}
 
 //Reporter is a data transit specification
 type Reporter interface {
-	Boot(service string, serviceInstance string)
+	Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher)
 	Send(spans []ReportedSpan)
 	Close()
 }

@@ -155,5 +155,16 @@ They are defined as constant in root package with prefix `Tag`.
 
 Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugins).
 
+## CDS - Configuration Discovery Service
+
+Configuration Discovery Service provides the dynamic configuration for the agent, defined in gRPC and stored in the backend.
+
+## Available key(s) and value(s) in Golang Agent.
+Golang agent supports the following dynamic configurations.
+
+|        Config Key         |                      Value Description                       | Value Format Example  |
+| :-----------------------: | :----------------------------------------------------------: | :-------------------: |
+|     agent.sample_rate     |            The percentage of trace when sampling             |          0.1          |
+
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.

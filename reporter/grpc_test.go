@@ -206,6 +206,15 @@ func TestGRPCReporterOption(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:   "with cds",
+			option: WithCDS(10),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if reporter.cdsInterval != 10 {
+					t.Error("error cds interval")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

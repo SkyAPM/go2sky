@@ -10,3 +10,4 @@
 | `reporter.WithInstanceProps` |  setup service instance properties eg: org=SkyAPM |
 | `reporter.WithTransportCredentials` |  setup transport layer security |
 | `reporter.WithAuthentication` |  used Authentication for gRPC |
+| `reporter.WithCDS` |  setup CDS service |
