@@ -164,7 +164,7 @@ Golang agent supports the following dynamic configurations.
 
 |        Config Key         |                      Value Description                       | Value Format Example  |
 | :-----------------------: | :----------------------------------------------------------: | :-------------------: |
-|     agent.sample_rate     |            The percentage of trace when sampling             |          0.1          |
+|     agent.sample_rate     |The percentage of trace when sampling. It's `[0, 1]`, Same with `WithSampler` parameter.|0.1|
 
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.
