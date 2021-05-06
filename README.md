@@ -36,7 +36,7 @@ tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r))
 // tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r), go2sky.WithSampler(0.5))
 ```
 
-You can also create tracer with sampling rate.
+You can also create tracer with sampling rate. It supports decimals between **0-1** (two decimal places), representing the sampling percentage of trace.
 ```go
 ....
 tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r), go2sky.WithSampler(0.5))
