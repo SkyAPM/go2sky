@@ -35,6 +35,10 @@ jobs:
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
+      - name: Check License Header
+        uses: apache/skywalking-eyes@b49aa124edcd9460d3ecc6d03f1e71efe9be9732
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get dependencies
         run: make deps
       - name: Lint
