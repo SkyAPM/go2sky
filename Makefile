@@ -54,7 +54,3 @@ fix: $(LINTER)
 
 .PHONY: all
 all: test lint
-
-.PHONY: license
-license:
-	python3 tools/check-license-header.py
