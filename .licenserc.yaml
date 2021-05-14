@@ -14,32 +14,20 @@
 # limitations under the License.
 #
 
-linters:
-  enable:
-    - deadcode
-    - errcheck
-    - goconst
-    - golint
-    - ineffassign
-    - lll
-    - maligned
-    - misspell
-    - structcheck
-    - unconvert
-    - varcheck
-    - govet
-    - goimports
-    - prealloc
-    - unused
-    - staticcheck
-    - gosimple
-    - megacheck
-  disable:
-    - interfacer
-linters-settings:
-  lll:
-    line-length: 160
-  goconst:
-    min-occurrences: 4
-  govet:
-    check-shadowing: true
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: SkyAPM org
+
+  paths-ignore:
+    - '**/*.md'
+    - '**/go.mod'
+    - '**/go.sum'
+    - 'LICENSE'
+    - 'NOTICE'
+    - '.gitignore'
+    - '.github/ISSUE_TEMPLATE'
+    - 'reporter/grpc'
+    - 'test/test-data'
+
+  comment: on-failure
