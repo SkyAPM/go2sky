@@ -28,8 +28,6 @@ import (
 
 const (
 	errParameter = tool.Error("parameter are nil")
-	EmptyTraceID = "N/A"
-	NoopTraceID  = "[Ignored Trace]"
 )
 
 // Tracer is go2sky tracer implementation.
@@ -204,16 +202,4 @@ type Reporter interface {
 	Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher)
 	Send(spans []ReportedSpan)
 	Close()
-}
-
-func TraceID(ctx context.Context) string {
-	activeSpan := ctx.Value(ctxKeyInstance)
-	if activeSpan == nil {
-		return EmptyTraceID
-	}
-	span, ok := activeSpan.(segmentSpan)
-	if ok {
-		return span.context().TraceID
-	}
-	return NoopTraceID
 }

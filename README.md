@@ -56,14 +56,6 @@ passing `context.Background()`. We must also be sure to end this span, which wil
 span, ctx, err := tracer.CreateLocalSpan(context.Background())
 ```
 
-## Get Global TraceID
-
-Get the `TraceID` of the `activeSpan` in the `Context`.
-
-```go
-go2sky.TraceID(ctx)
-```
-
 ## Create a sub span
 
 A sub span created as the children of root span links to its parent with `Context`.
@@ -95,6 +87,46 @@ We must end the spans so they becomes available for sending to the backend by a 
 ```go
 subSpan.End()
 span.End()
+```
+
+## Get Global Service Name
+
+Get the `ServiceName` of the `activeSpan` in the `Context`.
+
+```go
+go2sky.ServiceName(ctx)
+```
+
+## Get Global Service Instance Name
+
+Get the `ServiceInstanceName` of the `activeSpan` in the `Context`.
+
+```go
+go2sky.ServiceInstanceName(ctx)
+```
+
+## Get Global TraceID
+
+Get the `TraceID` of the `activeSpan` in the `Context`.
+
+```go
+go2sky.TraceID(ctx)
+```
+
+## Get Global TraceSegmentID
+
+Get the `TraceSegmentID` of the `activeSpan` in the `Context`.
+
+```go
+go2sky.TraceSegmentID(ctx)
+```
+
+## Get Global SpanID
+
+Get the `SpanID` of the `activeSpan` in the `Context`.
+
+```go
+go2sky.SpanID(ctx)
 ```
 
 # Advanced Concepts
