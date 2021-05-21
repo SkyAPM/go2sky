@@ -183,6 +183,20 @@ may use them to aggregate metrics, generate topology map and etc.
 
 They are defined as constant in root package with prefix `Tag`.
 
+## Log
+
+We enhance trace integration capability, make trace context data into log. OAP server may link log and trace together. 
+
+```go
+// Get trace context data
+import go2skylog "github.com/SkyAPM/go2sky/log"
+logContext = go2skylog.FromContext(ctx)
+
+// Build context data string
+// Inject context string into log
+contextString := logContext.String()
+```
+
 ## Plugins
 
 Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugins).
