@@ -183,9 +183,9 @@ may use them to aggregate metrics, generate topology map and etc.
 
 They are defined as constant in root package with prefix `Tag`.
 
-## Log
+## Log x Trace context
 
-We enhance trace integration capability, make trace context data into log. OAP server may link log and trace together. 
+Inject trace context into the log text. SkyWalking LAL(log analysis language) engine could extract the context from the text and correlate trace and logs.
 
 ```go
 // Get trace context data
