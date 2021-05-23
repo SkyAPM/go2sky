@@ -194,6 +194,7 @@ logContext = go2skylog.FromContext(ctx)
 
 // Build context data string
 // Inject context string into log
+// Context format string: [$serviceName,$instanceName,$traceId,$traceSegmentId,$spanId]
 contextString := logContext.String()
 ```
 
