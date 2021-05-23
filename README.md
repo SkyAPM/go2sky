@@ -183,6 +183,21 @@ may use them to aggregate metrics, generate topology map and etc.
 
 They are defined as constant in root package with prefix `Tag`.
 
+## Log x Trace context
+
+Inject trace context into the log text. SkyWalking LAL(log analysis language) engine could extract the context from the text and correlate trace and logs.
+
+```go
+// Get trace context data
+import go2skylog "github.com/SkyAPM/go2sky/log"
+logContext = go2skylog.FromContext(ctx)
+
+// Build context data string
+// Inject context string into log
+// Context format string: [$serviceName,$instanceName,$traceId,$traceSegmentId,$spanId]
+contextString := logContext.String()
+```
+
 ## Plugins
 
 Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugins).
