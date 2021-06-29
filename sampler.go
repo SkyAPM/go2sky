@@ -52,7 +52,7 @@ type RandomSampler struct {
 
 // IsSampled implements IsSampled() of Sampler.
 func (s *RandomSampler) IsSampled(operation string) bool {
-	return s.threshold >= s.rand.Intn(100)
+	return s.threshold > s.rand.Intn(100)
 }
 
 func (s *RandomSampler) init() {

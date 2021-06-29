@@ -36,11 +36,18 @@ func TestConstSampler_IsSampled(t *testing.T) {
 
 func TestRandomSampler_IsSampled(t *testing.T) {
 	randomSampler := NewRandomSampler(0.5)
+	operationName := "op"
+
 	//just for test case
 	randomSampler.threshold = 100
-	operationName := "op"
 	sampled := randomSampler.IsSampled(operationName)
 	if sampled != true {
-		t.Errorf("const sampler should be sampled")
+		t.Errorf("random sampler should be sampled")
+	}
+
+	randomSampler.threshold = 0
+	sampled = randomSampler.IsSampled(operationName)
+	if sampled != false {
+		t.Errorf("random sampler should not be sampled")
 	}
 }
