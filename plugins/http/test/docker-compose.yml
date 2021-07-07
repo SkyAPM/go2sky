@@ -1,0 +1,76 @@
+#
+# Copyright 2021 SkyAPM org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: '2.1'
+
+services:
+  mockoap:
+    image: arugaldocker/skywalking-mock-collector:1.0.0
+    expose:
+      - 19876
+      - 12800
+    ports:
+      - 19876
+      - 12800
+    networks:
+      - e2e
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "http://127.0.0.1:12800/healthCheck" ]
+      interval: 5s
+      timeout: 60s
+      retries: 120
+  httpserver:
+    build:
+      context: ../../../
+      dockerfile: ./plugins/http/test/docker/Dockerfile.http_server
+    networks:
+      - e2e
+    expose:
+      - 8080
+    ports:
+      - 8080
+    healthcheck:
+      test: [ "CMD", "curl", "http://127.0.0.1:8080/healthCheck" ]
+      interval: 5s
+      timeout: 60s
+      retries: 120
+    depends_on:
+      mockoap:
+        condition: service_healthy
+  httpclient:
+    build:
+      context: ../../../
+      dockerfile: ./plugins/http/test/docker/Dockerfile.http_client
+    expose:
+      - 8080
+    ports:
+      - 8080
+    networks:
+      - e2e
+    healthcheck:
+      test: [ "CMD", "curl", "http://127.0.0.1:8080/healthCheck" ]
+      interval: 5s
+      timeout: 60s
+      retries: 120
+    depends_on:
+      mockoap:
+        condition: service_healthy
+      httpserver:
+        condition: service_healthy
+
+networks:
+  e2e:

@@ -106,7 +106,7 @@ func main() {
 
 	sm, err := httpPlugin.NewServerMiddleware(tracer)
 	if err != nil {
-		log.Fatalf("create client error %v \n", err)
+		log.Fatalf("create server middleware error %v \n", err)
 	}
 	err = http.ListenAndServe(listenAddr, sm(route))
 	if err != nil {

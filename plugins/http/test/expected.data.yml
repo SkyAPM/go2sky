@@ -1,0 +1,61 @@
+#
+# Copyright 2021 SkyAPM org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+segmentItems:
+  {{- range .segmentItems }}
+  - serviceName: {{ notEmpty .serviceName }}
+    segmentSize: {{ gt .segmentSize 0 }}
+    segments:
+      {{- range .segments }}
+      - segmentId: {{ notEmpty .segmentId }}
+        spans:
+        {{- range .spans }}
+        - operationName: {{ notEmpty .operationName }}
+          operationId: {{ .operationId }}
+          parentSpanId: {{ .parentSpanId }}
+          spanId: {{ .spanId }}
+          spanLayer: {{ notEmpty .spanLayer }}
+          startTime: {{ gt .startTime 0 }}
+          endTime: {{ gt .endTime 0 }}
+          componentId: {{ gt .componentId 0 }}
+          isError: {{ .isError }}
+          spanType: {{ notEmpty .spanType }}
+          peer: '{{ .peer }}'
+          skipAnalysis: {{ .skipAnalysis }}
+          {{- if .tags }}
+          tags:
+            {{- range .tags }}
+            - key: {{ .key }}
+              value: '{{ .value }}'
+          {{- end}}
+        {{- end}}
+        {{- if .refs }}
+          refs:
+          {{- range .refs }}
+          - parentEndpoint: {{ notEmpty .parentEndpoint }}
+            networkAddress: '{{ notEmpty .networkAddress }}'
+            refType: {{ notEmpty .refType }}
+            parentSpanId: {{ gt .parentSpanId -1}}
+            parentTraceSegmentId: {{ notEmpty .parentTraceSegmentId }}
+            parentServiceInstance: {{ notEmpty .parentServiceInstance }}
+            parentService: {{ notEmpty .parentService }}
+            traceId: {{ notEmpty .traceId }}
+        {{- end}}
+        {{- end}}
+        {{- end}}
+      {{- end}}
+  {{- end}}
+meterItems: []
