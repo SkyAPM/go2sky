@@ -16,21 +16,26 @@
 
 segmentItems:
   {{- range .segmentItems }}
-  - serviceName: {{ notEmpty .serviceName }}
+  {{- if or (eq .serviceName "http-client") (eq .serviceName "http-server")}}
+  - serviceName: {{ .serviceName }}
     segmentSize: {{ gt .segmentSize 0 }}
     segments:
       {{- range .segments }}
       - segmentId: {{ notEmpty .segmentId }}
         spans:
         {{- range .spans }}
-        - operationName: {{ notEmpty .operationName }}
+        {{- if or (eq .operationName "/GET/hello") (eq .operationName "/GET/healthCheck") }}
+        - operationName: {{ .operationName }}
+        {{- end}}
           operationId: {{ .operationId }}
           parentSpanId: {{ .parentSpanId }}
           spanId: {{ .spanId }}
-          spanLayer: {{ notEmpty .spanLayer }}
+          spanLayer: Http
           startTime: {{ gt .startTime 0 }}
           endTime: {{ gt .endTime 0 }}
-          componentId: {{ gt .componentId 0 }}
+        {{- if or (eq .componentId 5004) (eq .componentId 5005) }}
+          componentId: {{ .componentId }}
+        {{- end}}
           isError: {{ .isError }}
           spanType: {{ notEmpty .spanType }}
           peer: '{{ .peer }}'
@@ -38,24 +43,35 @@ segmentItems:
           {{- if .tags }}
           tags:
             {{- range .tags }}
-            - key: {{ .key }}
+            {{- if eq .key "http.method" }}
+            - key: http.method
+              value: GET
+            {{- end}}
+            {{- if eq .key "url" }}
+            - key: url
               value: '{{ .value }}'
+            {{- end}}
+            {{- if eq .key "status_code" }}
+            - key: status_code
+              value: '200'
+            {{- end}}
           {{- end}}
         {{- end}}
         {{- if .refs }}
           refs:
           {{- range .refs }}
-          - parentEndpoint: {{ notEmpty .parentEndpoint }}
-            networkAddress: '{{ notEmpty .networkAddress }}'
-            refType: {{ notEmpty .refType }}
+          - parentEndpoint: /GET/hello
+            networkAddress: 'httpserver:8080'
+            refType: CrossProcess
             parentSpanId: {{ gt .parentSpanId -1}}
             parentTraceSegmentId: {{ notEmpty .parentTraceSegmentId }}
             parentServiceInstance: {{ notEmpty .parentServiceInstance }}
-            parentService: {{ notEmpty .parentService }}
+            parentService: http-client
             traceId: {{ notEmpty .traceId }}
         {{- end}}
         {{- end}}
         {{- end}}
       {{- end}}
+  {{- end}}
   {{- end}}
 meterItems: []
