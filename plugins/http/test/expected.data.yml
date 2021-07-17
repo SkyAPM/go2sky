@@ -26,7 +26,6 @@ segmentItems:
         {{- range .spans }}
         {{- if or (eq .operationName "/GET/hello") (eq .operationName "/GET/healthCheck") }}
         - operationName: {{ .operationName }}
-        {{- end}}
           operationId: {{ .operationId }}
           parentSpanId: {{ .parentSpanId }}
           spanId: {{ .spanId }}
@@ -68,6 +67,7 @@ segmentItems:
             parentServiceInstance: {{ notEmpty .parentServiceInstance }}
             parentService: http-client
             traceId: {{ notEmpty .traceId }}
+        {{- end}}
         {{- end}}
         {{- end}}
         {{- end}}
