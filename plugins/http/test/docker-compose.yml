@@ -18,7 +18,7 @@ version: '2.1'
 
 services:
   mockoap:
-    image: arugaldocker/skywalking-mock-collector:1.0.0
+    image: ghcr.io/apache/skywalking-agent-test-tool/mock-collector:b01d4137fed862338d78a73b23435ccf425f9962
     expose:
       - 19876
       - 12800
