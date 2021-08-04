@@ -129,6 +129,10 @@ Get the `SpanID` of the `activeSpan` in the `Context`.
 go2sky.SpanID(ctx)
 ```
 
+## Reporter
+g2sky does not guarantee that finished segments are reported. Segments that
+finish just before the program exit might not be reported.
+
 # Advanced Concepts
 
 We cover some advanced topics about GO2Sky.
