@@ -358,3 +358,84 @@ func TestTracer_CreateExitSpan_Parameter(t *testing.T) {
 		})
 	}
 }
+
+func TestTracer_CreateExitSpanWithContext_Parameter(t *testing.T) {
+	type args struct {
+		ctx           context.Context
+		operationName string
+		peer          string
+		injector      propagation.Injector
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"context is nil",
+			args{
+				ctx:           nil,
+				operationName: "query type",
+				peer:          "localhost:8080",
+				injector:      func(key, value string) error { return nil },
+			},
+			true,
+		},
+		{
+			"OperationName is nil",
+			args{
+				ctx:           context.Background(),
+				operationName: "",
+				peer:          "localhost:8080",
+				injector:      func(key, value string) error { return nil },
+			},
+			true,
+		},
+		{
+			"Peer is nil",
+			args{
+				ctx:           context.Background(),
+				operationName: "query type",
+				peer:          "",
+				injector:      func(key, value string) error { return nil },
+			},
+			true,
+		},
+		{
+			"injector is nil",
+			args{
+				ctx:           context.Background(),
+				operationName: "",
+				peer:          "localhost:8080",
+				injector:      nil,
+			},
+			true,
+		},
+		{
+			"normal",
+			args{
+				ctx:           context.Background(),
+				operationName: "query type",
+				peer:          "localhost:8080",
+				injector:      func(key, value string) error { return nil },
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tracer := Tracer{}
+			_, ctx, err := tracer.CreateExitSpanWithContext(tt.args.ctx, tt.args.operationName, tt.args.peer, tt.args.injector)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Tracer.CreateExitSpan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if ctx != nil {
+				if id := SpanID(ctx); id != EmptySpanID {
+					t.Error("Span ID should not be Empty")
+					return
+				}
+			}
+		})
+	}
+}

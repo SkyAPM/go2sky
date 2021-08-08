@@ -97,9 +97,6 @@ func (t *Tracer) CreateEntrySpan(ctx context.Context, operationName string, extr
 		refSc = nil
 	}
 	s, nCtx, err = t.CreateLocalSpan(ctx, WithContext(refSc), WithSpanType(SpanTypeEntry), WithOperationName(operationName))
-	if err != nil {
-		return
-	}
 	return
 }
 
@@ -138,27 +135,33 @@ func (t *Tracer) CreateLocalSpan(ctx context.Context, opts ...SpanOption) (s Spa
 }
 
 // CreateExitSpan creates and starts an exit span for client
-func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer string, injector propagation.Injector) (Span, error) {
+func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer string, injector propagation.Injector) (s Span, err error) {
+	s, _, err = t.CreateExitSpanWithContext(ctx, operationName, peer, injector)
+	return
+}
+
+// CreateExitSpanWithContext creates and starts an exit span for client with context
+func (t *Tracer) CreateExitSpanWithContext(ctx context.Context, operationName string, peer string, injector propagation.Injector) (s Span, nCtx context.Context, err error) {
 	if ctx == nil || operationName == "" || peer == "" || injector == nil {
-		return nil, errParameter
+		return nil, nil, errParameter
 	}
-	if s, _ := t.createNoop(ctx); s != nil {
-		return s, nil
+	if s, nCtx = t.createNoop(ctx); s != nil {
+		return
 	}
-	s, _, err := t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit), WithOperationName(operationName))
+	s, nCtx, err = t.CreateLocalSpan(ctx, WithSpanType(SpanTypeExit), WithOperationName(operationName))
 	if err != nil {
-		return nil, err
+		return
 	}
 	noopSpan, ok := interface{}(s).(NoopSpan)
 	if ok {
 		// Ignored, there is no need to inject SW8 in the request header
-		return &noopSpan, nil
+		return &noopSpan, nCtx, nil
 	}
 	s.SetPeer(peer)
 	spanContext := &propagation.SpanContext{}
 	span, ok := s.(ReportedSpan)
 	if !ok {
-		return nil, errors.New("span type is wrong")
+		return nil, nil, errors.New("span type is wrong")
 	}
 
 	firstSpan := span.Context().FirstSpan
@@ -174,9 +177,9 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 
 	err = spanContext.Encode(injector)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return s, nil
+	return
 }
 
 func (t *Tracer) createNoop(ctx context.Context) (s Span, nCtx context.Context) {
