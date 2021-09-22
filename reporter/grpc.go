@@ -232,8 +232,9 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 func (r *gRPCReporter) Close() {
 	if r.sendCh != nil {
 		close(r.sendCh)
+	} else {
+		r.closeGRPCConn()
 	}
-	r.closeGRPCConn()
 }
 
 func (r *gRPCReporter) closeGRPCConn() {
