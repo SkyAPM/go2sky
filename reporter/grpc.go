@@ -149,6 +149,9 @@ type gRPCReporter struct {
 
 	md    metadata.MD
 	creds credentials.TransportCredentials
+
+	// bootFlag is set if Boot be executed
+	bootFlag bool
 }
 
 func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers []go2sky.AgentConfigChangeWatcher) {
@@ -157,6 +160,7 @@ func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers 
 	r.initSendPipeline()
 	r.check()
 	r.initCDS(cdsWatchers)
+	r.bootFlag = true
 }
 
 func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
@@ -230,10 +234,11 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 }
 
 func (r *gRPCReporter) Close() {
-	if r.sendCh != nil {
+	if r.sendCh != nil && r.bootFlag {
 		close(r.sendCh)
+	} else {
+		r.closeGRPCConn()
 	}
-	r.closeGRPCConn()
 }
 
 func (r *gRPCReporter) closeGRPCConn() {

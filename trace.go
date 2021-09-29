@@ -141,7 +141,8 @@ func (t *Tracer) CreateExitSpan(ctx context.Context, operationName string, peer 
 }
 
 // CreateExitSpanWithContext creates and starts an exit span for client with context
-func (t *Tracer) CreateExitSpanWithContext(ctx context.Context, operationName string, peer string, injector propagation.Injector) (s Span, nCtx context.Context, err error) {
+func (t *Tracer) CreateExitSpanWithContext(ctx context.Context, operationName string, peer string,
+	injector propagation.Injector) (s Span, nCtx context.Context, err error) {
 	if ctx == nil || operationName == "" || peer == "" || injector == nil {
 		return nil, nil, errParameter
 	}
