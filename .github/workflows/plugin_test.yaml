@@ -26,10 +26,18 @@ jobs:
   PluginsTest:
     name: Plugin
     runs-on: ubuntu-latest
+    env:
+      e2e_file: "plugins/http/test/http_plugin_test.yaml"
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
       - uses: apache/skywalking-infra-e2e@main
         with:
-          e2e-file: plugins/http/test/http_plugin_test.yaml
+          e2e-file: ${e2e_file}
+      - name: Show Container Logs
+        if: ${{ failure() }}
+        run: docker ps -a | grep -v CONTAINER | awk '{print $1}' | xargs -i docker logs {}
+      - name: Cleanup
+        if: ${{ failure() }}
+        run: e2e cleanup -c ${e2e_file}
