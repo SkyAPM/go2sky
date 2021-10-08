@@ -74,10 +74,6 @@ func main() {
 		_, _ = writer.Write(body)
 	})
 
-	route.HandleFunc("/healthCheck", func(writer http.ResponseWriter, request *http.Request) {
-		_, _ = writer.Write([]byte("Success"))
-	})
-
 	sm, err := httpPlugin.NewServerMiddleware(tracer)
 	if err != nil {
 		log.Fatalf("create client error %v \n", err)
