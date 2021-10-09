@@ -16,15 +16,14 @@
 
 segmentItems:
   {{- contains .segmentItems }}
-  - serviceName: {{ notEmpty .serviceName }}
+  - serviceName: http-client
     segmentSize: {{ gt .segmentSize 0 }}
     segments:
     {{- contains .segments }}
     - segmentId: {{ notEmpty .segmentId }}
       spans:
       {{- contains .spans }}
-      {{- if and (eq .operationName "/GET/hello") (eq .spanType "Exit") }}
-      - operationName: /GET/hello
+      - operationName: /GET/helloserver
         operationId: 0
         isError: false
         skipAnalysis: false
@@ -45,8 +44,6 @@ segmentItems:
           - key: status_code
             value: '200'
         {{- end }}
-      {{- end }}
-      {{- if and (eq .operationName "/GET/hello") (eq .spanType "Entry") }}
       - operationName: /GET/hello
         operationId: 0
         isError: false
@@ -69,7 +66,14 @@ segmentItems:
             value: '200'
         {{- end }}
       {{- end }}
-      {{- if eq .operationName "/GET/helloserver" }}
+    {{- end }}
+  - serviceName: http-server
+    segmentSize: {{ gt .segmentSize 0 }}
+    segments:
+    {{- contains .segments }}
+    - segmentId: {{ notEmpty .segmentId }}
+      spans:
+      {{- contains .spans }}
       - operationName: /GET/helloserver
         operationId: 0
         parentSpanId: -1
@@ -102,7 +106,6 @@ segmentItems:
             parentService: http-client
             traceId: {{ notEmpty .traceId }}
           {{- end}}
-      {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
