@@ -24,7 +24,6 @@ segmentItems:
       spans:
       {{- contains .spans }}
       - operationName: /GET/helloserver
-        operationId: 0
         isError: false
         skipAnalysis: false
         spanLayer: Http
@@ -45,7 +44,6 @@ segmentItems:
             value: '200'
         {{- end }}
       - operationName: /GET/hello
-        operationId: 0
         isError: false
         skipAnalysis: false
         spanLayer: Http
@@ -75,7 +73,6 @@ segmentItems:
       spans:
       {{- contains .spans }}
       - operationName: /GET/helloserver
-        operationId: 0
         parentSpanId: -1
         spanId: 0
         spanLayer: Http
