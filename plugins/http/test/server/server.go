@@ -42,7 +42,7 @@ func main() {
 	}
 
 	route := http.NewServeMux()
-	route.HandleFunc("/hello", func(writer http.ResponseWriter, request *http.Request) {
+	route.HandleFunc("/helloserver", func(writer http.ResponseWriter, request *http.Request) {
 		_, _ = writer.Write([]byte("Hello World!"))
 	})
 
