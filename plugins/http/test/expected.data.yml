@@ -15,92 +15,64 @@
 #
 
 segmentItems:
-  {{- range .segmentItems }}
-  {{- if eq .serviceName "http-client" }}
+  {{- contains .segmentItems }}
   - serviceName: http-client
     segmentSize: {{ gt .segmentSize 0 }}
     segments:
-    {{- range .segments }}
+    {{- contains .segments }}
     - segmentId: {{ notEmpty .segmentId }}
       spans:
-      {{- range .spans}}
-      {{- if eq .operationName "/GET/healthCheck" }}
-      - operationName: /GET/healthCheck
-        operationId: 0
-        parentSpanId: -1
-        spanId: 0
+      {{- contains .spans }}
+      - operationName: /GET/helloserver
+        isError: false
+        skipAnalysis: false
         spanLayer: Http
         startTime: {{ gt .startTime 0 }}
         endTime: {{ gt .endTime 0 }}
-        componentId: 5004
-        isError: false
-        spanType: Entry
-        peer: ''
-        skipAnalysis: false
-        tags:
-        - key: http.method
-          value: GET
-        - key: url
-          value: '127.0.0.1:8080/healthCheck'
-        - key: status_code
-          value: '200'
-      {{- end}}
-      {{- if and (eq .operationName "/GET/hello") (eq .spanType "Exit") }}
-      - operationName: /GET/hello
-        operationId: 0
         parentSpanId: 0
         spanId: 1
-        spanLayer: Http
-        startTime: {{ gt .startTime 0 }}
-        endTime: {{ gt .endTime 0 }}
         componentId: 5005
-        isError: false
         spanType: Exit
         peer: httpserver:8080
-        skipAnalysis: false
         tags:
-        - key: http.method
-          value: GET
-        - key: url
-          value: 'http://httpserver:8080/hello'
-        - key: status_code
-          value: '200'
-      {{- end}}
-      {{- if and (eq .operationName "/GET/hello") (eq .spanType "Entry") }}
+        {{- contains .tags }}
+          - key: http.method
+            value: GET
+          - key: url
+            value: {{ .value }}
+          - key: status_code
+            value: '200'
+        {{- end }}
       - operationName: /GET/hello
-        operationId: 0
-        parentSpanId: -1
-        spanId: 0
+        isError: false
+        skipAnalysis: false
         spanLayer: Http
         startTime: {{ gt .startTime 0 }}
         endTime: {{ gt .endTime 0 }}
+        parentSpanId: -1
+        spanId: 0
         componentId: 5004
-        isError: false
         spanType: Entry
         peer: ''
-        skipAnalysis: false
         tags:
-        - key: http.method
-          value: GET
-        - key: url
-          value: {{ notEmpty (index .tags 1).value }}
-        - key: status_code
-          value: '200'
-      {{- end}}
-      {{- end}}
-    {{- end}}
-  {{- end}}
-  {{- if eq .serviceName "http-server" }}
+        {{- contains .tags }}
+          - key: http.method
+            value: GET
+          - key: url
+            value: {{ .value }}
+          - key: status_code
+            value: '200'
+        {{- end }}
+      {{- end }}
+    {{- end }}
   - serviceName: http-server
     segmentSize: {{ gt .segmentSize 0 }}
     segments:
-    {{- range .segments }}
+    {{- contains .segments }}
     - segmentId: {{ notEmpty .segmentId }}
       spans:
-      {{- range .spans}}
-      {{- if eq .operationName "/GET/healthCheck" }}
-      - operationName: /GET/healthCheck
-        operationId: 0
+      {{- contains .spans }}
+      - operationName: /GET/helloserver
         parentSpanId: -1
         spanId: 0
         spanLayer: Http
@@ -112,45 +84,26 @@ segmentItems:
         peer: ''
         skipAnalysis: false
         tags:
+        {{- contains .tags }}
         - key: http.method
           value: GET
         - key: url
-          value: '127.0.0.1:8080/healthCheck'
+          value: {{ .value }}
         - key: status_code
           value: '200'
-      {{- end }}
-      {{- if eq .operationName "/GET/hello" }}
-      - operationName: /GET/hello
-        operationId: 0
-        parentSpanId: -1
-        spanId: 0
-        spanLayer: Http
-        startTime: {{ gt .startTime 0 }}
-        endTime: {{ gt .endTime 0 }}
-        componentId: 5004
-        isError: false
-        spanType: Entry
-        peer: ''
-        skipAnalysis: false
-        tags:
-        - key: http.method
-          value: GET
-        - key: url
-          value: 'httpserver:8080/hello'
-        - key: status_code
-          value: '200'
+        {{- end }}
         refs:
-        - parentEndpoint: /GET/hello
-          networkAddress: 'httpserver:8080'
-          refType: CrossProcess
-          parentSpanId: 1
-          parentTraceSegmentId: {{ notEmpty (index .refs 0).parentTraceSegmentId }}
-          parentServiceInstance: {{ notEmpty (index .refs 0).parentServiceInstance }}
-          parentService: http-client
-          traceId: {{ notEmpty (index .refs 0).traceId }}
-      {{- end }}
+          {{- contains .refs }}
+          - parentEndpoint: /GET/hello
+            networkAddress: 'httpserver:8080'
+            refType: CrossProcess
+            parentSpanId: 1
+            parentTraceSegmentId: {{ notEmpty .parentTraceSegmentId }}
+            parentServiceInstance: {{ notEmpty .parentServiceInstance }}
+            parentService: http-client
+            traceId: {{ notEmpty .traceId }}
+          {{- end}}
       {{- end }}
     {{- end }}
-  {{- end }}
   {{- end }}
 meterItems: []

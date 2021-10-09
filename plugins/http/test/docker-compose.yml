@@ -18,7 +18,7 @@ version: '2.1'
 
 services:
   mockoap:
-    image: ghcr.io/apache/skywalking-agent-test-tool/mock-collector:b01d4137fed862338d78a73b23435ccf425f9962
+    image: ghcr.io/apache/skywalking-agent-test-tool/mock-collector:5acb890f225ca37ee60675ce3e330545e23e3cbc
     expose:
       - 19876
       - 12800
@@ -44,7 +44,7 @@ services:
     ports:
       - 8080
     healthcheck:
-      test: [ "CMD", "curl", "http://127.0.0.1:8080/healthCheck" ]
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
       interval: 5s
       timeout: 60s
       retries: 120
@@ -62,7 +62,7 @@ services:
     networks:
       - e2e
     healthcheck:
-      test: [ "CMD", "curl", "http://127.0.0.1:8080/healthCheck" ]
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
       interval: 5s
       timeout: 60s
       retries: 120
@@ -71,6 +71,5 @@ services:
         condition: service_healthy
       httpserver:
         condition: service_healthy
-
 networks:
   e2e:

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM golang:1.12
+FROM golang:1.16
 
 ADD . /go2sky
 WORKDIR /go2sky

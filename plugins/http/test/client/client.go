@@ -29,7 +29,7 @@ import (
 const (
 	oap         = "mockoap:19876"
 	service     = "http-client"
-	upstreamURL = "http://httpserver:8080/hello"
+	upstreamURL = "http://httpserver:8080/helloserver"
 )
 
 func main() {
@@ -72,10 +72,6 @@ func main() {
 		}
 		writer.WriteHeader(res.StatusCode)
 		_, _ = writer.Write(body)
-	})
-
-	route.HandleFunc("/healthCheck", func(writer http.ResponseWriter, request *http.Request) {
-		_, _ = writer.Write([]byte("Success"))
 	})
 
 	sm, err := httpPlugin.NewServerMiddleware(tracer)
