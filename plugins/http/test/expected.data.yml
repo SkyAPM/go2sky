@@ -25,6 +25,7 @@ segmentItems:
         spans:
         {{- contains .spans}}
         - operationName: /GET/hello
+          operationId: 0
           isError: false
           skipAnalysis: false
           spanLayer: Http
