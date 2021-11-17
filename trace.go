@@ -153,10 +153,10 @@ func (t *Tracer) CreateExitSpanWithContext(ctx context.Context, operationName st
 	if err != nil {
 		return
 	}
-	noopSpan, ok := interface{}(s).(NoopSpan)
+	noopSpan, ok := interface{}(s).(*NoopSpan)
 	if ok {
 		// Ignored, there is no need to inject SW8 in the request header
-		return &noopSpan, nCtx, nil
+		return noopSpan, nCtx, nil
 	}
 	s.SetPeer(peer)
 	spanContext := &propagation.SpanContext{}
