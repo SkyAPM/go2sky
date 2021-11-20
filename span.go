@@ -151,7 +151,7 @@ const (
 	TagDBType          Tag = "db.type"
 	TagDBInstance      Tag = "db.instance"
 	TagDBStatement     Tag = "db.statement"
-	TagDbSqlParameters Tag = "db.sql.parameters"
+	TagDBSqlParameters Tag = "db.sql.parameters"
 	TagMQQueue         Tag = "mq.queue"
 	TagMQBroker        Tag = "mq.broker"
 	TagMQTopic         Tag = "mq.topic"
