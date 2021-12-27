@@ -51,6 +51,7 @@ type Span interface {
 	End()
 	IsEntry() bool
 	IsExit() bool
+	IsValid() bool
 }
 
 func newLocalSpan(t *Tracer) *defaultSpan {
@@ -133,6 +134,10 @@ func (ds *defaultSpan) IsEntry() bool {
 
 func (ds *defaultSpan) IsExit() bool {
 	return ds.SpanType == SpanTypeExit
+}
+
+func (ds *defaultSpan) IsValid() bool {
+	return ds.EndTime.IsZero()
 }
 
 // SpanOption allows for functional options to adjust behaviour

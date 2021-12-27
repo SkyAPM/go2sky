@@ -60,3 +60,7 @@ func (*NoopSpan) IsEntry() bool {
 func (*NoopSpan) IsExit() bool {
 	return false
 }
+
+func (*NoopSpan) IsValid() bool {
+	return false
+}
