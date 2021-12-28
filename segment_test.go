@@ -42,6 +42,15 @@ func TestSyncSegment(t *testing.T) {
 	if err := mr.Verify(2); err != nil {
 		t.Error(err)
 	}
+
+	if eSpan.IsValid() {
+		t.Error("exit span is still valid")
+	}
+	eSpan.End() // not be panic
+	if span.IsValid() {
+		t.Error("entry span is still valid")
+	}
+	span.End() // not be panic
 }
 
 func TestAsyncSingleSegment(t *testing.T) {

@@ -90,10 +90,16 @@ func TestNoopSpanFromBegin(t *testing.T) {
 func TestNoopMethod(t *testing.T) {
 	n := NoopSpan{}
 	n.SetOperationName("aa")
+	if n.GetOperationName() != "" {
+		t.Error("operation name should be void string")
+	}
 	n.SetPeer("localhost:1111")
 	n.SetSpanLayer(agentv3.SpanLayer_Database)
 	n.SetComponent(2)
 	n.Tag("key", "value")
 	n.Log(time.Now(), "key", "value")
 	n.Error(time.Now(), "key", "value")
+	if n.IsValid() {
+		t.Error("noop span is valid")
+	}
 }
