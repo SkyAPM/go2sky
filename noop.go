@@ -62,5 +62,5 @@ func (*NoopSpan) IsExit() bool {
 }
 
 func (*NoopSpan) IsValid() bool {
-	return false
+	return true
 }

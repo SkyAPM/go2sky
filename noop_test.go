@@ -99,7 +99,7 @@ func TestNoopMethod(t *testing.T) {
 	n.Tag("key", "value")
 	n.Log(time.Now(), "key", "value")
 	n.Error(time.Now(), "key", "value")
-	if n.IsValid() {
-		t.Error("noop span is valid")
+	if !n.IsValid() {
+		t.Error("noop span is not valid")
 	}
 }
