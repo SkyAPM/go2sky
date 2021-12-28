@@ -291,3 +291,14 @@ func Test_defaultSpan_SpanType(t *testing.T) {
 		})
 	}
 }
+
+func Test_defaultSpan_Valid(t *testing.T) {
+	ds := &defaultSpan{}
+	if ds.IsValid() != true {
+		t.Error("default span is not valid")
+	}
+	ds.End()
+	if ds.IsValid() != false {
+		t.Error("default span is valid after call End")
+	}
+}

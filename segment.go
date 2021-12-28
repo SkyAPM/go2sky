@@ -91,6 +91,9 @@ type segmentSpanImpl struct {
 
 // For Span
 func (s *segmentSpanImpl) End() {
+	if !s.IsValid() {
+		return
+	}
 	s.defaultSpan.End()
 	go func() {
 		s.Context().collect <- s
@@ -204,6 +207,9 @@ type rootSegmentSpan struct {
 }
 
 func (rs *rootSegmentSpan) End() {
+	if !rs.IsValid() {
+		return
+	}
 	rs.defaultSpan.End()
 	go func() {
 		rs.doneCh <- atomic.SwapInt32(rs.Context().refNum, -1)
