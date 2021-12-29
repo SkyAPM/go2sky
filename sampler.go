@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -44,20 +45,56 @@ func (s *ConstSampler) IsSampled(operation string) bool {
 	return s.decision
 }
 
+// RandomSampler Use sync.Pool to implement concurrent-safe for randomizer.
 type RandomSampler struct {
 	samplingRate float64
-	rand         *rand.Rand
 	threshold    int
+	pool         sync.Pool
 }
 
 // IsSampled implements IsSampled() of Sampler.
 func (s *RandomSampler) IsSampled(operation string) bool {
-	return s.threshold > s.rand.Intn(100)
+
+	return s.threshold > s.generateRandomNumber()
 }
 
 func (s *RandomSampler) init() {
-	s.rand = rand.New(rand.NewSource(time.Now().Unix()))
+
 	s.threshold = int(s.samplingRate * 100)
+	s.pool.New = s.newRand
+}
+
+func (s *RandomSampler) generateRandomNumber() int {
+
+	r := s.getRandomizer()
+	defer s.returnRandomizer(r)
+
+	return r.Intn(100)
+}
+
+func (s *RandomSampler) returnRandomizer(r *rand.Rand) {
+	s.pool.Put(r)
+}
+
+func (s *RandomSampler) getRandomizer() *rand.Rand {
+
+	var r *rand.Rand
+
+	generator := s.pool.Get()
+	if generator == nil {
+		generator = s.newRand()
+	}
+
+	r, ok := generator.(*rand.Rand)
+	if !ok {
+		r = s.newRand().(*rand.Rand) // it must be *rand.Rand
+	}
+
+	return r
+}
+
+func (s *RandomSampler) newRand() interface{} {
+	return rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
 func NewRandomSampler(samplingRate float64) *RandomSampler {

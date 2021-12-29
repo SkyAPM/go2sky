@@ -17,6 +17,7 @@
 package go2sky
 
 import (
+	"sync"
 	"testing"
 )
 
@@ -36,9 +37,16 @@ func TestConstSampler_IsSampled(t *testing.T) {
 
 func TestRandomSampler_IsSampled(t *testing.T) {
 	randomSampler := NewRandomSampler(0.5)
+
+	t.Run("threshold need transform", func(t *testing.T) {
+		if randomSampler.threshold != 50 {
+			t.Errorf("threshold should be 50")
+		}
+	})
+
 	operationName := "op"
 
-	//just for test case
+	// just for test case
 	randomSampler.threshold = 100
 	sampled := randomSampler.IsSampled(operationName)
 	if sampled != true {
@@ -50,4 +58,49 @@ func TestRandomSampler_IsSampled(t *testing.T) {
 	if sampled != false {
 		t.Errorf("random sampler should not be sampled")
 	}
+}
+
+func TestNewRandomSampler(t *testing.T) {
+	randomSampler := NewRandomSampler(100)
+	operationName := "op"
+	sampled := randomSampler.IsSampled(operationName)
+	if sampled != true {
+		t.Errorf("random sampler should be sampled")
+	}
+}
+
+func TestRandomSampler_getRandomizer(t *testing.T) {
+
+	t.Run("must not nil", func(t *testing.T) {
+
+		sampler := &RandomSampler{
+			pool: sync.Pool{},
+		}
+
+		if sampler.getRandomizer() == nil {
+			t.Errorf("randomizer should be nil")
+		}
+	})
+
+	t.Run("must not nil, if got not a *rand.Rand", func(t *testing.T) {
+
+		sampler := &RandomSampler{
+			pool: sync.Pool{},
+		}
+
+		sampler.pool.Put(&struct{}{})
+		if sampler.getRandomizer() == nil {
+			t.Errorf("randomizer should be nil")
+		}
+	})
+}
+
+func BenchmarkRandomPoolSampler_IsSampled(b *testing.B) {
+	sampler := NewRandomSampler(0.5)
+	operationName := "op"
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			sampler.IsSampled(operationName)
+		}
+	})
 }
