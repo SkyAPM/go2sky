@@ -59,3 +59,32 @@ func verifyEqual(t *testing.T, equalsKey string, expect interface{}, actual inte
 		t.Errorf("expect%s: %v, actual%s: %v", equalsKey, expect, equalsKey, actual)
 	}
 }
+
+func TestActiveSpan(t *testing.T) {
+	// activeSpan == nil
+	verifySpan(context.Background(), t, nil)
+
+	// activeSpan == NoopSpan
+	tracer, _ := NewTracer("service")
+	noopSpan, ctx, err := tracer.CreateLocalSpan(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+	verifySpan(ctx, t, noopSpan)
+
+	// activeSpan == segmentSpan
+	reporter := &mockRegisterReporter{
+		success: true,
+	}
+	tracer, _ = NewTracer("service", WithInstance("instance"), WithReporter(reporter))
+	span, ctx, err := tracer.CreateLocalSpan(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+	verifySpan(ctx, t, span)
+}
+
+func verifySpan(ctx context.Context, t *testing.T, expectSpan Span) {
+	actualSpan := ActiveSpan(ctx)
+	verifyEqual(t, "ActiveSpan", expectSpan, actualSpan)
+}
