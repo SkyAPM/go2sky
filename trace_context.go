@@ -26,6 +26,10 @@ const (
 	EmptySpanID              = -1
 )
 
+type ctxKey struct{}
+
+var ctxKeyInstance = ctxKey{}
+
 func ServiceName(ctx context.Context) string {
 	span, failed, ok := extractSpanString(ctx, EmptyServiceName)
 	if !ok {
@@ -64,6 +68,17 @@ func SpanID(ctx context.Context) int32 {
 		return failed
 	}
 	return (*span).context().SpanID
+}
+
+func ActiveSpan(ctx context.Context) Span {
+	activeSpan := ctx.Value(ctxKeyInstance)
+	if activeSpan != nil {
+		span, ok := activeSpan.(Span)
+		if ok {
+			return span
+		}
+	}
+	return nil
 }
 
 func extractSpanString(ctx context.Context, noopResult string) (*segmentSpan, string, bool) {

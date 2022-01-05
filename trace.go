@@ -197,10 +197,6 @@ func (t *Tracer) createNoop(ctx context.Context) (s Span, nCtx context.Context) 
 	return
 }
 
-type ctxKey struct{}
-
-var ctxKeyInstance = ctxKey{}
-
 //Reporter is a data transit specification
 type Reporter interface {
 	Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher)
