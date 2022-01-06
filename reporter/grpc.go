@@ -25,6 +25,7 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
+	"github.com/SkyAPM/go2sky/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
@@ -45,7 +46,7 @@ const (
 // NewGRPCReporter create a new reporter to send data to gRPC oap server. Only one backend address is allowed.
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
 	r := &gRPCReporter{
-		logger:        log.New(os.Stderr, defaultLogPrefix, log.LstdFlags),
+		logger:        logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 	}
@@ -85,7 +86,15 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 type GRPCReporterOption func(r *gRPCReporter)
 
 // WithLogger setup logger for gRPC reporter
-func WithLogger(logger *log.Logger) GRPCReporterOption {
+// Deprecated: WithLog is recommended
+func WithLogger(log *log.Logger) GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.logger = logger.NewDefaultLogger(log)
+	}
+}
+
+// WithLog setup log for gRPC reporter
+func WithLog(logger logger.Log) GRPCReporterOption {
 	return func(r *gRPCReporter) {
 		r.logger = logger
 	}
@@ -137,7 +146,7 @@ type gRPCReporter struct {
 	service          string
 	serviceInstance  string
 	instanceProps    map[string]string
-	logger           *log.Logger
+	logger           logger.Log
 	sendCh           chan *agentv3.SegmentObject
 	conn             *grpc.ClientConn
 	traceClient      agentv3.TraceSegmentReportServiceClient
@@ -223,13 +232,13 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 	defer func() {
 		// recover the panic caused by close sendCh
 		if err := recover(); err != nil {
-			r.logger.Printf("reporter segment err %v", err)
+			r.logger.Errorf("reporter segment err %v", err)
 		}
 	}()
 	select {
 	case r.sendCh <- segmentObject:
 	default:
-		r.logger.Printf("reach max send buffer")
+		r.logger.Errorf("reach max send buffer")
 	}
 }
 
@@ -244,7 +253,7 @@ func (r *gRPCReporter) Close() {
 func (r *gRPCReporter) closeGRPCConn() {
 	if r.conn != nil {
 		if err := r.conn.Close(); err != nil {
-			r.logger.Print(err)
+			r.logger.Error(err)
 		}
 	}
 }
@@ -258,14 +267,14 @@ func (r *gRPCReporter) initSendPipeline() {
 		for {
 			stream, err := r.traceClient.Collect(metadata.NewOutgoingContext(context.Background(), r.md))
 			if err != nil {
-				r.logger.Printf("open stream error %v", err)
+				r.logger.Errorf("open stream error %v", err)
 				time.Sleep(5 * time.Second)
 				continue StreamLoop
 			}
 			for s := range r.sendCh {
 				err = stream.Send(s)
 				if err != nil {
-					r.logger.Printf("send segment error %v", err)
+					r.logger.Errorf("send segment error %v", err)
 					r.closeStream(stream)
 					continue StreamLoop
 				}
@@ -298,7 +307,7 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 			})
 
 			if err != nil {
-				r.logger.Printf("fetch dynamic configuration error %v", err)
+				r.logger.Errorf("fetch dynamic configuration error %v", err)
 				time.Sleep(r.checkInterval)
 				continue
 			}
@@ -316,7 +325,7 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_CollectClient) {
 	_, err := stream.CloseAndRecv()
 	if err != nil && err != io.EOF {
-		r.logger.Printf("send closing error %v", err)
+		r.logger.Errorf("send closing error %v", err)
 	}
 }
 
@@ -352,7 +361,7 @@ func (r *gRPCReporter) check() {
 			if !instancePropertiesSubmitted {
 				err := r.reportInstanceProperties()
 				if err != nil {
-					r.logger.Printf("report serviceInstance properties error %v", err)
+					r.logger.Errorf("report serviceInstance properties error %v", err)
 					time.Sleep(r.checkInterval)
 					continue
 				}
@@ -365,7 +374,7 @@ func (r *gRPCReporter) check() {
 			})
 
 			if err != nil {
-				r.logger.Printf("send keep alive signal error %v", err)
+				r.logger.Errorf("send keep alive signal error %v", err)
 			}
 			time.Sleep(r.checkInterval)
 		}
