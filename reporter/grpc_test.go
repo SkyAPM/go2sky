@@ -318,11 +318,11 @@ func (t testLog) Infof(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-func (t testLog) Warning(args ...interface{}) {
+func (t testLog) Warn(args ...interface{}) {
 	fmt.Print(args...)
 }
 
-func (t testLog) Warningf(format string, args ...interface{}) {
+func (t testLog) Warnf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 

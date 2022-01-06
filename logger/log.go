@@ -23,10 +23,10 @@ type Log interface {
 	Info(args ...interface{})
 	// Infof logs to the INFO log.
 	Infof(format string, args ...interface{})
-	// Warning logs to the WARNING and INFO logs.
-	Warning(args ...interface{})
-	// Warningf logs to the WARNING and INFO logs.
-	Warningf(format string, args ...interface{})
+	// Warn logs to the WARNING and INFO logs.
+	Warn(args ...interface{})
+	// Warnf logs to the WARNING and INFO logs.
+	Warnf(format string, args ...interface{})
 	// Error logs to the ERROR, WARNING, and INFO logs.
 	Error(args ...interface{})
 	// Errorf logs to the ERROR, WARNING, and INFO logs.
@@ -45,11 +45,11 @@ func (d defaultLogger) Infof(format string, args ...interface{}) {
 	d.logger.Printf(format, args...)
 }
 
-func (d defaultLogger) Warning(args ...interface{}) {
+func (d defaultLogger) Warn(args ...interface{}) {
 	d.logger.Print(args...)
 }
 
-func (d defaultLogger) Warningf(format string, args ...interface{}) {
+func (d defaultLogger) Warnf(format string, args ...interface{}) {
 	d.logger.Printf(format, args...)
 }
 
