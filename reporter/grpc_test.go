@@ -21,10 +21,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/SkyAPM/go2sky"
+	"github.com/SkyAPM/go2sky/logger"
 	"github.com/SkyAPM/go2sky/propagation"
 	mock "github.com/SkyAPM/go2sky/reporter/grpc/management/mock_management"
 	"github.com/golang/mock/gomock"
@@ -133,7 +136,10 @@ func TestGRPCReporterOption(t *testing.T) {
 	instanceProps["org"] = "SkyAPM"
 
 	// log
-	logger := log.New(os.Stderr, "WithLogger", log.LstdFlags)
+	log1 := log.New(os.Stderr, "WithLogger", log.LstdFlags)
+
+	// custom log
+	log2 := &testLog{}
 
 	// tls
 	creds, err := credentials.NewClientTLSFromFile("../test/test-data/certs/cert.crt", "SkyAPM.org")
@@ -180,10 +186,21 @@ func TestGRPCReporterOption(t *testing.T) {
 		},
 		{
 			name:   "with logger",
-			option: WithLogger(logger),
+			option: WithLogger(log1),
 			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
-				if reporter.logger != logger {
+				log3 := reflect.ValueOf(reporter.logger).Elem().FieldByName("logger")
+				log3 = reflect.NewAt(log3.Type(), unsafe.Pointer(log3.UnsafeAddr())).Elem()
+				if log3.Interface() != log1 {
 					t.Error("error are not set logger")
+				}
+			},
+		},
+		{
+			name:   "with log",
+			option: WithLog(log2),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if reporter.logger != log2 {
+					t.Error("error are not set log")
 				}
 			},
 		},
@@ -258,7 +275,7 @@ func TestGRPCReporter_reportInstanceProperties(t *testing.T) {
 
 func createGRPCReporter() *gRPCReporter {
 	reporter := &gRPCReporter{
-		logger: log.New(os.Stderr, "go2sky", log.LstdFlags),
+		logger: logger.NewDefaultLogger(log.New(os.Stderr, "go2sky", log.LstdFlags)),
 	}
 	return reporter
 }
@@ -287,4 +304,32 @@ func (e instancePropertiesMatcher) Matches(x interface{}) bool {
 
 func (e instancePropertiesMatcher) String() string {
 	return fmt.Sprintf("is equal to %v", e.x)
+}
+
+// testLog test only
+type testLog struct {
+}
+
+func (t testLog) Info(args ...interface{}) {
+	fmt.Print(args...)
+}
+
+func (t testLog) Infof(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+func (t testLog) Warn(args ...interface{}) {
+	fmt.Print(args...)
+}
+
+func (t testLog) Warnf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+func (t testLog) Error(args ...interface{}) {
+	fmt.Print(args...)
+}
+
+func (t testLog) Errorf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
 }
