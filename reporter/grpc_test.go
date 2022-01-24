@@ -333,3 +333,79 @@ func (t testLog) Error(args ...interface{}) {
 func (t testLog) Errorf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
+
+func TestGRPCReporter_EnvIfNotSet(t *testing.T) {
+	os.Setenv(swAgentAuthentication, "auth")
+	os.Setenv(swAgentCollectorHeartbeatPeriod, "10")
+	os.Setenv(swAgentCollectorGetAgentDynamicConfigInterval, "-1")
+	os.Setenv(swAgentCollectorMaxSendQueueSize, "10")
+
+	defer os.Unsetenv(swAgentAuthentication)
+	defer os.Unsetenv(swAgentCollectorHeartbeatPeriod)
+	defer os.Unsetenv(swAgentCollectorGetAgentDynamicConfigInterval)
+	defer os.Unsetenv(swAgentCollectorMaxSendQueueSize)
+
+	r := createGRPCReporter()
+	err := applyGRPCReporterOption(r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	auth, ok := r.md["authentication"]
+	if !ok {
+		t.Errorf("the expected value of Authentication is auth")
+	}
+	if len(auth) != 1 || auth[0] != "auth" {
+		t.Errorf("the expected value of Authentication is auth")
+	}
+
+	if r.checkInterval != 10*time.Second {
+		t.Errorf("the expected value of checkInterval is 10s")
+	}
+
+	if r.cdsInterval != -1*time.Second {
+		t.Errorf("the expected value of checkInterval is -1s")
+	}
+
+	if cap(r.sendCh) != 10 {
+		t.Errorf("the expected value of maxSendQueueSize is 10")
+	}
+}
+
+func TestGRPCReporter_EnvOverride(t *testing.T) {
+	os.Setenv(swAgentAuthentication, "auth")
+	os.Setenv(swAgentCollectorHeartbeatPeriod, "10")
+	os.Setenv(swAgentCollectorGetAgentDynamicConfigInterval, "-1")
+	os.Setenv(swAgentCollectorMaxSendQueueSize, "10")
+
+	defer os.Unsetenv(swAgentAuthentication)
+	defer os.Unsetenv(swAgentCollectorHeartbeatPeriod)
+	defer os.Unsetenv(swAgentCollectorGetAgentDynamicConfigInterval)
+	defer os.Unsetenv(swAgentCollectorMaxSendQueueSize)
+
+	r := createGRPCReporter()
+	err := applyGRPCReporterOption(r, WithCDS(10), WithAuthentication("test"), WithCheckInterval(30), WithMaxSendQueueSize(9))
+	if err != nil {
+		t.Error(err)
+	}
+
+	auth, ok := r.md["authentication"]
+	if !ok {
+		t.Errorf("the expected value of Authentication is auth")
+	}
+	if len(auth) != 1 || auth[0] != "auth" {
+		t.Errorf("the expected value of Authentication is auth")
+	}
+
+	if r.checkInterval != 10*time.Second {
+		t.Errorf("the expected value of checkInterval is 10s")
+	}
+
+	if r.cdsInterval != -1*time.Second {
+		t.Errorf("the expected value of checkInterval is -1s")
+	}
+
+	if cap(r.sendCh) != 10 {
+		t.Errorf("the expected value of maxSendQueueSize is 10")
+	}
+}

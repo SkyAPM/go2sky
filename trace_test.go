@@ -18,6 +18,7 @@ package go2sky
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sync"
 	"testing"
@@ -83,6 +84,74 @@ func TestTracer_CreateLocalSpanAsync(t *testing.T) {
 	rootSpan := reporter.Spans[len(reporter.Spans)-1]
 	for _, span := range reporter.Spans[:len(reporter.Spans)-2] {
 		verifySpans(t, rootSpan, span)
+	}
+}
+
+func TestTracer_EnvIfNotSet(t *testing.T) {
+	os.Setenv(swAgentName, "env-service")
+	os.Setenv(swAgentInstanceName, "env-instance")
+	os.Setenv(swAgentSample, "0.5")
+	defer os.Unsetenv(swAgentName)
+	defer os.Unsetenv(swAgentInstanceName)
+	defer os.Unsetenv(swAgentSample)
+
+	tracer, err := NewTracer("")
+	if err != nil {
+		t.Error(err)
+	}
+	if tracer.service != "env-service" {
+		t.Errorf("the expected value of service is env-service")
+	}
+
+	if tracer.instance != "env-instance" {
+		t.Errorf("the expected value of instance is env-instance")
+	}
+
+	sampler, ok := tracer.sampler.(*DynamicSampler)
+	if !ok {
+		t.Errorf("the expected value of sampler is DynamicSampler")
+	}
+
+	if sampler.currentRate != 0.5 {
+		t.Errorf("the expected value of currentRate is 0.5")
+	}
+
+	if sampler.defaultRate != 0.5 {
+		t.Errorf("the expected value of defaultRate is 0.5")
+	}
+}
+
+func TestTracer_EnvOverride(t *testing.T) {
+	os.Setenv(swAgentName, "env-service")
+	os.Setenv(swAgentInstanceName, "env-instance")
+	os.Setenv(swAgentSample, "0.5")
+	defer os.Unsetenv(swAgentName)
+	defer os.Unsetenv(swAgentInstanceName)
+	defer os.Unsetenv(swAgentSample)
+
+	tracer, err := NewTracer("service", WithInstance("instance"), WithSampler(0.6))
+	if err != nil {
+		t.Error(err)
+	}
+	if tracer.service != "env-service" {
+		t.Errorf("the expected value of service is env-service")
+	}
+
+	if tracer.instance != "env-instance" {
+		t.Errorf("the expected value of instance is env-instance")
+	}
+
+	sampler, ok := tracer.sampler.(*DynamicSampler)
+	if !ok {
+		t.Errorf("the expected value of sampler is DynamicSampler")
+	}
+
+	if sampler.currentRate != 0.5 {
+		t.Errorf("the expected value of currentRate is 0.5")
+	}
+
+	if sampler.defaultRate != 0.5 {
+		t.Errorf("the expected value of defaultRate is 0.5")
 	}
 }
 
