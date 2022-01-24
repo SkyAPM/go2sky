@@ -48,9 +48,19 @@ type TracerOption func(t *Tracer)
 
 // NewTracer return a new go2sky Tracer
 func NewTracer(service string, opts ...TracerOption) (tracer *Tracer, err error) {
+	// read the service in the environment variable
+	service = serviceFormEnv(service)
 	if service == "" {
 		return nil, errParameter
 	}
+
+	// read the options in the environment variable
+	envOps, err := traceOptionsFormEnv()
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, envOps...)
+
 	t := &Tracer{
 		service:  service,
 		initFlag: 0,

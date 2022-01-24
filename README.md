@@ -228,16 +228,33 @@ contextString := logContext.String()
 
 Go to go2sky-plugins repo to see all the plugins, [click here](https://github.com/SkyAPM/go2sky-plugins).
 
+## Supported Environment Variables
+
+Below is the full list of supported environment variables you can set to customize the agent behavior, please read the descriptions for what they can achieve.
+
+|                 Environment Variable	                  |                                                                                                                                               Description                                                                                                                                                |      Default       |
+|:------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:------------------:|
+|                    `SW_AGENT_NAME`                     |                                                                                                                                       The name of the Go service	                                                                                                                                        |       unset        |
+|                `SW_AGENT_INSTANCE_NAME`                |                                                                                                                                   The name of the Go service instance	                                                                                                                                   | Randomly generated |
+|                   `SW_AGENT_SAMPLE`                    |                                                                                                                           Sample rate, 1 setting it to 1 means full sampling	                                                                                                                            |         1          |
+|         `SW_AGENT_COLLECTOR_BACKEND_SERVICES`          |                                                                                                                                     The backend OAP server address	                                                                                                                                      |       unset        |
+|               `SW_AGENT_AUTHENTICATION`                | The authentication token to verify that the agent is trusted by the backend OAP, as for how to configure the backend, refer to [the yaml](https://github.com/apache/skywalking/blob/4f0f39ffccdc9b41049903cc540b8904f7c9728e/oap-server/server-bootstrap/src/main/resources/application.yml#L155-L158).	 |       unset        |
+|         `SW_AGENT_COLLECTOR_HEARTBEAT_PERIOD`          |                                                                                                                               Agent heartbeat report period. Unit, second                                                                                                                                |         20         |
+| `SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL` |                                                                                                                         Sniffer get agent dynamic config interval. Unit, second                                                                                                                          |         20         |
+|        `SW_AGENT_COLLECTOR_MAX_SEND_QUEUE_SIZE`        |                                                                                                                                      Send span queue buffer length                                                                                                                                       |       30000        |
+
+
+
 ## CDS - Configuration Discovery Service
 
 Configuration Discovery Service provides the dynamic configuration for the agent, defined in gRPC and stored in the backend.
 
-## Available key(s) and value(s) in Golang Agent.
+### Available key(s) and value(s) in Golang Agent.
 Golang agent supports the following dynamic configurations.
 
-|        Config Key         |                      Value Description                       | Value Format Example  |
-| :-----------------------: | :----------------------------------------------------------: | :-------------------: |
-|     agent.sample_rate     |The percentage of trace when sampling. It's `[0, 1]`, Same with `WithSampler` parameter.|0.1|
+|    Config Key     |                                    Value Description                                     | Value Format Example |
+|:-----------------:|:----------------------------------------------------------------------------------------:|:--------------------:|
+| agent.sample_rate | The percentage of trace when sampling. It's `[0, 1]`, Same with `WithSampler` parameter. |         0.1          |
 
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.

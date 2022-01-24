@@ -39,9 +39,23 @@ import (
 const (
 	maxSendQueueSize     int32 = 30000
 	defaultCheckInterval       = 20 * time.Second
+	defaultCDSInterval         = 20 * time.Second
 	defaultLogPrefix           = "go2sky-gRPC"
 	authKey                    = "Authentication"
 )
+
+func applyGRPCReporterOption(r *gRPCReporter, opts ...GRPCReporterOption) error {
+	// read the options in the environment variable
+	envOps, err := gRPCReporterOptionsFormEnv()
+	if err != nil {
+		return err
+	}
+	opts = append(opts, envOps...)
+	for _, o := range opts {
+		o(r)
+	}
+	return nil
+}
 
 // NewGRPCReporter create a new reporter to send data to gRPC oap server. Only one backend address is allowed.
 func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Reporter, error) {
@@ -49,9 +63,11 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		logger:        logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
+		cdsInterval:   defaultCDSInterval, // cds default on
 	}
-	for _, o := range opts {
-		o(r)
+
+	if err := applyGRPCReporterOption(r, opts...); err != nil {
+		return nil, err
 	}
 
 	var credsDialOption grpc.DialOption
@@ -62,11 +78,8 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		credsDialOption = grpc.WithInsecure()
 	}
 
-	// cds default on
-	if r.cdsInterval == 0 {
-		r.cdsInterval = time.Second * 20
-	}
-
+	// read the backend service address in the environment variable
+	serverAddr = serverAddrFormEnv(serverAddr)
 	conn, err := grpc.Dial(serverAddr, credsDialOption)
 	if err != nil {
 		return nil, err
@@ -79,67 +92,6 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		r.cdsService = go2sky.NewConfigDiscoveryService()
 	}
 	return r, nil
-}
-
-// GRPCReporterOption allows for functional options to adjust behaviour
-// of a gRPC reporter to be created by NewGRPCReporter
-type GRPCReporterOption func(r *gRPCReporter)
-
-// WithLogger setup logger for gRPC reporter
-// Deprecated: WithLog is recommended
-func WithLogger(log *log.Logger) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.logger = logger.NewDefaultLogger(log)
-	}
-}
-
-// WithLog setup log for gRPC reporter
-func WithLog(logger logger.Log) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.logger = logger
-	}
-}
-
-// WithCheckInterval setup service and endpoint registry check interval
-func WithCheckInterval(interval time.Duration) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.checkInterval = interval
-	}
-}
-
-// WithMaxSendQueueSize setup send span queue buffer length
-func WithMaxSendQueueSize(maxSendQueueSize int) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.sendCh = make(chan *agentv3.SegmentObject, maxSendQueueSize)
-	}
-}
-
-// WithInstanceProps setup service instance properties eg: org=SkyAPM
-func WithInstanceProps(props map[string]string) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.instanceProps = props
-	}
-}
-
-// WithTransportCredentials setup transport layer security
-func WithTransportCredentials(creds credentials.TransportCredentials) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.creds = creds
-	}
-}
-
-// WithAuthentication used Authentication for gRPC
-func WithAuthentication(auth string) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.md = metadata.New(map[string]string{authKey: auth})
-	}
-}
-
-// WithCDS setup Configuration Discovery Service to dynamic config
-func WithCDS(interval time.Duration) GRPCReporterOption {
-	return func(r *gRPCReporter) {
-		r.cdsInterval = interval
-	}
 }
 
 type gRPCReporter struct {
@@ -308,7 +260,7 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 
 			if err != nil {
 				r.logger.Errorf("fetch dynamic configuration error %v", err)
-				time.Sleep(r.checkInterval)
+				time.Sleep(r.cdsInterval)
 				continue
 			}
 
@@ -317,7 +269,7 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 				r.cdsService.HandleCommand(command)
 			}
 
-			time.Sleep(r.checkInterval)
+			time.Sleep(r.cdsInterval)
 		}
 	}()
 }

@@ -17,28 +17,33 @@
 version: '2.1'
 
 services:
-  mockoap:
-    image: ghcr.io/apache/skywalking-agent-test-tool/mock-collector:5acb890f225ca37ee60675ce3e330545e23e3cbc
+  oap:
+    image: ghcr.io/apache/skywalking/oap:latest
     expose:
-      - 19876
+      - 11800
       - 12800
+      - 10051
+      - 5005
     ports:
-      - 19876
       - 12800
     networks:
       - e2e
-    restart: on-failure
+    environment:
+      SW_AUTHENTICATION: "3MET4!XWRbFXN"
     healthcheck:
-      test: [ "CMD", "curl", "http://127.0.0.1:12800/healthCheck" ]
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/11800"]
       interval: 5s
       timeout: 60s
       retries: 120
+
   httpserver:
     build:
-      context: ../../../
-      dockerfile: ./plugins/http/test/docker/Dockerfile.http_server
+      context: ../../../../
+      dockerfile: ./test/e2e/cases/environment-variable/docker/Dockerfile.http_server
     environment:
-      SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
+      SW_AGENT_NAME: app1
+      SW_AGENT_COLLECTOR_BACKEND_SERVICES: oap:11800
+      SW_AGENT_AUTHENTICATION: "3MET4!XWRbFXN"
     networks:
       - e2e
     expose:
@@ -51,29 +56,7 @@ services:
       timeout: 60s
       retries: 120
     depends_on:
-      mockoap:
-        condition: service_healthy
-  httpclient:
-    build:
-      context: ../../../
-      dockerfile: ./plugins/http/test/docker/Dockerfile.http_client
-    environment:
-      SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
-    expose:
-      - 8080
-    ports:
-      - 8080
-    networks:
-      - e2e
-    healthcheck:
-      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
-      interval: 5s
-      timeout: 60s
-      retries: 120
-    depends_on:
-      mockoap:
-        condition: service_healthy
-      httpserver:
+      oap:
         condition: service_healthy
 networks:
   e2e:
