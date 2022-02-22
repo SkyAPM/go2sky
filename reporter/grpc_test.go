@@ -28,10 +28,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/SkyAPM/go2sky"
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
-	"github.com/SkyAPM/go2sky/reporter/grpc/register"
-	"github.com/SkyAPM/go2sky/reporter/grpc/register/mock_register"
+	"github.com/powerapm/go2sky"
+	"github.com/powerapm/go2sky/reporter/grpc/common"
+	"github.com/powerapm/go2sky/reporter/grpc/register"
+	"github.com/powerapm/go2sky/reporter/grpc/register/mock_register"
 )
 
 const header string = "1-MTU1NTY0NDg4Mjk2Nzg2ODAwMC4wLjU5NDYzNzUyMDYzMzg3NDkwODc=" +

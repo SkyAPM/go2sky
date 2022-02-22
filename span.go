@@ -21,10 +21,10 @@ import (
 	"math"
 	"time"
 
-	"github.com/SkyAPM/go2sky/internal/tool"
-	"github.com/SkyAPM/go2sky/propagation"
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
-	v2 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent-v2"
+	"github.com/powerapm/go2sky/internal/tool"
+	"github.com/powerapm/go2sky/propagation"
+	"github.com/powerapm/go2sky/reporter/grpc/common"
+	v2 "github.com/powerapm/go2sky/reporter/grpc/language-agent-v2"
 )
 
 // SpanType is used to identify entry, exit and local

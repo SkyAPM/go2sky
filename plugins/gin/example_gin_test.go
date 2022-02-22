@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/SkyAPM/go2sky"
-	h "github.com/SkyAPM/go2sky/plugins/http"
-	"github.com/SkyAPM/go2sky/reporter"
 	"github.com/gin-gonic/gin"
+	"github.com/powerapm/go2sky"
+	h "github.com/powerapm/go2sky/plugins/http"
+	"github.com/powerapm/go2sky/reporter"
 )
 
 func ExampleMiddleware() {

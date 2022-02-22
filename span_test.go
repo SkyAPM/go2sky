@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
+	"github.com/powerapm/go2sky/reporter/grpc/common"
 )
 
 func Test_defaultSpan_SetOperationName(t *testing.T) {

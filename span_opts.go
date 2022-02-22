@@ -17,7 +17,7 @@
 
 package go2sky
 
-import "github.com/SkyAPM/go2sky/propagation"
+import "github.com/powerapm/go2sky/propagation"
 
 // WithContext setup trace sc from propagation
 func WithContext(sc *propagation.SpanContext) SpanOption {

@@ -26,8 +26,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/SkyAPM/go2sky"
-	"github.com/SkyAPM/go2sky/reporter"
+	"github.com/powerapm/go2sky"
+	"github.com/powerapm/go2sky/reporter"
 )
 
 func ExampleNewServerMiddleware() {

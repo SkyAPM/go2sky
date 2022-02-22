@@ -26,8 +26,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/SkyAPM/go2sky/internal/tool"
-	"github.com/SkyAPM/go2sky/propagation"
+	"github.com/powerapm/go2sky/internal/tool"
+	"github.com/powerapm/go2sky/propagation"
 )
 
 const (

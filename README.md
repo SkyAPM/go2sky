@@ -1,14 +1,14 @@
 # GO2Sky
 
-[![Build](https://github.com/SkyAPM/go2sky/workflows/Build/badge.svg?branch=master)](https://github.com/SkyAPM/go2sky/actions?query=branch%3Amaster+event%3Apush+workflow%3ABuild)
-[![GoDoc](https://godoc.org/github.com/SkyAPM/go2sky?status.svg)](https://godoc.org/github.com/SkyAPM/go2sky)
+[![Build](https://github.com/powerapm/go2sky/workflows/Build/badge.svg?branch=master)](https://github.com/powerapm/go2sky/actions?query=branch%3Amaster+event%3Apush+workflow%3ABuild)
+[![GoDoc](https://godoc.org/github.com/powerapm/go2sky?status.svg)](https://godoc.org/github.com/powerapm/go2sky)
 
 
 **GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metrics formats.
 
 # Installation
 ```
-$ go get -u github.com/SkyAPM/go2sky
+$ go get -u github.com/powerapm/go2sky
 ```
 
 The API of this project is still evolving. The use of vendoring tool is recommended.

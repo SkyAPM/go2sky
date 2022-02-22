@@ -23,8 +23,8 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/SkyAPM/go2sky"
-	"github.com/SkyAPM/go2sky/reporter"
+	"github.com/powerapm/go2sky"
+	"github.com/powerapm/go2sky/reporter"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 )

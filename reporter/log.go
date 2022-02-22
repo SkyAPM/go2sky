@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/SkyAPM/go2sky"
+	"github.com/powerapm/go2sky"
 )
 
 const (

@@ -24,10 +24,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SkyAPM/go2sky"
-	"github.com/SkyAPM/go2sky/propagation"
-	"github.com/SkyAPM/go2sky/reporter/grpc/common"
 	"github.com/gin-gonic/gin"
+	"github.com/powerapm/go2sky"
+	"github.com/powerapm/go2sky/propagation"
+	"github.com/powerapm/go2sky/reporter/grpc/common"
 )
 
 const (
