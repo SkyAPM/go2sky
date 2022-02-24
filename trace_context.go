@@ -81,6 +81,10 @@ func ActiveSpan(ctx context.Context) Span {
 	return nil
 }
 
+func WithSpan(ctx context.Context, span Span) context.Context {
+	return context.WithValue(ctx, ctxKeyInstance, span)
+}
+
 func extractSpanString(ctx context.Context, noopResult string) (*segmentSpan, string, bool) {
 	activeSpan := ctx.Value(ctxKeyInstance)
 	if activeSpan != nil {
