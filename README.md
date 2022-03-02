@@ -110,6 +110,14 @@ Get the `activeSpan` in the `Context`.
 go2sky.ActiveSpan(ctx)
 ```
 
+## With Span
+
+Save the `activeSpan` to `Context`
+
+```go
+go2sky.WithSpan(ctx, activeSpan)
+```
+
 ## Get Global Service Name
 
 Get the `ServiceName` of the `activeSpan` in the `Context`.
