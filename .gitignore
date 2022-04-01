@@ -14,6 +14,7 @@ bin/
 
 # IDE
 .idea/
+.vscode/
 
 # Coverage
 coverage.txt
