@@ -113,6 +113,9 @@ type gRPCReporter struct {
 
 	// bootFlag is set if Boot be executed
 	bootFlag bool
+
+	// Instance belong layer name which define in the backend
+	layer string
 }
 
 func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers []go2sky.AgentConfigChangeWatcher) {
@@ -295,6 +298,7 @@ func (r *gRPCReporter) reportInstanceProperties() (err error) {
 		Service:         r.service,
 		ServiceInstance: r.serviceInstance,
 		Properties:      props,
+		Layer:           r.layer,
 	})
 	return err
 }
@@ -323,6 +327,7 @@ func (r *gRPCReporter) check() {
 			_, err := r.managementClient.KeepAlive(metadata.NewOutgoingContext(context.Background(), r.md), &managementv3.InstancePingPkg{
 				Service:         r.service,
 				ServiceInstance: r.serviceInstance,
+				Layer:           r.layer,
 			})
 
 			if err != nil {

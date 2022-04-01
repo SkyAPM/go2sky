@@ -3,7 +3,7 @@
 `GRPCReporterOption` allows for functional options to adjust behaviour of a `gRPC` reporter to be created by `NewGRPCReporter`.
 
 | Function                            | Describe                                           |
-|-------------------------------------|----------------------------------------------------|
+| ----------------------------------- | -------------------------------------------------- |
 | `reporter.WithLog`                  | setup log for gRPC reporter                        |
 | `reporter.WithCheckInterval`        | setup service and endpoint registry check interval |
 | `reporter.WithMaxSendQueueSize`     | setup send span queue buffer length                |
@@ -11,3 +11,5 @@
 | `reporter.WithTransportCredentials` | setup transport layer security                     |
 | `reporter.WithAuthentication`       | used Authentication for gRPC                       |
 | `reporter.WithCDS`                  | setup CDS service                                  |
+| `reporter.WithLayer`                | setup layer                                        |
+| `reporter.WithFAASLayer`            | setup layer to FAAS                                |
