@@ -1,6 +1,6 @@
 module github.com/SkyAPM/go2sky
 
-go 1.12
+go 1.14
 
 require (
 	github.com/golang/mock v1.5.0
