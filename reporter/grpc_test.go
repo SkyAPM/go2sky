@@ -231,6 +231,24 @@ func TestGRPCReporterOption(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:   "with layer",
+			option: WithLayer("test"),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if reporter.layer != "test" {
+					t.Error("error layer")
+				}
+			},
+		},
+		{
+			name:   "with faas layer",
+			option: WithFAASLayer(),
+			verifyFunc: func(t *testing.T, reporter *gRPCReporter) {
+				if reporter.layer != "FAAS" {
+					t.Error("error faas layer")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -336,11 +354,13 @@ func (t testLog) Errorf(format string, args ...interface{}) {
 
 func TestGRPCReporter_EnvIfNotSet(t *testing.T) {
 	os.Setenv(swAgentAuthentication, "auth")
+	os.Setenv(swAgentLayer, "test3")
 	os.Setenv(swAgentCollectorHeartbeatPeriod, "10")
 	os.Setenv(swAgentCollectorGetAgentDynamicConfigInterval, "-1")
 	os.Setenv(swAgentCollectorMaxSendQueueSize, "10")
 
 	defer os.Unsetenv(swAgentAuthentication)
+	defer os.Unsetenv(swAgentLayer)
 	defer os.Unsetenv(swAgentCollectorHeartbeatPeriod)
 	defer os.Unsetenv(swAgentCollectorGetAgentDynamicConfigInterval)
 	defer os.Unsetenv(swAgentCollectorMaxSendQueueSize)
@@ -359,6 +379,10 @@ func TestGRPCReporter_EnvIfNotSet(t *testing.T) {
 		t.Errorf("the expected value of Authentication is auth")
 	}
 
+	if r.layer != "test3" {
+		t.Errorf("the expected value of layer is test3")
+	}
+
 	if r.checkInterval != 10*time.Second {
 		t.Errorf("the expected value of checkInterval is 10s")
 	}
@@ -374,17 +398,19 @@ func TestGRPCReporter_EnvIfNotSet(t *testing.T) {
 
 func TestGRPCReporter_EnvOverride(t *testing.T) {
 	os.Setenv(swAgentAuthentication, "auth")
+	os.Setenv(swAgentLayer, "test")
 	os.Setenv(swAgentCollectorHeartbeatPeriod, "10")
 	os.Setenv(swAgentCollectorGetAgentDynamicConfigInterval, "-1")
 	os.Setenv(swAgentCollectorMaxSendQueueSize, "10")
 
 	defer os.Unsetenv(swAgentAuthentication)
+	defer os.Unsetenv(swAgentLayer)
 	defer os.Unsetenv(swAgentCollectorHeartbeatPeriod)
 	defer os.Unsetenv(swAgentCollectorGetAgentDynamicConfigInterval)
 	defer os.Unsetenv(swAgentCollectorMaxSendQueueSize)
 
 	r := createGRPCReporter()
-	err := applyGRPCReporterOption(r, WithCDS(10), WithAuthentication("test"), WithCheckInterval(30), WithMaxSendQueueSize(9))
+	err := applyGRPCReporterOption(r, WithCDS(10), WithLayer("test1"), WithAuthentication("test"), WithCheckInterval(30), WithMaxSendQueueSize(9))
 	if err != nil {
 		t.Error(err)
 	}
@@ -395,6 +421,10 @@ func TestGRPCReporter_EnvOverride(t *testing.T) {
 	}
 	if len(auth) != 1 || auth[0] != "auth" {
 		t.Errorf("the expected value of Authentication is auth")
+	}
+
+	if r.layer != "test" {
+		t.Errorf("the expected value of layer is test")
 	}
 
 	if r.checkInterval != 10*time.Second {

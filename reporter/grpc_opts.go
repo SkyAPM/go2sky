@@ -86,3 +86,17 @@ func WithCDS(interval time.Duration) GRPCReporterOption {
 		r.cdsInterval = interval
 	}
 }
+
+// WithLayer setup layer
+func WithLayer(layer string) GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.layer = layer
+	}
+}
+
+// WithFAASLayer set layer to FAAS
+func WithFAASLayer() GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.layer = "FAAS"
+	}
+}

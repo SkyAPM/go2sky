@@ -27,6 +27,7 @@ import (
 
 const (
 	swAgentAuthentication                         = "SW_AGENT_AUTHENTICATION"
+	swAgentLayer                                  = "SW_AGENT_LAYER"
 	swAgentCollectorHeartbeatPeriod               = "SW_AGENT_COLLECTOR_HEARTBEAT_PERIOD"
 	swAgentCollectorGetAgentDynamicConfigInterval = "SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL"
 	swAgentCollectorBackendServices               = "SW_AGENT_COLLECTOR_BACKEND_SERVICES"
@@ -45,6 +46,10 @@ func serverAddrFormEnv(serverAddr string) string {
 func gRPCReporterOptionsFormEnv() (opts []GRPCReporterOption, err error) {
 	if auth := os.Getenv(swAgentAuthentication); auth != "" {
 		opts = append(opts, WithAuthentication(auth))
+	}
+
+	if layer := os.Getenv(swAgentLayer); layer != "" {
+		opts = append(opts, WithLayer(layer))
 	}
 
 	if value := os.Getenv(swAgentCollectorHeartbeatPeriod); value != "" {
