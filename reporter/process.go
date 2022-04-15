@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -96,7 +97,7 @@ func reportProcessIFNeed(r *gRPCReporter) {
 }
 
 func (p *processStat) checkMetaConfirmed() (bool, error) {
-	confirmData, err := os.ReadFile(process.confirmFilePath)
+	confirmData, err := ioutil.ReadFile(process.confirmFilePath)
 	if err != nil {
 		return false, fmt.Errorf("could not read process confirm file: %s, %v", process.confirmFilePath, err)
 	}
