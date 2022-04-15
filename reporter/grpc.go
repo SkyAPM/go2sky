@@ -202,6 +202,7 @@ func (r *gRPCReporter) Close() {
 		close(r.sendCh)
 	} else {
 		r.closeGRPCConn()
+		cleanupProcessDirectory(r)
 	}
 }
 
@@ -313,6 +314,9 @@ func (r *gRPCReporter) check() {
 			if r.conn.GetState() == connectivity.Shutdown {
 				break
 			}
+
+			// report the process
+			reportProcessIFNeed(r)
 
 			if !instancePropertiesSubmitted {
 				err := r.reportInstanceProperties()

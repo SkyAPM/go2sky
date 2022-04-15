@@ -13,3 +13,4 @@
 | `reporter.WithCDS`                  | setup CDS service                                  |
 | `reporter.WithLayer`                | setup layer                                        |
 | `reporter.WithFAASLayer`            | setup layer to FAAS                                |
+| `reporter.WithLabels`               | setup labels bind to process                       |

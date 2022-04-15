@@ -18,6 +18,7 @@ package reporter
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"github.com/SkyAPM/go2sky/logger"
@@ -98,5 +99,15 @@ func WithLayer(layer string) GRPCReporterOption {
 func WithFAASLayer() GRPCReporterOption {
 	return func(r *gRPCReporter) {
 		r.layer = "FAAS"
+	}
+}
+
+// WithLabels setup labels bind to process
+func WithLabels(labels []string) GRPCReporterOption {
+	return func(t *gRPCReporter) {
+		if t.instanceProps == nil {
+			t.instanceProps = make(map[string]string)
+		}
+		t.instanceProps[ProcessLabelKey] = strings.Join(labels, ",")
 	}
 }
