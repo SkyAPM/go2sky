@@ -67,7 +67,7 @@ func initProcessStat(r *gRPCReporter) *processStat {
 
 // Report the current process metadata to local file
 // using to work with eBPF agent
-func reportProcessIFNeed(r *gRPCReporter) {
+func reportProcess(r *gRPCReporter) {
 	if process == nil {
 		process = initProcessStat(r)
 	}

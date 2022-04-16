@@ -316,7 +316,7 @@ func (r *gRPCReporter) check() {
 			}
 
 			// report the process
-			reportProcessIFNeed(r)
+			reportProcess(r)
 
 			if !instancePropertiesSubmitted {
 				err := r.reportInstanceProperties()

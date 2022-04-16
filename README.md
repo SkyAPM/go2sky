@@ -264,5 +264,36 @@ Golang agent supports the following dynamic configurations.
 |:-----------------:|:----------------------------------------------------------------------------------------:|:--------------------:|
 | agent.sample_rate | The percentage of trace when sampling. It's `[0, 1]`, Same with `WithSampler` parameter. |         0.1          |
 
+## Process
+
+This feature is used in cooperation with the [skywalking-rover](https://github.com/apache/skywalking-rover) project.
+
+When go2sky keeps alive with the backend, it would write a metadata file to the local (temporary directory) at the same time, which describes the information of the current process.
+The rover side scans all processes, find out which process contains this metadata file, and update the confirmed file. Finally, the rover could collect, profiling, with this process.
+
+### Metadata File
+
+The metadata file use to save metadata with current process, it save in: `{TMPDIR}/apache_skyuwalking/process/{pid}/metadata.properties`.
+
+Also, when the go2sky keep alive with backend, modify and open time of the metadata file would be updated.
+
+| Key | Type | Description |
+|-----|------|------------|
+|layer|string|this process layer.|
+|service_name|string|this process service name.|
+|instance_name|string|this process instance name.|
+|process_name|string|this process process name, it's same with the instance name.|
+|properties|json|the properties in instance, the process labels also in the properties value.|
+|label_key_in_properties|string|the key name of the process labels.|
+|language|string|current process language, which is `golang`.|
+
+### Confirmation file
+
+The confirmation file used to let the go2sky known, the rover side have detected current process, so don't need to keep update the metadata file again. It save in: `{TMPDIR}/apache_skyuwalking/process/{pid}/metadata-confirm.properties`.
+
+| Key | Type | Description |
+|-----|------|-------------|
+|status|string|the status of check process|
+
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.
