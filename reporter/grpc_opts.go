@@ -102,12 +102,20 @@ func WithFAASLayer() GRPCReporterOption {
 	}
 }
 
-// WithLabels setup labels bind to process
-func WithLabels(labels []string) GRPCReporterOption {
+// WithProcessLabels setup labels bind to process
+func WithProcessLabels(labels []string) GRPCReporterOption {
 	return func(t *gRPCReporter) {
+		t.processLabels = labels
 		if t.instanceProps == nil {
 			t.instanceProps = make(map[string]string)
 		}
 		t.instanceProps[ProcessLabelKey] = strings.Join(labels, ",")
+	}
+}
+
+// WithProcessStatusHook setup is enabled the process status
+func WithProcessStatusHook(enable bool) GRPCReporterOption {
+	return func(r *gRPCReporter) {
+		r.processStatusHookEnable = enable
 	}
 }

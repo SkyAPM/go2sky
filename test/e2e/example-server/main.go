@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/SkyAPM/go2sky"
@@ -30,12 +29,11 @@ import (
 )
 
 var (
-	grpc          bool
-	oapServer     string
-	upstreamURL   string
-	listenAddr    string
-	serviceName   string
-	processLabels string
+	grpc        bool
+	oapServer   string
+	upstreamURL string
+	listenAddr  string
+	serviceName string
 
 	client *http.Client
 )
@@ -46,7 +44,6 @@ func init() {
 	flag.StringVar(&upstreamURL, "upstream-url", "upstream-service", "upstream service url")
 	flag.StringVar(&listenAddr, "listen-addr", ":8080", "listen address")
 	flag.StringVar(&serviceName, "service-name", "go2sky", "service name")
-	flag.StringVar(&processLabels, "process-labels", "", "process labels")
 }
 
 func ServerHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -80,15 +77,10 @@ func ServerHTTP(writer http.ResponseWriter, request *http.Request) {
 func main() {
 	flag.Parse()
 
-	labels := make([]string, 0)
-	if processLabels != "" {
-		labels = strings.Split(processLabels, ",")
-	}
-
 	var report go2sky.Reporter
 	var err error
 	if grpc {
-		report, err = reporter.NewGRPCReporter(oapServer, reporter.WithCDS(10), reporter.WithLabels(labels))
+		report, err = reporter.NewGRPCReporter(oapServer, reporter.WithCDS(10))
 		if err != nil {
 			log.Fatalf("crate grpc reporter error: %v \n", err)
 		}

@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -38,30 +37,26 @@ const (
 
 	NotInit ProcessReportStatus = iota
 	Reported
-	Confirmed
 	Closed
 )
 
 var process *processStat
 
 type processStat struct {
-	basePath        string
-	metaFilePath    string
-	confirmFilePath string
-	status          ProcessReportStatus
-	shutdownOnce    sync.Once
+	basePath     string
+	metadataFile string
+	status       ProcessReportStatus
+	shutdownOnce sync.Once
 }
 
 func initProcessStat(r *gRPCReporter) *processStat {
 	basePath := path.Join(os.TempDir(), "apache_skywalking", "process", strconv.Itoa(os.Getpid()))
 	metaFilePath := path.Join(basePath, "metadata.properties")
-	confirmFilePath := path.Join(basePath, "metadata-confirm.properties")
 
 	return &processStat{
-		basePath:        basePath,
-		metaFilePath:    metaFilePath,
-		confirmFilePath: confirmFilePath,
-		status:          NotInit,
+		basePath:     basePath,
+		metadataFile: metaFilePath,
+		status:       NotInit,
 	}
 }
 
@@ -73,39 +68,22 @@ func reportProcess(r *gRPCReporter) {
 	}
 
 	if process.status == NotInit {
-		// create meta and confirm file
-		if p, err := process.initMetaAndConfirmFile(r); err != nil {
-			r.logger.Warnf("process file init failure: %s, %v", p, err)
+		// create metadata file
+		if p, err := process.initMetadataFile(r); err != nil {
+			r.logger.Warnf("process status file init failure: %s, %v", p, err)
+		} else {
+			process.status = Reported
 		}
-		process.status = Reported
 	} else if process.status == Reported {
-		// already init the reporter, check confirmed or update modify time on metadata file
-		if confirmed, err := process.checkMetaConfirmed(); err != nil {
-			r.logger.Warnf("check process confirm failure, %v", err)
-		} else if confirmed {
-			r.logger.Infof("the process information have been confirmed")
-			process.status = Confirmed
-			return
-		}
-
 		// keep the metadata file alive(update modify time)
 		updateTime := time.Now()
-		if err := os.Chtimes(process.metaFilePath, updateTime, updateTime); err != nil {
+		if err := os.Chtimes(process.metadataFile, updateTime, updateTime); err != nil {
 			r.logger.Warnf("keep the process metadata alive failure: %v", err)
 		}
 	}
 }
 
-func (p *processStat) checkMetaConfirmed() (bool, error) {
-	confirmData, err := ioutil.ReadFile(process.confirmFilePath)
-	if err != nil {
-		return false, fmt.Errorf("could not read process confirm file: %s, %v", process.confirmFilePath, err)
-	}
-	data := strings.TrimSpace(string(confirmData))
-	return data == "status=success", nil
-}
-
-func (p *processStat) initMetaAndConfirmFile(r *gRPCReporter) (string, error) {
+func (p *processStat) initMetadataFile(r *gRPCReporter) (string, error) {
 	// create base directory
 	basePath := process.basePath
 	if err := os.RemoveAll(basePath); err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -116,7 +94,7 @@ func (p *processStat) initMetaAndConfirmFile(r *gRPCReporter) (string, error) {
 	}
 
 	// create and write metadata file
-	metadataFile := process.metaFilePath
+	metadataFile := process.metadataFile
 	if metaFile, err := os.Create(metadataFile); err != nil {
 		return metadataFile, err
 	} else {
@@ -125,11 +103,6 @@ func (p *processStat) initMetaAndConfirmFile(r *gRPCReporter) (string, error) {
 		} else if _, err = metaFile.WriteString(content); err != nil {
 			return metadataFile, err
 		}
-	}
-
-	// create confirm file
-	if _, err := os.Create(process.confirmFilePath); err != nil {
-		return process.confirmFilePath, err
 	}
 	return "", nil
 }
@@ -146,13 +119,13 @@ func (p *processStat) buildMetadataContent(g *gRPCReporter) (string, error) {
 	}
 
 	metadata := map[string]string{
-		"layer":                   layer,
-		"service_name":            g.service,
-		"instance_name":           g.serviceInstance,
-		"process_name":            g.serviceInstance, // process name is same with instance name
-		"properties":              propertiesJson,
-		"label_key_in_properties": ProcessLabelKey,
-		"language":                "golang",
+		"layer":         layer,
+		"service_name":  g.service,
+		"instance_name": g.serviceInstance,
+		"process_name":  g.serviceInstance, // process name is same with instance name
+		"properties":    propertiesJson,
+		"labels":        strings.Join(g.processLabels, ","),
+		"language":      "golang",
 	}
 
 	result := ""

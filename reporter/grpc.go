@@ -116,6 +116,10 @@ type gRPCReporter struct {
 
 	// Instance belong layer name which define in the backend
 	layer string
+
+	// The process metadata and is enabled the process status hook
+	processLabels           []string
+	processStatusHookEnable bool
 }
 
 func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers []go2sky.AgentConfigChangeWatcher) {
@@ -315,8 +319,10 @@ func (r *gRPCReporter) check() {
 				break
 			}
 
-			// report the process
-			reportProcess(r)
+			// report the process status
+			if r.processStatusHookEnable {
+				reportProcess(r)
+			}
 
 			if !instancePropertiesSubmitted {
 				err := r.reportInstanceProperties()
