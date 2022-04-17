@@ -275,7 +275,7 @@ The rover side scans all processes, find out which process contains this metadat
 
 ### Metadata File
 
-The metadata file use to save metadata with current process, it save in: `{TMPDIR}/apache_skyuwalking/process/{pid}/metadata.properties`.
+The metadata file use to save metadata with current process, it save in: `{TMPDIR}/apache_skywalking/process/{pid}/metadata.properties`.
 
 Also, when the go2sky keep alive with backend, modify and open time of the metadata file would be updated.
 
