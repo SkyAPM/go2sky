@@ -251,6 +251,8 @@ Below is the full list of supported environment variables you can set to customi
 |         `SW_AGENT_COLLECTOR_HEARTBEAT_PERIOD`          |                                                                                                                               Agent heartbeat report period. Unit, second                                                                                                                               |         20         |
 | `SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL` |                                                                                                                         Sniffer get agent dynamic config interval. Unit, second                                                                                                                         |         20         |
 |        `SW_AGENT_COLLECTOR_MAX_SEND_QUEUE_SIZE`        |                                                                                                                                      Send span queue buffer length                                                                                                                                      |       30000        |
+|         `SW_AGENT_PROCESS_STATUS_HOOK_ENABLE`          |                                                                                                                                 Enable the Process Status Hook feature                                                                                                                                  |       false        |
+|               `SW_AGENT_PROCESS_LABELS`                |                                                                                                                       The labels of the process, multiple labels split by ","                                                                                                                           |       unset        |
 
 
 ## CDS - Configuration Discovery Service
@@ -263,6 +265,29 @@ Golang agent supports the following dynamic configurations.
 |    Config Key     |                                    Value Description                                     | Value Format Example |
 |:-----------------:|:----------------------------------------------------------------------------------------:|:--------------------:|
 | agent.sample_rate | The percentage of trace when sampling. It's `[0, 1]`, Same with `WithSampler` parameter. |         0.1          |
+
+## Process Status Hook
+
+This feature is used in cooperation with the [skywalking-rover](https://github.com/apache/skywalking-rover) project.
+
+When go2sky keeps alive with the backend, it would write a metadata file to the local (temporary directory) at the same time, which describes the information of the current process.
+The rover side scans all processes, find out which process contains this metadata file. Finally, the rover could collect, profiling, with this process.
+
+### Metadata File
+
+The metadata file use to save metadata with current process, it save in: `{TMPDIR}/apache_skywalking/process/{pid}/metadata.properties`.
+
+Also, when the go2sky keep alive with backend, modify and open time of the metadata file would be updated.
+
+| Key | Type | Description |
+|-----|------|------------|
+|layer|string|this process layer.|
+|service_name|string|this process service name.|
+|instance_name|string|this process instance name.|
+|process_name|string|this process process name, it's same with the instance name.|
+|properties|json|the properties in instance, the process labels also in the properties value.|
+|labels|string|the process labels, multiple labels split by ",".|
+|language|string|current process language, which is `golang`.|
 
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.

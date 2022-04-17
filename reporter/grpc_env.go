@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -32,6 +33,8 @@ const (
 	swAgentCollectorGetAgentDynamicConfigInterval = "SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL"
 	swAgentCollectorBackendServices               = "SW_AGENT_COLLECTOR_BACKEND_SERVICES"
 	swAgentCollectorMaxSendQueueSize              = "SW_AGENT_COLLECTOR_MAX_SEND_QUEUE_SIZE"
+	swAgentProcessStatusHookEnable                = "SW_AGENT_PROCESS_STATUS_HOOK_ENABLE"
+	swAgentProcessLabels                          = "SW_AGENT_PROCESS_LABELS"
 )
 
 // serverAddrFormEnv read the backend service address in the environment variable
@@ -74,6 +77,19 @@ func gRPCReporterOptionsFormEnv() (opts []GRPCReporterOption, err error) {
 			return nil, err
 		}
 		opts = append(opts, WithMaxSendQueueSize(int(size)))
+	}
+
+	if value := os.Getenv(swAgentProcessStatusHookEnable); value != "" {
+		enable, err1 := strconv.ParseBool(value)
+		if err1 != nil {
+			return nil, err
+		}
+		opts = append(opts, WithProcessStatusHook(enable))
+	}
+
+	if value := os.Getenv(swAgentProcessLabels); value != "" {
+		labels := strings.Split(value, ",")
+		opts = append(opts, WithProcessLabels(labels))
 	}
 	return
 }
