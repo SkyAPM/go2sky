@@ -289,5 +289,7 @@ Also, when the go2sky keep alive with backend, modify and open time of the metad
 |labels|string|the process labels, multiple labels split by ",".|
 |language|string|current process language, which is `golang`.|
 
+Please read the [official documentation of rover](https://skywalking.apache.org/docs/skywalking-rover/latest/en/setup/configuration/process_discovery/scanner/#agent-sensor-mode) to get more information.
+
 # License
 Apache License 2.0. See [LICENSE](LICENSE) file for details.
