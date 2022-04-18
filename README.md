@@ -271,7 +271,7 @@ Golang agent supports the following dynamic configurations.
 This feature is used in cooperation with the [skywalking-rover](https://github.com/apache/skywalking-rover) project.
 
 ```go
-// create reporter and enable the this feature
+// create reporter and enable this feature
 reporter.NewGRPCReporter("oap-skywalking:11800", reporter.WithProcessStatusHook(true))
 ```
 
