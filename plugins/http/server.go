@@ -17,7 +17,10 @@
 package http
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -126,6 +129,14 @@ func (rww *responseWriterWrapper) Write(bytes []byte) (int, error) {
 func (rww *responseWriterWrapper) WriteHeader(statusCode int) {
 	rww.statusCode = statusCode
 	rww.w.WriteHeader(statusCode)
+}
+
+func (rww *responseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := rww.w.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("NotImplementHijacker")
+	}
+	return h.Hijack()
 }
 
 func getOperationName(name string, r *http.Request) string {
