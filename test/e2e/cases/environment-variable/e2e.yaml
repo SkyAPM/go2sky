@@ -21,7 +21,7 @@ setup:
   init-system-environment: ../../script/env
   steps:
     - name: install swctl
-      command: bash test/e2e/script/prepare/setup-e2e-shell/install-swctl.sh
+      command: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/apache/skywalking-cli/master/scripts/install.sh)"
 
 cleanup:
   # always never success failure
