@@ -17,6 +17,7 @@
 {{- contains . }}
 - id: {{ b64enc "app1" }}.1
   name: app1
+  normal: true
   group: ""
   shortname: app1
   layers:
