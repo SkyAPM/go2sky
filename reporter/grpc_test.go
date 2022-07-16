@@ -439,3 +439,27 @@ func TestGRPCReporter_EnvOverride(t *testing.T) {
 		t.Errorf("the expected value of maxSendQueueSize is 10")
 	}
 }
+
+func TestCollectGolangMetric(t *testing.T) {
+	report, err := NewGRPCReporter("127.0.0.1:11800")
+	if err != nil {
+		log.Fatalf("crate grpc reporter error: %v \n", err)
+	}
+
+	_, err = go2sky.NewTracer("service-yipingjian", go2sky.WithReporter(report))
+	if err != nil {
+		log.Fatalf("crate tracer error: %v \n", err)
+	}
+
+	go func() {
+		for {
+			s := ""
+			for i := 0; i < 10000; i++ {
+				s += "afff"
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	time.Sleep(5 * time.Minute)
+}

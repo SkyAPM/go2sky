@@ -1,49 +1,53 @@
 package go2sky
 
 import (
-	"fmt"
+	"github.com/SkyAPM/go2sky/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
+	"log"
+	"os"
 	"runtime"
 	"time"
 )
 
+const (
+	maxSendQueueSize             int32 = 30000
+	defaultGolangCollectInterval       = 5 * time.Second
+	defaultLogPrefix                   = "go2sky-golang-metric"
+)
+
 type RunTimeMetric struct {
 	// the Unix time when metrics were collected
-	time int64
-	// the service name that user input
-	service string
-	// the service instance id that generated automatic
-	serviceInstance string
+	Time int64
 	// the bytes of allocated heap objects
-	heapAlloc int64
+	HeapAlloc int64
 	// the bytes in stack spans.
-	stackInUse int64
+	StackInUse int64
 	// the number of completed GC cycles since
-	gcNum int64
-	// the latest gc pause time
-	gcPauseTime int64
+	GcNum int64
+	// the latest gc pause time(NS)
+	GcPauseTime int64
 	// the number of goroutines that currently exist
-	goroutineNum int64
+	GoroutineNum int64
 	// the number of records in the thread creation profile
-	threadNum int64
+	ThreadNum int64
 	// the cpu Used float64
-	cpuUsedRate float64
+	CpuUsedRate float64
 	// the Percentage of RAM used by programs
-	memUsedRate float64
+	MemUsedRate float64
 }
 
 type MetricCollector struct {
-	service         string
-	serviceInstance string
-	sendCh          chan *RunTimeMetric
+	sendCh   chan RunTimeMetric
+	reporter MetricsReporter
+	logger   logger.Log
 }
 
-func initMetricCollector(service, serviceInstance string) {
+func InitMetricCollector(reporter MetricsReporter) {
 	collector := &MetricCollector{
-		service:         service,
-		serviceInstance: serviceInstance,
-		sendCh:          make(chan *RunTimeMetric, 1000),
+		sendCh:   make(chan RunTimeMetric, maxSendQueueSize),
+		logger:   logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
+		reporter: reporter,
 	}
 
 	go collector.collect()
@@ -51,37 +55,51 @@ func initMetricCollector(service, serviceInstance string) {
 }
 
 func (c *MetricCollector) collect() {
+	defer func() {
+		// recover the panic caused by close sendCh
+		if err := recover(); err != nil {
+			c.logger.Errorf("collect metric err %v", err)
+		}
+	}()
+
 	for {
-		c.sendCh <- c.getCurrentMetrics()
-		time.Sleep(5 * time.Second)
+		select {
+		case c.sendCh <- c.getCurrentMetrics():
+		default:
+			c.logger.Errorf("reach max send buffer")
+		}
+
+		time.Sleep(defaultGolangCollectInterval)
 	}
 }
 
 func (c *MetricCollector) send() {
 
 	for m := range c.sendCh {
-		fmt.Println(fmt.Sprintf("%+v", m))
+		c.reporter.SendMetrics(m)
 	}
 
 }
 
-func (c *MetricCollector) getCurrentMetrics() *RunTimeMetric {
+func (c *MetricCollector) getCurrentMetrics() RunTimeMetric {
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
 	v, _ := mem.VirtualMemory()
 	cpuPercent, _ := cpu.Percent(0, false)
 	threadNum, _ := runtime.ThreadCreateProfile(nil)
-	return &RunTimeMetric{
-		time:            time.Now().Unix(),
-		service:         c.service,
-		serviceInstance: c.serviceInstance,
-		heapAlloc:       int64(rtm.HeapAlloc),
-		stackInUse:      int64(rtm.StackInuse),
-		gcNum:           int64(rtm.NumGC),
-		gcPauseTime:     int64(rtm.PauseNs[(rtm.NumGC+255)%256]),
-		goroutineNum:    int64(runtime.NumGoroutine()),
-		threadNum:       int64(threadNum),
-		cpuUsedRate:     cpuPercent[0],
-		memUsedRate:     v.UsedPercent,
+	return RunTimeMetric{
+		Time:         time.Now().UnixMilli(),
+		HeapAlloc:    int64(rtm.HeapAlloc),
+		StackInUse:   int64(rtm.StackInuse),
+		GcNum:        int64(rtm.NumGC),
+		GcPauseTime:  int64(rtm.PauseNs[(rtm.NumGC+255)%256]),
+		GoroutineNum: int64(runtime.NumGoroutine()),
+		ThreadNum:    int64(threadNum),
+		CpuUsedRate:  cpuPercent[0],
+		MemUsedRate:  v.UsedPercent,
 	}
+}
+
+type MetricsReporter interface {
+	SendMetrics(metrics RunTimeMetric)
 }

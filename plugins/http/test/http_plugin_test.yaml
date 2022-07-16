@@ -31,7 +31,7 @@ trigger:
   method: GET
 
 verify:
-  # verify with retry strategy
+  # verify with retry transfer
   retry:
     # max retry count
     count: 10

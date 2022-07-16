@@ -26,6 +26,7 @@ import (
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
 	"github.com/SkyAPM/go2sky/logger"
+	metricV3 "github.com/easonyipj/skywalking-goapi/github.com/easonyipj/skywalking-goapi/collect/language/agent/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
@@ -87,6 +88,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r.conn = conn
 	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
 	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
+	r.metricsClient = metricV3.NewGolangMetricReportServiceClient(r.conn)
 	if r.cdsInterval > 0 {
 		r.cdsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
 		r.cdsService = go2sky.NewConfigDiscoveryService()
@@ -103,6 +105,7 @@ type gRPCReporter struct {
 	conn             *grpc.ClientConn
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
+	metricsClient    metricV3.GolangMetricReportServiceClient
 	checkInterval    time.Duration
 	cdsInterval      time.Duration
 	cdsService       *go2sky.ConfigDiscoveryService
@@ -128,6 +131,7 @@ func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers 
 	r.initSendPipeline()
 	r.check()
 	r.initCDS(cdsWatchers)
+	r.initMetricsCollector()
 	r.bootFlag = true
 }
 
@@ -280,6 +284,36 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 			time.Sleep(r.cdsInterval)
 		}
 	}()
+}
+
+func (r *gRPCReporter) initMetricsCollector() {
+	go2sky.InitMetricCollector(r)
+}
+
+func (r *gRPCReporter) SendMetrics(metrics go2sky.RunTimeMetric) {
+
+	metricsList := make([]*metricV3.GolangMetric, 0)
+	metricsData := &metricV3.GolangMetric{
+		Time:         metrics.Time,
+		HeapAlloc:    metrics.HeapAlloc,
+		StackInUse:   metrics.StackInUse,
+		GcNum:        metrics.GcNum,
+		GcPauseTime:  metrics.GcPauseTime,
+		GoroutineNum: metrics.GoroutineNum,
+		ThreadNum:    metrics.ThreadNum,
+		CpuUsedRate:  float32(metrics.CpuUsedRate),
+		MemUsedRate:  float32(metrics.MemUsedRate),
+	}
+	metricsList = append(metricsList, metricsData)
+	_, err := r.metricsClient.Collect(context.Background(), &metricV3.GolangMetricCollection{
+		Metrics:         metricsList,
+		Service:         r.service,
+		ServiceInstance: r.serviceInstance,
+	})
+	if err != nil {
+		r.logger.Errorf("send golang metrics error %v", err)
+		return
+	}
 }
 
 func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_CollectClient) {
