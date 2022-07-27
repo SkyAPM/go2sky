@@ -64,6 +64,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 		cdsInterval:   defaultCDSInterval, // cds default on
+		crs:	       defaultCrs,
 	}
 
 	if err := applyGRPCReporterOption(r, opts...); err != nil {
@@ -108,6 +109,9 @@ type gRPCReporter struct {
 	cdsService       *go2sky.ConfigDiscoveryService
 	cdsClient        configuration.ConfigurationDiscoveryServiceClient
 
+	// set custom escalation policy
+	crs CustomReportStrategy
+	
 	md    metadata.MD
 	creds credentials.TransportCredentials
 
@@ -232,6 +236,9 @@ func (r *gRPCReporter) initSendPipeline() {
 				continue StreamLoop
 			}
 			for s := range r.sendCh {
+				if !r.crs(s) {
+					continue
+				} 
 				err = stream.Send(s)
 				if err != nil {
 					r.logger.Errorf("send segment error %v", err)
