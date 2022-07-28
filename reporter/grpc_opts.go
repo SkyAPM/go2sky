@@ -127,7 +127,7 @@ func WithProcessStatusHook(enable bool) GRPCReporterOption {
 }
 
 // WithReportStrategy set report strategy
-func WithCustomReportStrategy(rs ReportStrategy) GRPCReporterOption {
+func WithReportStrategy(rs ReportStrategy) GRPCReporterOption {
 	return func(r *gRPCReporter) {
 		r.rs = rs
 	}
