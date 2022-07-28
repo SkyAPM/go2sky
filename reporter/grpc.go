@@ -64,7 +64,6 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 		cdsInterval:   defaultCDSInterval, // cds default on
-		rs:	       defaultRs,
 	}
 
 	if err := applyGRPCReporterOption(r, opts...); err != nil {
@@ -236,7 +235,7 @@ func (r *gRPCReporter) initSendPipeline() {
 				continue StreamLoop
 			}
 			for s := range r.sendCh {
-				if !r.rs(s) {
+				if r.rs != nil && !r.rs(s) {
 					continue
 				} 
 				err = stream.Send(s)
