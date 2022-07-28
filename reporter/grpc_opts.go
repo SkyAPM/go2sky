@@ -27,11 +27,11 @@ import (
 	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
-var defaultCrs CustomReportStrategy = func(s *agentv3.SegmentObject) bool { return true }
+var defaultRs ReportStrategy = func(s *agentv3.SegmentObject) bool { return true }
 
-// CustomReportStrategy allowed to set a custom filter
+// ReportStrategy allowed to set a custom filter
 // to filter the reported segment
-type CustomReportStrategy func(s *agentv3.SegmentObject) bool
+type ReportStrategy func(s *agentv3.SegmentObject) bool
 
 // GRPCReporterOption allows for functional options to adjust behaviour
 // of a gRPC reporter to be created by NewGRPCReporter
@@ -126,9 +126,9 @@ func WithProcessStatusHook(enable bool) GRPCReporterOption {
 	}
 }
 
-// WithCustomReportStrategy set custom escalation policy
-func WithCustomReportStrategy(crs CustomReportStrategy) GRPCReporterOption {
+// WithReportStrategy set report strategy
+func WithCustomReportStrategy(rs ReportStrategy) GRPCReporterOption {
 	return func(r *gRPCReporter) {
-		r.crs = crs
+		r.rs = rs
 	}
 }
