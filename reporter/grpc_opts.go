@@ -27,8 +27,6 @@ import (
 	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
-var defaultRs ReportStrategy = func(s *agentv3.SegmentObject) bool { return true }
-
 // ReportStrategy allowed to set a custom filter
 // to filter the reported segment
 type ReportStrategy func(s *agentv3.SegmentObject) bool
