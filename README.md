@@ -33,6 +33,22 @@ if err != nil {
 defer r.Close()
 tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r))
 ```
+In some scenarios, we may need a filter to filter segments that do not need to be submitted to reduce the pressure of grpc reporting. For example, we just need to track the request of error.
+
+```go
+r, err := reporter.NewGRPCReporter("oap-skywalking:11800", reporter.WithReportStrategy(func(s *v3.SegmentObject) bool {
+	var isReport bool
+	for _, span := s.GetSpans {
+		if span.GetIsError() {
+			isReport = true
+			break
+		}
+	}
+	
+	return isReport
+}))
+
+```
 
 You can also create tracer with sampling rate. It supports decimals between **0-1** (two decimal places), representing the sampling percentage of trace.
 ```go
