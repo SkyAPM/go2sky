@@ -33,7 +33,7 @@ if err != nil {
 defer r.Close()
 tracer, err := go2sky.NewTracer("example", go2sky.WithReporter(r))
 ```
-In some scenarios, we may need a filter to filter segments that do not need to be submitted to reduce the pressure of grpc reporting. For example, we just need to track the request of error.
+In some scenarios, we may need a filter to filter segments that do not need to be submitted, for example, to reduce the load of gRPC reporting, or only track the request of error.
 
 ```go
 r, err := reporter.NewGRPCReporter("oap-skywalking:11800", reporter.WithReportStrategy(func(s *v3.SegmentObject) bool {
