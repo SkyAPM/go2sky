@@ -38,7 +38,7 @@ In some scenarios, we may need a filter to filter segments that do not need to b
 ```go
 r, err := reporter.NewGRPCReporter("oap-skywalking:11800", reporter.WithReportStrategy(func(s *v3.SegmentObject) bool {
 	var isReport bool
-	for _, span := s.GetSpans {
+	for _, span := s.GetSpans() {
 		if span.GetIsError() {
 			isReport = true
 			break
