@@ -2,6 +2,8 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/99designs/gqlgen v0.17.12 h1:lH/H5dTYCY5eLNRKXeq22l0wFMavpOnN6v9GAIw+fxY=
 github.com/99designs/gqlgen v0.17.12/go.mod h1:w1brbeOdqVyNJI553BGwtwdVcYu1LKeYE1opLWN9RgQ=
+github.com/99designs/gqlgen v0.17.14 h1:5c3TYN3Hbe54CevGzQOiuMhlpjSpmNhy65ZqIZhtQ+E=
+github.com/99designs/gqlgen v0.17.14/go.mod h1:IXeS/mdPf7JPkmqvbRKjCAV+CLxMKe6vXw6yD9vamB8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
@@ -29,6 +31,10 @@ github.com/easonyipj/skywalking-goapi v0.0.0-20220714130922-430d2ca6b0cb h1:K8J5
 github.com/easonyipj/skywalking-goapi v0.0.0-20220714130922-430d2ca6b0cb/go.mod h1:CyOo296OPUgZIGXBIhqg7o4CYLywxNtKNJEU8aCQJL8=
 github.com/easonyipj/skywalking-goapi v0.0.0-20220714133241-dae462b9d077 h1:VzNwns5dRpr8kZV/KQsoU50smU+0lf0+BAW8Rh4ij7E=
 github.com/easonyipj/skywalking-goapi v0.0.0-20220714133241-dae462b9d077/go.mod h1:Ku7Fj18/K+Bhz3reSRjmN63DbpRYBBuXbFaw9eEY/6s=
+github.com/easonyipj/skywalking-goapi v0.0.0-20220820142318-d436f0a8d532 h1:FfVbowIt7mom2yu281IevDyPkdrB0h0cEvu9Ft7EGCk=
+github.com/easonyipj/skywalking-goapi v0.0.0-20220820142318-d436f0a8d532/go.mod h1:lN6WlrmwJjTsMCE8VA/RPHO6ke3mJQQ7daw250BSonA=
+github.com/easonyipj/skywalking-goapi v0.0.0-20220821144218-a3bdfc3df4aa h1:M3ioEEwJVllqFt3cIdIpe7n4hn9vzP4vBvOPbWsGP/M=
+github.com/easonyipj/skywalking-goapi v0.0.0-20220821144218-a3bdfc3df4aa/go.mod h1:lN6WlrmwJjTsMCE8VA/RPHO6ke3mJQQ7daw250BSonA=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -108,6 +114,7 @@ github.com/tklauser/numcpus v0.4.0 h1:E53Dm1HjH1/R2/aoCtXtPgzmElmn51aOkhCFSuZq//
 github.com/tklauser/numcpus v0.4.0/go.mod h1:1+UI3pD8NW14VMwdgJNJ1ESk2UnwhAnz5hMwiKKqXCQ=
 github.com/urfave/cli/v2 v2.8.1/go.mod h1:Z41J9TPoffeoqP0Iza0YbAhGvymRdZAd2uPmZ5JxRdY=
 github.com/vektah/gqlparser/v2 v2.4.6/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
+github.com/vektah/gqlparser/v2 v2.4.8/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673/go.mod h1:N3UwUGtsrSj3ccvlPHLoLsHnpR27oXr4ZE984MbSER8=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
@@ -215,6 +222,8 @@ google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp0
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 google.golang.org/protobuf v1.28.0 h1:w43yiav+6bVFTBQFZX0r7ipe9JQ1QsbMgHwbBziscLw=
 google.golang.org/protobuf v1.28.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
+google.golang.org/protobuf v1.28.1 h1:d0NfwRgPtno5B1Wa6L2DAG+KivqkdutMf1UhdNx175w=
+google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

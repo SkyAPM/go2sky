@@ -23,10 +23,10 @@ type RunTimeMetric struct {
 	HeapAlloc int64
 	// the bytes in stack spans.
 	StackInUse int64
-	// the number of completed GC cycles since
+	// the number of completed GC cycles since instance started
 	GcNum int64
 	// the latest gc pause time(NS)
-	GcPauseTime int64
+	GcPauseTime float64
 	// the number of goroutines that currently exist
 	GoroutineNum int64
 	// the number of records in the thread creation profile
@@ -62,12 +62,36 @@ func (c *MetricCollector) collect() {
 		}
 	}()
 
+	var lastGCNum = uint32(0)
+
 	for {
+
+		var rtm runtime.MemStats
+		runtime.ReadMemStats(&rtm)
+		v, _ := mem.VirtualMemory()
+		cpuPercent, _ := cpu.Percent(0, false)
+		threadNum, _ := runtime.ThreadCreateProfile(nil)
+		runTimeMetric := RunTimeMetric{
+			Time:       time.Now().UnixMilli(),
+			HeapAlloc:  int64(rtm.HeapAlloc),
+			StackInUse: int64(rtm.StackInuse),
+			GcNum:      int64(rtm.NumGC - lastGCNum),
+			// transfer ns to ms
+			GcPauseTime:  float64(rtm.PauseNs[(rtm.NumGC+255)%256]) / float64(1000000),
+			GoroutineNum: int64(runtime.NumGoroutine()),
+			ThreadNum:    int64(threadNum),
+			CpuUsedRate:  cpuPercent[0],
+			MemUsedRate:  v.UsedPercent,
+		}
+
+		lastGCNum = rtm.NumGC
+
 		select {
-		case c.sendCh <- c.getCurrentMetrics():
+		case c.sendCh <- runTimeMetric:
 		default:
 			c.logger.Errorf("reach max send buffer")
 		}
+		c.logger.Infof("%+v", runTimeMetric)
 
 		time.Sleep(defaultGolangCollectInterval)
 	}
@@ -79,25 +103,6 @@ func (c *MetricCollector) send() {
 		c.reporter.SendMetrics(m)
 	}
 
-}
-
-func (c *MetricCollector) getCurrentMetrics() RunTimeMetric {
-	var rtm runtime.MemStats
-	runtime.ReadMemStats(&rtm)
-	v, _ := mem.VirtualMemory()
-	cpuPercent, _ := cpu.Percent(0, false)
-	threadNum, _ := runtime.ThreadCreateProfile(nil)
-	return RunTimeMetric{
-		Time:         time.Now().UnixMilli(),
-		HeapAlloc:    int64(rtm.HeapAlloc),
-		StackInUse:   int64(rtm.StackInuse),
-		GcNum:        int64(rtm.NumGC),
-		GcPauseTime:  int64(rtm.PauseNs[(rtm.NumGC+255)%256]),
-		GoroutineNum: int64(runtime.NumGoroutine()),
-		ThreadNum:    int64(threadNum),
-		CpuUsedRate:  cpuPercent[0],
-		MemUsedRate:  v.UsedPercent,
-	}
 }
 
 type MetricsReporter interface {
