@@ -463,10 +463,3 @@ func TestCollectGolangMetric(t *testing.T) {
 
 	time.Sleep(10 * time.Minute)
 }
-
-func TestFlow(t *testing.T) {
-	var i int32
-	i = 2147483647
-	i += 4
-	fmt.Println(i)
-}
