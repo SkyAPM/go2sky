@@ -26,7 +26,7 @@ type RunTimeMetric struct {
 	// the number of completed GC cycles since instance started
 	GcNum int64
 	// the latest gc pause time(NS)
-	GcPauseTime float64
+	GcPauseTime int64
 	// the number of goroutines that currently exist
 	GoroutineNum int64
 	// the number of records in the thread creation profile
@@ -72,12 +72,11 @@ func (c *MetricCollector) collect() {
 		cpuPercent, _ := cpu.Percent(0, false)
 		threadNum, _ := runtime.ThreadCreateProfile(nil)
 		runTimeMetric := RunTimeMetric{
-			Time:       time.Now().UnixMilli(),
-			HeapAlloc:  int64(rtm.HeapAlloc),
-			StackInUse: int64(rtm.StackInuse),
-			GcNum:      int64(rtm.NumGC - lastGCNum),
-			// transfer ns to ms
-			GcPauseTime:  float64(rtm.PauseNs[(rtm.NumGC+255)%256]) / float64(1000000),
+			Time:         time.Now().UnixMilli(),
+			HeapAlloc:    int64(rtm.HeapAlloc),
+			StackInUse:   int64(rtm.StackInuse),
+			GcNum:        int64(rtm.NumGC - lastGCNum),
+			GcPauseTime:  int64(rtm.PauseNs[(rtm.NumGC+255)%256]),
 			GoroutineNum: int64(runtime.NumGoroutine()),
 			ThreadNum:    int64(threadNum),
 			CpuUsedRate:  cpuPercent[0],
@@ -91,6 +90,7 @@ func (c *MetricCollector) collect() {
 		default:
 			c.logger.Errorf("reach max send buffer")
 		}
+		// TODO mr前删除
 		c.logger.Infof("%+v", runTimeMetric)
 
 		time.Sleep(defaultGolangCollectInterval)

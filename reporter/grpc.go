@@ -297,7 +297,7 @@ func (r *gRPCReporter) SendMetrics(metrics go2sky.RunTimeMetric) {
 		HeapAlloc:    metrics.HeapAlloc,
 		StackInUse:   metrics.StackInUse,
 		GcNum:        metrics.GcNum,
-		GcPauseTime:  float32(metrics.GcPauseTime),
+		GcPauseTime:  metrics.GcPauseTime,
 		GoroutineNum: metrics.GoroutineNum,
 		ThreadNum:    metrics.ThreadNum,
 		CpuUsedRate:  float32(metrics.CpuUsedRate),
