@@ -19,7 +19,7 @@ package reporter
 import (
 	"context"
 	"fmt"
-	mock_v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent/mock_metrics"
+
 	"log"
 	"os"
 	"reflect"
@@ -442,12 +442,29 @@ func TestGRPCReporter_EnvOverride(t *testing.T) {
 }
 
 func TestSendMetrics(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockGolangMetricReportServiceClient := mock_v3.NewMockGolangMetricReportServiceClient(ctrl)
-	mockGolangMetricReportServiceClient.EXPECT().Collect(context.Background(), gomock.Any()).Return(nil, nil)
-	mockGRRCReporter := createGRPCReporter()
-	mockGRRCReporter.metricsClient = mockGolangMetricReportServiceClient
 
-	mockGRRCReporter.initMetricsCollector()
-	time.Sleep(1 * time.Second)
+}
+
+func TestCollectGolangMetric(t *testing.T) {
+	report, err := NewGRPCReporter("127.0.0.1:11800")
+	if err != nil {
+		log.Fatalf("crate grpc reporter error: %v \n", err)
+	}
+
+	_, err = go2sky.NewTracer("service-yipingjian", go2sky.WithReporter(report))
+	if err != nil {
+		log.Fatalf("crate tracer error: %v \n", err)
+	}
+
+	go func() {
+		for {
+			s := ""
+			for i := 0; i < 10000; i++ {
+				s += "afff"
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	time.Sleep(10 * time.Minute)
 }

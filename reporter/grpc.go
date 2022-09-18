@@ -87,7 +87,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r.conn = conn
 	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
 	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
-	r.metricsClient = agentv3.NewGolangMetricReportServiceClient(r.conn)
+	r.meterClient = agentv3.NewMeterReportServiceClient(r.conn)
 	if r.cdsInterval > 0 {
 		r.cdsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
 		r.cdsService = go2sky.NewConfigDiscoveryService()
@@ -104,7 +104,7 @@ type gRPCReporter struct {
 	conn             *grpc.ClientConn
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
-	metricsClient    agentv3.GolangMetricReportServiceClient
+	meterClient      agentv3.MeterReportServiceClient
 	checkInterval    time.Duration
 	cdsInterval      time.Duration
 	cdsService       *go2sky.ConfigDiscoveryService
@@ -286,32 +286,29 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 }
 
 func (r *gRPCReporter) initMetricsCollector() {
-	go2sky.InitMetricCollector(r)
+	go2sky.InitMetricCollector(r, r.serviceInstance, r.service)
 }
 
-func (r *gRPCReporter) SendMetrics(metrics go2sky.RunTimeMetric) {
-
-	metricsList := make([]*agentv3.GolangMetric, 0)
-	metricsData := &agentv3.GolangMetric{
-		Time:         metrics.Time,
-		HeapAlloc:    metrics.HeapAlloc,
-		StackInUse:   metrics.StackInUse,
-		GcNum:        metrics.GcNum,
-		GcPauseTime:  metrics.GcPauseTime,
-		GoroutineNum: metrics.GoroutineNum,
-		ThreadNum:    metrics.ThreadNum,
-		CpuUsedRate:  float32(metrics.CpuUsedRate),
-		MemUsedRate:  float32(metrics.MemUsedRate),
-	}
-	metricsList = append(metricsList, metricsData)
-	_, err := r.metricsClient.Collect(context.Background(), &agentv3.GolangMetricCollection{
-		Metrics:         metricsList,
-		Service:         r.service,
-		ServiceInstance: r.serviceInstance,
-	})
+func (r *gRPCReporter) SendMetrics(metrics []*agentv3.MeterData) {
+	stream, err := r.meterClient.Collect(metadata.NewOutgoingContext(context.Background(), r.md))
 	if err != nil {
-		r.logger.Errorf("send golang metrics error %v", err)
-		return
+		r.logger.Errorf("open meter stream error %v", err)
+		time.Sleep(1 * time.Second)
+	}
+
+	for _, meter := range metrics {
+		// TODO delete the log before mr
+		r.logger.Infof("meter date %+v", meter)
+		err = stream.Send(meter)
+		if err != nil {
+			r.logger.Errorf("send meter error %v", err)
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	_, err = stream.CloseAndRecv()
+	if err != nil && err != io.EOF {
+		r.logger.Errorf("send closing error %v", err)
 	}
 }
 
