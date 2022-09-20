@@ -289,26 +289,24 @@ func (r *gRPCReporter) initMetricsCollector() {
 	go2sky.InitMetricCollector(r, r.serviceInstance, r.service)
 }
 
-func (r *gRPCReporter) SendMetrics(metrics []*agentv3.MeterData) {
-	stream, err := r.meterClient.Collect(metadata.NewOutgoingContext(context.Background(), r.md))
+func (r *gRPCReporter) SendMetrics(meters []*agentv3.MeterData) {
+	stream, err := r.meterClient.CollectBatch(metadata.NewOutgoingContext(context.Background(), r.md))
 	if err != nil {
-		r.logger.Errorf("open meter stream error %v", err)
-		time.Sleep(1 * time.Second)
+		r.logger.Errorf("open meter stream error %+v", err)
+		return
 	}
 
-	for _, meter := range metrics {
-		// TODO delete the log before mr
-		r.logger.Infof("meter date %+v", meter)
-		err = stream.Send(meter)
-		if err != nil {
-			r.logger.Errorf("send meter error %v", err)
-			time.Sleep(1 * time.Second)
-		}
+	// TODO delete the log before mr
+	r.logger.Infof("meter date %+v", meters)
+	err = stream.Send(&agentv3.MeterDataCollection{MeterData: meters})
+	if err != nil {
+		r.logger.Errorf("send meter error %+v", err)
+		return
 	}
 
 	_, err = stream.CloseAndRecv()
 	if err != nil && err != io.EOF {
-		r.logger.Errorf("send closing error %v", err)
+		r.logger.Errorf("send closing error %+v", err)
 	}
 }
 
