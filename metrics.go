@@ -13,17 +13,16 @@ import (
 )
 
 const (
-	maxSendQueueSize             int32 = 30000
-	defaultGolangCollectInterval       = 5 * time.Second
-	defaultLogPrefix                   = "go2sky-golang-metric"
-	InstanceGolangHeap                 = "instance_golang_heap"
-	InstanceGolangStack                = "instance_golang_stack"
-	InstanceGolangGCTime               = "instance_golang_gc_time"
-	InstanceGolangGCCount              = "instance_golang_gc_count"
-	InstanceGolangThreadNum            = "instance_golang_thread_num"
-	InstanceGolangGoroutineNum         = "instance_golang_goroutine_num"
-	InstanceGolangCPUUsedRate          = "instance_golang_cpu_used_rate"
-	InstanceGolangMemUsedRate          = "instance_golang_mem_used_rate"
+	maxSendQueueSize           int32 = 30000
+	defaultLogPrefix                 = "go2sky-golang-metric"
+	InstanceGolangHeap               = "instance_golang_heap"
+	InstanceGolangStack              = "instance_golang_stack"
+	InstanceGolangGCTime             = "instance_golang_gc_time"
+	InstanceGolangGCCount            = "instance_golang_gc_count"
+	InstanceGolangThreadNum          = "instance_golang_thread_num"
+	InstanceGolangGoroutineNum       = "instance_golang_goroutine_num"
+	InstanceGolangCPUUsedRate        = "instance_golang_cpu_used_rate"
+	InstanceGolangMemUsedRate        = "instance_golang_mem_used_rate"
 )
 
 type RunTimeMetric struct {
@@ -34,9 +33,9 @@ type RunTimeMetric struct {
 	// the bytes in stack spans.
 	StackInUse int64
 	// the number of completed GC cycles since instance started
-	GcNum int64
+	GCCount int64
 	// the latest gc pause time(NS)
-	GcPauseTime int64
+	GCPauseTime int64
 	// the number of goroutines that currently exist
 	GoroutineNum int64
 	// the number of records in the thread creation profile
@@ -52,16 +51,18 @@ type MetricCollector struct {
 	reporter MetricsReporter
 	instance string
 	service  string
+	interval time.Duration
 	logger   logger.Log
 }
 
-func InitMetricCollector(reporter MetricsReporter, instance, service string) {
+func InitMetricCollector(reporter MetricsReporter, instance, service string, interval time.Duration) {
 	collector := &MetricCollector{
 		sendCh:   make(chan RunTimeMetric, maxSendQueueSize),
 		logger:   logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
 		reporter: reporter,
 		instance: instance,
 		service:  service,
+		interval: interval,
 	}
 
 	go collector.collect()
@@ -76,32 +77,36 @@ func (c *MetricCollector) collect() {
 		}
 	}()
 
+	timer := time.NewTicker(c.interval)
+
 	for {
+		go c.collectMeter()
+		<-timer.C
+	}
+}
 
-		var rtm runtime.MemStats
-		runtime.ReadMemStats(&rtm)
-		v, _ := mem.VirtualMemory()
-		cpuPercent, _ := cpu.Percent(0, false)
-		threadNum, _ := runtime.ThreadCreateProfile(nil)
-		runTimeMetric := RunTimeMetric{
-			Time:         time.Now().UnixMilli(),
-			HeapAlloc:    int64(rtm.HeapAlloc),
-			StackInUse:   int64(rtm.StackInuse),
-			GcNum:        int64(rtm.NumGC),
-			GcPauseTime:  int64(rtm.PauseNs[(rtm.NumGC+255)%256]),
-			GoroutineNum: int64(runtime.NumGoroutine()),
-			ThreadNum:    int64(threadNum),
-			CpuUsedRate:  cpuPercent[0],
-			MemUsedRate:  v.UsedPercent,
-		}
+func (c *MetricCollector) collectMeter() {
+	var rtm runtime.MemStats
+	runtime.ReadMemStats(&rtm)
+	v, _ := mem.VirtualMemory()
+	cpuPercent, _ := cpu.Percent(0, false)
+	threadNum, _ := runtime.ThreadCreateProfile(nil)
+	runTimeMetric := RunTimeMetric{
+		Time:         time.Now().UnixMilli(),
+		HeapAlloc:    int64(rtm.HeapAlloc),
+		StackInUse:   int64(rtm.StackInuse),
+		GCCount:      int64(rtm.NumGC),
+		GCPauseTime:  int64(rtm.PauseNs[(rtm.NumGC+255)%256]),
+		GoroutineNum: int64(runtime.NumGoroutine()),
+		ThreadNum:    int64(threadNum),
+		CpuUsedRate:  cpuPercent[0],
+		MemUsedRate:  v.UsedPercent,
+	}
 
-		select {
-		case c.sendCh <- runTimeMetric:
-		default:
-			c.logger.Errorf("reach max send buffer")
-		}
-
-		time.Sleep(defaultGolangCollectInterval)
+	select {
+	case c.sendCh <- runTimeMetric:
+	default:
+		c.logger.Errorf("reach max send buffer")
 	}
 }
 
@@ -111,8 +116,8 @@ func (c *MetricCollector) send() {
 		meterDataList := make([]*v3.MeterData, 0)
 		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangHeap, float64(m.HeapAlloc), m.Time))
 		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangStack, float64(m.StackInUse), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCTime, float64(m.GcPauseTime), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCCount, float64(m.GcNum), m.Time))
+		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCTime, float64(m.GCPauseTime), m.Time))
+		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCCount, float64(m.GCCount), m.Time))
 		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangThreadNum, float64(m.ThreadNum), m.Time))
 		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGoroutineNum, float64(m.GoroutineNum), m.Time))
 		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangCPUUsedRate, m.CpuUsedRate, m.Time))

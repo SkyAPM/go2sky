@@ -19,7 +19,7 @@ package reporter
 import (
 	"context"
 	"fmt"
-
+	"github.com/SkyAPM/go2sky/reporter/grpc/language-agent/mock_meter"
 	"log"
 	"os"
 	"reflect"
@@ -442,11 +442,15 @@ func TestGRPCReporter_EnvOverride(t *testing.T) {
 }
 
 func TestSendMetrics(t *testing.T) {
+	mockGRPCReporter := createGRPCReporter()
+	ctrl := gomock.NewController(t)
+	mockGRPCReporter.meterInterval = 1
+	mockGRPCReporter.meterClient = mock_meter.NewMockMeterReportServiceClient(ctrl)
 
 }
 
 func TestCollectGolangMetric(t *testing.T) {
-	report, err := NewGRPCReporter("127.0.0.1:11800")
+	report, err := NewGRPCReporter("127.0.0.1:11800", WithMeterCollectPeriod(15*time.Second))
 	if err != nil {
 		log.Fatalf("crate grpc reporter error: %v \n", err)
 	}

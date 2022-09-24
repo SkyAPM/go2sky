@@ -107,6 +107,7 @@ type gRPCReporter struct {
 	meterClient      agentv3.MeterReportServiceClient
 	checkInterval    time.Duration
 	cdsInterval      time.Duration
+	meterInterval    time.Duration
 	cdsService       *go2sky.ConfigDiscoveryService
 	cdsClient        configuration.ConfigurationDiscoveryServiceClient
 
@@ -286,7 +287,7 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 }
 
 func (r *gRPCReporter) initMetricsCollector() {
-	go2sky.InitMetricCollector(r, r.serviceInstance, r.service)
+	go2sky.InitMetricCollector(r, r.serviceInstance, r.service, r.meterInterval)
 }
 
 func (r *gRPCReporter) SendMetrics(meters []*agentv3.MeterData) {
