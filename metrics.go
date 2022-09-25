@@ -66,7 +66,6 @@ func InitMetricCollector(reporter MetricsReporter, instance, service string, int
 	}
 
 	go collector.collect()
-	go collector.send()
 }
 
 func (c *MetricCollector) collect() {
@@ -103,28 +102,22 @@ func (c *MetricCollector) collectMeter() {
 		MemUsedRate:  v.UsedPercent,
 	}
 
-	select {
-	case c.sendCh <- runTimeMetric:
-	default:
-		c.logger.Errorf("reach max send buffer")
-	}
+	c.reporter.SendMetrics(c.generateMeterDataList(runTimeMetric))
 }
 
-func (c *MetricCollector) send() {
+func (c *MetricCollector) generateMeterDataList(m RunTimeMetric) []*v3.MeterData {
 
-	for m := range c.sendCh {
-		meterDataList := make([]*v3.MeterData, 0)
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangHeap, float64(m.HeapAlloc), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangStack, float64(m.StackInUse), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCTime, float64(m.GCPauseTime), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCCount, float64(m.GCCount), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangThreadNum, float64(m.ThreadNum), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGoroutineNum, float64(m.GoroutineNum), m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangCPUUsedRate, m.CpuUsedRate, m.Time))
-		meterDataList = append(meterDataList, c.generateMeter(InstanceGolangMemUsedRate, m.MemUsedRate, m.Time))
-		c.reporter.SendMetrics(meterDataList)
-	}
+	meterDataList := make([]*v3.MeterData, 0)
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangHeap, float64(m.HeapAlloc), m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangStack, float64(m.StackInUse), m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCTime, float64(m.GCPauseTime), m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCCount, float64(m.GCCount), m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangThreadNum, float64(m.ThreadNum), m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGoroutineNum, float64(m.GoroutineNum), m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangCPUUsedRate, m.CpuUsedRate, m.Time))
+	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangMemUsedRate, m.MemUsedRate, m.Time))
 
+	return meterDataList
 }
 
 func (c *MetricCollector) generateMeter(name string, value float64, time int64) *v3.MeterData {

@@ -62,6 +62,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r := &gRPCReporter{
 		logger:        logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
+		meterCh:       make(chan []*agentv3.MeterData, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 		cdsInterval:   defaultCDSInterval, // cds default on
 	}
@@ -101,6 +102,7 @@ type gRPCReporter struct {
 	instanceProps    map[string]string
 	logger           logger.Log
 	sendCh           chan *agentv3.SegmentObject
+	meterCh          chan []*agentv3.MeterData
 	conn             *grpc.ClientConn
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
@@ -288,26 +290,50 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 
 func (r *gRPCReporter) initMetricsCollector() {
 	go2sky.InitMetricCollector(r, r.serviceInstance, r.service, r.meterInterval)
+	r.initSendMeterPipeline()
 }
 
-func (r *gRPCReporter) SendMetrics(meters []*agentv3.MeterData) {
-	stream, err := r.meterClient.CollectBatch(metadata.NewOutgoingContext(context.Background(), r.md))
-	if err != nil {
-		r.logger.Errorf("open meter stream error %+v", err)
+func (r *gRPCReporter) SendMetrics(metrics []*agentv3.MeterData) {
+	select {
+	case r.meterCh <- metrics:
+	default:
+		r.logger.Errorf("reach max send buffer")
+	}
+}
+
+func (r *gRPCReporter) initSendMeterPipeline() {
+	if r.meterClient == nil {
 		return
 	}
+	go func() {
+	StreamLoop:
+		for {
+			stream, err := r.meterClient.CollectBatch(metadata.NewOutgoingContext(context.Background(), r.md))
+			if err != nil {
+				r.logger.Errorf("open stream error %v", err)
+				time.Sleep(5 * time.Second)
+				continue StreamLoop
+			}
+			for meters := range r.meterCh {
+				// TODO delete the log before merge
+				r.logger.Infof("meters:%+v", meters)
+				err = stream.Send(&agentv3.MeterDataCollection{MeterData: meters})
+				if err != nil {
+					r.logger.Errorf("send meter error %v", err)
+					r.closeMeterStream(stream)
+					continue StreamLoop
+				}
+			}
+			r.closeMeterStream(stream)
+			break
+		}
+	}()
+}
 
-	// TODO delete the log before mr
-	r.logger.Infof("meter date %+v", meters)
-	err = stream.Send(&agentv3.MeterDataCollection{MeterData: meters})
-	if err != nil {
-		r.logger.Errorf("send meter error %+v", err)
-		return
-	}
-
-	_, err = stream.CloseAndRecv()
+func (r *gRPCReporter) closeMeterStream(stream agentv3.MeterReportService_CollectBatchClient) {
+	_, err := stream.CloseAndRecv()
 	if err != nil && err != io.EOF {
-		r.logger.Errorf("send closing error %+v", err)
+		r.logger.Errorf("send meter stream closing error %v", err)
 	}
 }
 

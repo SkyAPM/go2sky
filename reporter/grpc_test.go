@@ -19,7 +19,7 @@ package reporter
 import (
 	"context"
 	"fmt"
-	"github.com/SkyAPM/go2sky/reporter/grpc/language-agent/mock_meter"
+	mock_v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent/mock_meter"
 	"log"
 	"os"
 	"reflect"
@@ -444,9 +444,18 @@ func TestGRPCReporter_EnvOverride(t *testing.T) {
 func TestSendMetrics(t *testing.T) {
 	mockGRPCReporter := createGRPCReporter()
 	ctrl := gomock.NewController(t)
-	mockGRPCReporter.meterInterval = 1
-	mockGRPCReporter.meterClient = mock_meter.NewMockMeterReportServiceClient(ctrl)
+	mockGRPCReporter.meterInterval = 1 * time.Second
+	mockGRPCReporter.meterCh = make(chan []*agentv3.MeterData, maxSendQueueSize)
+	meterClient := mock_v3.NewMockMeterReportServiceClient(ctrl)
+	mockStream := mock_v3.NewMockMeterReportService_CollectBatchClient(ctrl)
 
+	mockStream.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+	meterClient.EXPECT().CollectBatch(gomock.Any()).Return(mockStream, nil).AnyTimes()
+
+	mockGRPCReporter.meterClient = meterClient
+	mockGRPCReporter.initMetricsCollector()
+
+	time.Sleep(1 * time.Second)
 }
 
 func TestCollectGolangMetric(t *testing.T) {
