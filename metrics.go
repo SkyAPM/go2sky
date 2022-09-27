@@ -1,6 +1,7 @@
 package go2sky
 
 import (
+	"context"
 	"github.com/SkyAPM/go2sky/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -8,8 +9,6 @@ import (
 	"os"
 	"runtime"
 	"time"
-
-	"skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 )
 
 const (
@@ -47,22 +46,20 @@ type RunTimeMetric struct {
 }
 
 type MetricCollector struct {
-	sendCh   chan RunTimeMetric
-	reporter MetricsReporter
-	instance string
-	service  string
-	interval time.Duration
-	logger   logger.Log
+	cancelCtx context.Context
+	reporter  MetricsReporter
+	instance  string
+	service   string
+	interval  time.Duration
+	logger    logger.Log
 }
 
-func InitMetricCollector(reporter MetricsReporter, instance, service string, interval time.Duration) {
+func InitMetricCollector(reporter MetricsReporter, interval time.Duration, cancelCtx context.Context) {
 	collector := &MetricCollector{
-		sendCh:   make(chan RunTimeMetric, maxSendQueueSize),
-		logger:   logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
-		reporter: reporter,
-		instance: instance,
-		service:  service,
-		interval: interval,
+		cancelCtx: cancelCtx,
+		logger:    logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
+		reporter:  reporter,
+		interval:  interval,
 	}
 
 	go collector.collect()
@@ -79,7 +76,15 @@ func (c *MetricCollector) collect() {
 	timer := time.NewTicker(c.interval)
 
 	for {
-		go c.collectMeter()
+
+		select {
+		case <-c.cancelCtx.Done():
+			c.logger.Infof("stop the meter collection")
+			return
+		default:
+			go c.collectMeter()
+		}
+
 		<-timer.C
 	}
 }
@@ -102,38 +107,9 @@ func (c *MetricCollector) collectMeter() {
 		MemUsedRate:  v.UsedPercent,
 	}
 
-	c.reporter.SendMetrics(c.generateMeterDataList(runTimeMetric))
-}
-
-func (c *MetricCollector) generateMeterDataList(m RunTimeMetric) []*v3.MeterData {
-
-	meterDataList := make([]*v3.MeterData, 0)
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangHeap, float64(m.HeapAlloc), m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangStack, float64(m.StackInUse), m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCTime, float64(m.GCPauseTime), m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGCCount, float64(m.GCCount), m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangThreadNum, float64(m.ThreadNum), m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangGoroutineNum, float64(m.GoroutineNum), m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangCPUUsedRate, m.CpuUsedRate, m.Time))
-	meterDataList = append(meterDataList, c.generateMeter(InstanceGolangMemUsedRate, m.MemUsedRate, m.Time))
-
-	return meterDataList
-}
-
-func (c *MetricCollector) generateMeter(name string, value float64, time int64) *v3.MeterData {
-	return &v3.MeterData{
-		Metric: &v3.MeterData_SingleValue{
-			SingleValue: &v3.MeterSingleValue{
-				Name:  name,
-				Value: value,
-			},
-		},
-		Timestamp:       time,
-		Service:         c.service,
-		ServiceInstance: c.instance,
-	}
+	c.reporter.SendMetrics(runTimeMetric)
 }
 
 type MetricsReporter interface {
-	SendMetrics(metrics []*v3.MeterData)
+	SendMetrics(runTimeMeter RunTimeMetric)
 }
