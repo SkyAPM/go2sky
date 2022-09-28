@@ -68,7 +68,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	}
 
 	// init a cancel ctx and cancel function
-	r.cancelCtx, r.cancelFunc = context.WithCancel(context.Background())
+	r.ctx, r.cancelFunc = context.WithCancel(context.Background())
 
 	if err := applyGRPCReporterOption(r, opts...); err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 }
 
 type gRPCReporter struct {
-	cancelCtx        context.Context
+	ctx              context.Context
 	cancelFunc       context.CancelFunc
 	service          string
 	serviceInstance  string
@@ -214,8 +214,12 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 
 func (r *gRPCReporter) Close() {
 	if r.sendCh != nil && r.bootFlag {
-		// cancel meter collection and send
-		r.closeMeterChannel()
+		// close meter collection goroutine
+		r.cancelFunc()
+		if r.meterCh != nil {
+			// close meter send channel
+			close(r.meterCh)
+		}
 		close(r.sendCh)
 	} else {
 		r.closeGRPCConn()
@@ -296,7 +300,7 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 }
 
 func (r *gRPCReporter) initMetricsCollector() {
-	go2sky.InitMetricCollector(r, r.meterInterval, r.cancelCtx)
+	go2sky.InitMetricCollector(r, r.meterInterval, r.ctx)
 	r.initSendMeterPipeline()
 }
 
@@ -320,7 +324,7 @@ func (r *gRPCReporter) SendMetrics(m go2sky.RunTimeMetric) {
 	}()
 
 	select {
-	case <-r.cancelCtx.Done():
+	case <-r.ctx.Done():
 		r.logger.Infof("send channel is closed")
 		return
 	case r.meterCh <- meterDataList:
@@ -350,6 +354,10 @@ func (r *gRPCReporter) initSendMeterPipeline() {
 	go func() {
 	StreamLoop:
 		for {
+			if r.conn.GetState() == connectivity.Shutdown {
+				break
+			}
+
 			stream, err := r.meterClient.CollectBatch(metadata.NewOutgoingContext(context.Background(), r.md))
 			if err != nil {
 				r.logger.Errorf("open stream error %v", err)
@@ -373,25 +381,13 @@ func (r *gRPCReporter) initSendMeterPipeline() {
 }
 
 func (r *gRPCReporter) closeMeterStream(stream agentv3.MeterReportService_CollectBatchClient) {
+	if r.conn.GetState() == connectivity.Shutdown {
+		return
+	}
+
 	_, err := stream.CloseAndRecv()
 	if err != nil && err != io.EOF {
 		r.logger.Errorf("send meter stream closing error %v", err)
-	}
-}
-
-func (r *gRPCReporter) closeMeterChannel() {
-	defer func() {
-		err := recover()
-		if err != nil {
-			r.logger.Errorf("closeMeterChannel panic, err:%+v", err)
-		}
-	}()
-	// stop the meter collection
-	r.cancelFunc()
-	r.logger.Infof("cancelFunc")
-	// close the meter send channel
-	if r.meterCh != nil {
-		close(r.meterCh)
 	}
 }
 

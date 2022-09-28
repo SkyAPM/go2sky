@@ -446,7 +446,7 @@ func TestSendMetrics(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockGRPCReporter.meterInterval = 1 * time.Second
 	mockGRPCReporter.meterCh = make(chan []*agentv3.MeterData, maxSendQueueSize)
-	mockGRPCReporter.cancelCtx, mockGRPCReporter.cancelFunc = context.WithCancel(context.Background())
+	mockGRPCReporter.ctx, mockGRPCReporter.cancelFunc = context.WithCancel(context.Background())
 
 	meterClient := mock_v3.NewMockMeterReportServiceClient(ctrl)
 	mockStream := mock_v3.NewMockMeterReportService_CollectBatchClient(ctrl)
@@ -481,7 +481,7 @@ func TestCollectGolangMetric(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(30 * time.Second)
+	time.Sleep(300 * time.Second)
 	report.Close()
 	time.Sleep(15 * time.Second)
 }

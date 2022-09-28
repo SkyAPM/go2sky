@@ -46,20 +46,20 @@ type RunTimeMetric struct {
 }
 
 type MetricCollector struct {
-	cancelCtx context.Context
-	reporter  MetricsReporter
-	instance  string
-	service   string
-	interval  time.Duration
-	logger    logger.Log
+	ctx      context.Context
+	reporter MetricsReporter
+	instance string
+	service  string
+	interval time.Duration
+	logger   logger.Log
 }
 
 func InitMetricCollector(reporter MetricsReporter, interval time.Duration, cancelCtx context.Context) {
 	collector := &MetricCollector{
-		cancelCtx: cancelCtx,
-		logger:    logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
-		reporter:  reporter,
-		interval:  interval,
+		ctx:      cancelCtx,
+		logger:   logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
+		reporter: reporter,
+		interval: interval,
 	}
 
 	go collector.collect()
@@ -78,7 +78,7 @@ func (c *MetricCollector) collect() {
 	for {
 
 		select {
-		case <-c.cancelCtx.Done():
+		case <-c.ctx.Done():
 			c.logger.Infof("stop the meter collection")
 			return
 		default:
