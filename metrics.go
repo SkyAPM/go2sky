@@ -12,16 +12,15 @@ import (
 )
 
 const (
-	maxSendQueueSize           int32 = 30000
-	defaultLogPrefix                 = "go2sky-golang-metric"
-	InstanceGolangHeap               = "instance_golang_heap"
-	InstanceGolangStack              = "instance_golang_stack"
-	InstanceGolangGCTime             = "instance_golang_gc_time"
-	InstanceGolangGCCount            = "instance_golang_gc_count"
-	InstanceGolangThreadNum          = "instance_golang_thread_num"
-	InstanceGolangGoroutineNum       = "instance_golang_goroutine_num"
-	InstanceGolangCPUUsedRate        = "instance_golang_cpu_used_rate"
-	InstanceGolangMemUsedRate        = "instance_golang_mem_used_rate"
+	defaultLogPrefix           = "go2sky-golang-metric"
+	InstanceGolangHeap         = "instance_golang_heap"
+	InstanceGolangStack        = "instance_golang_stack"
+	InstanceGolangGCTime       = "instance_golang_gc_time"
+	InstanceGolangGCCount      = "instance_golang_gc_count"
+	InstanceGolangThreadNum    = "instance_golang_thread_num"
+	InstanceGolangGoroutineNum = "instance_golang_goroutine_num"
+	InstanceGolangCPUUsedRate  = "instance_golang_cpu_used_rate"
+	InstanceGolangMemUsedRate  = "instance_golang_mem_used_rate"
 )
 
 type RunTimeMetric struct {
