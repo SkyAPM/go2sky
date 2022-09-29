@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	defaultInterval            = 15 * time.Second
 	defaultLogPrefix           = "go2sky-golang-metric"
 	InstanceGolangHeap         = "instance_golang_heap"
 	InstanceGolangStack        = "instance_golang_stack"
@@ -54,6 +55,10 @@ type MetricCollector struct {
 }
 
 func InitMetricCollector(reporter MetricsReporter, interval time.Duration, cancelCtx context.Context) {
+	if interval == 0 {
+		interval = defaultInterval
+	}
+
 	collector := &MetricCollector{
 		ctx:      cancelCtx,
 		logger:   logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
