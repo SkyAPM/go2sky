@@ -200,6 +200,12 @@ func (r *MockReporter) Verify(mm ...int) error {
 		if m != len(r.Message[i]) {
 			return fmt.Errorf("span size mismatch. expected %d actual %d", m, len(r.Message[i]))
 		}
+		if i > 0 {
+			s := r.Message[i][len(r.Message[i])-1]
+			if len(s.Refs()) == 0 {
+				return fmt.Errorf("span refs mismatch. expected %d actual %d", 1, len(s.Refs()))
+			}
+		}
 	}
 	return nil
 }

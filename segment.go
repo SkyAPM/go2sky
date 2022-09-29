@@ -225,6 +225,17 @@ func (rs *rootSegmentSpan) createRootSegmentContext(parent segmentSpan) (err err
 	rs.spanIDGenerator = &i
 	rs.SpanID = i
 	rs.ParentSpanID = -1
+	if parent != nil {
+		spanContext := &propagation.SpanContext{}
+		firstSpan := parent.context().FirstSpan
+		spanContext.TraceID = parent.context().TraceID
+		spanContext.ParentSegmentID = parent.context().SegmentID
+		spanContext.ParentSpanID = parent.context().SpanID
+		spanContext.ParentService = parent.tracer().service
+		spanContext.ParentServiceInstance = parent.tracer().instance
+		spanContext.ParentEndpoint = firstSpan.GetOperationName()
+		rs.defaultSpan.Refs = append(rs.defaultSpan.Refs, spanContext)
+	}
 	return
 }
 
