@@ -85,11 +85,9 @@ func (c *MetricCollector) collect() {
 		case <-c.ctx.Done():
 			c.logger.Infof("stop the meter collection")
 			return
-		default:
+	        case <-timer.C:
 			go c.collectMeter()
 		}
-
-		<-timer.C
 	}
 }
 
