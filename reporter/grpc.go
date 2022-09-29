@@ -118,6 +118,9 @@ type gRPCReporter struct {
 	cdsService       *go2sky.ConfigDiscoveryService
 	cdsClient        configuration.ConfigurationDiscoveryServiceClient
 
+	// set report strategy
+	rs ReportStrategy
+
 	md    metadata.MD
 	creds credentials.TransportCredentials
 
@@ -249,6 +252,9 @@ func (r *gRPCReporter) initSendPipeline() {
 				continue StreamLoop
 			}
 			for s := range r.sendCh {
+				if r.rs != nil && !r.rs(s) {
+					continue
+				}
 				err = stream.Send(s)
 				if err != nil {
 					r.logger.Errorf("send segment error %v", err)
