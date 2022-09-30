@@ -298,6 +298,7 @@ func createGRPCReporter() *gRPCReporter {
 	reporter := &gRPCReporter{
 		logger: logger.NewDefaultLogger(log.New(os.Stderr, "go2sky", log.LstdFlags)),
 	}
+	reporter.ctx, reporter.cancelFunc = context.WithCancel(context.Background())
 	return reporter
 }
 
