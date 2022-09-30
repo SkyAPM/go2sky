@@ -62,7 +62,6 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r := &gRPCReporter{
 		logger:        logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
-		meterCh:       make(chan []*agentv3.MeterData, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 		cdsInterval:   defaultCDSInterval, // cds default on
 	}
@@ -72,6 +71,11 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 
 	if err := applyGRPCReporterOption(r, opts...); err != nil {
 		return nil, err
+	}
+
+	// if user choose not close meter collection, make the meter channel
+	if r.meterInterval == nil || (r.meterInterval != nil && *r.meterInterval > 0) {
+		r.meterCh = make(chan []*agentv3.MeterData, maxSendQueueSize)
 	}
 
 	var credsDialOption grpc.DialOption
@@ -114,7 +118,7 @@ type gRPCReporter struct {
 	meterClient      agentv3.MeterReportServiceClient
 	checkInterval    time.Duration
 	cdsInterval      time.Duration
-	meterInterval    time.Duration
+	meterInterval    *time.Duration
 	cdsService       *go2sky.ConfigDiscoveryService
 	cdsClient        configuration.ConfigurationDiscoveryServiceClient
 
@@ -216,13 +220,14 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 }
 
 func (r *gRPCReporter) Close() {
+	// close meter collection goroutine
+	r.cancelFunc()
+	if r.meterCh != nil {
+		// close meter send channel
+		close(r.meterCh)
+	}
+
 	if r.sendCh != nil && r.bootFlag {
-		// close meter collection goroutine
-		r.cancelFunc()
-		if r.meterCh != nil {
-			// close meter send channel
-			close(r.meterCh)
-		}
 		close(r.sendCh)
 	} else {
 		r.closeGRPCConn()
@@ -306,6 +311,10 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 }
 
 func (r *gRPCReporter) initMetricsCollector() {
+	if r.meterInterval != nil && *r.meterInterval <= 0 {
+		r.logger.Info("user choose to close the meter collection")
+		return
+	}
 	go2sky.InitMetricCollector(r, r.meterInterval, r.ctx)
 	r.initSendMeterPipeline()
 }
@@ -319,8 +328,8 @@ func (r *gRPCReporter) SendMetrics(m go2sky.RunTimeMetric) {
 	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangGCCount, float64(m.GCCount), m.Time))
 	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangThreadNum, float64(m.ThreadNum), m.Time))
 	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangGoroutineNum, float64(m.GoroutineNum), m.Time))
-	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangCPUUsedRate, m.CpuUsedRate, m.Time))
-	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangMemUsedRate, m.MemUsedRate, m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceCPUUsedRate, m.CpuUsedRate, m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceMemUsedRate, m.MemUsedRate, m.Time))
 
 	defer func() {
 		// recover the panic caused by close sendCh
