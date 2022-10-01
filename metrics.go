@@ -20,8 +20,8 @@ const (
 	InstanceGolangStack        = "instance_golang_stack_used"
 	InstanceGolangGCTime       = "instance_golang_gc_pause_time"
 	InstanceGolangGCCount      = "instance_golang_gc_count"
-	InstanceGolangThreadNum    = "instance_golang_os_threads_count"
-	InstanceGolangGoroutineNum = "instance_golang_live_goroutines_count"
+	InstanceGolangThreadNum    = "instance_golang_os_threads_num"
+	InstanceGolangGoroutineNum = "instance_golang_live_goroutines_num"
 	InstanceCPUUsedRate        = "instance_host_cpu_used_rate"
 	InstanceMemUsedRate        = "instance_host_mem_used_rate"
 )
