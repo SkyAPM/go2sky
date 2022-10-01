@@ -132,8 +132,8 @@ func WithReportStrategy(rs ReportStrategy) GRPCReporterOption {
 }
 
 // WithMeterCollectPeriod setup is set the meter collect interval
-func WithMeterCollectPeriod(interval *time.Duration) GRPCReporterOption {
+func WithMeterCollectPeriod(interval time.Duration) GRPCReporterOption {
 	return func(r *gRPCReporter) {
-		r.meterInterval = interval
+		r.meterInterval = &interval
 	}
 }
