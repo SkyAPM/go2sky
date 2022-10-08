@@ -26,7 +26,7 @@ deps:
 
 .PHONY: test
 test:
-	go test -v -race -cover -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v github.com/SkyAPM/go2sky/reporter/grpc | grep -v github.com/SkyAPM/go2sky/test`
+	go test -gcflags "all=-N -l" -v -race -cover -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v github.com/SkyAPM/go2sky/reporter/grpc | grep -v github.com/SkyAPM/go2sky/test`
 
 .PHONY: mock-gen
 mock-gen:
