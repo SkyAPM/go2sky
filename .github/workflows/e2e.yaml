@@ -23,26 +23,31 @@ on:
       - master
 
 jobs:
-  EnvironmentVariable:
-    name: Environment Variable
+  e2e-test:
+    name: E2E test
     runs-on: ubuntu-latest
-    env:
-      e2e_file: "test/e2e/cases/environment-variable/e2e.yaml"
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - name: Environment Variable
+            config: test/e2e/cases/environment-variable/e2e.yaml
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Set up Go 1.16
         uses: actions/setup-go@v1
         with:
           go-version: 1.16
         id: go
-      - uses: actions/checkout@v2
+      - name: ${{ matrix.test.name }}
+        uses: apache/skywalking-infra-e2e@main
         with:
-          submodules: true
-      - uses: apache/skywalking-infra-e2e@main
+          e2e-file: $GITHUB_WORKSPACE/${{ matrix.test.config }}
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        name: Upload Logs
         with:
-          e2e-file: ${e2e_file}
-      - name: Show Container Logs
-        if: ${{ failure() }}
-        run: docker ps -a | grep -v CONTAINER | awk '{print $1}' | xargs -i docker logs {}
-      - name: Cleanup
-        if: ${{ failure() }}
-        run: e2e cleanup -c ${e2e_file}
+          name: logs
+          path: "${{ env.SW_INFRA_E2E_LOG_DIR }}"
