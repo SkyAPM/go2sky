@@ -26,13 +26,14 @@ deps:
 
 .PHONY: test
 test:
-	go test -v -race -cover -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v github.com/SkyAPM/go2sky/reporter/grpc | grep -v github.com/SkyAPM/go2sky/test`
+	go test -gcflags "all=-N -l" -v -race -cover -coverprofile=coverage.txt -covermode=atomic `go list ./... | grep -v github.com/SkyAPM/go2sky/reporter/grpc | grep -v github.com/SkyAPM/go2sky/test`
 
 .PHONY: mock-gen
 mock-gen:
 	cd $(GRPC_PATH)/language-agent && \
     	  mkdir -p mock_trace && \
-    	  mockgen skywalking.apache.org/repo/goapi/collect/language/agent/v3 TraceSegmentReportServiceClient > mock_trace/Tracing.mock.go
+    	  mockgen skywalking.apache.org/repo/goapi/collect/language/agent/v3 TraceSegmentReportServiceClient > mock_trace/Tracing.mock.go && \
+          mockgen skywalking.apache.org/repo/goapi/collect/language/agent/v3 MeterReportServiceClient > mock_meter/Meter.mock.go
 	cd $(GRPC_PATH)/management && \
     	  mkdir -p mock_management && \
     	  mockgen skywalking.apache.org/repo/goapi/collect/management/v3 ManagementServiceClient > mock_management/Management.mock.go

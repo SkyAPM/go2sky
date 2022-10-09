@@ -66,8 +66,16 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 		cdsInterval:   defaultCDSInterval, // cds default on
 	}
 
+	// init a cancel ctx and cancel function
+	r.ctx, r.cancelFunc = context.WithCancel(context.Background())
+
 	if err := applyGRPCReporterOption(r, opts...); err != nil {
 		return nil, err
+	}
+
+	// if user choose not close meter collection, make the meter channel
+	if r.meterInterval == nil || (r.meterInterval != nil && *r.meterInterval > 0) {
+		r.meterCh = make(chan []*agentv3.MeterData, maxSendQueueSize)
 	}
 
 	var credsDialOption grpc.DialOption
@@ -87,6 +95,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r.conn = conn
 	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
 	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
+	r.meterClient = agentv3.NewMeterReportServiceClient(r.conn)
 	if r.cdsInterval > 0 {
 		r.cdsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
 		r.cdsService = go2sky.NewConfigDiscoveryService()
@@ -95,22 +104,27 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 }
 
 type gRPCReporter struct {
+	ctx              context.Context
+	cancelFunc       context.CancelFunc
 	service          string
 	serviceInstance  string
 	instanceProps    map[string]string
 	logger           logger.Log
 	sendCh           chan *agentv3.SegmentObject
+	meterCh          chan []*agentv3.MeterData
 	conn             *grpc.ClientConn
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
+	meterClient      agentv3.MeterReportServiceClient
 	checkInterval    time.Duration
 	cdsInterval      time.Duration
+	meterInterval    *time.Duration
 	cdsService       *go2sky.ConfigDiscoveryService
 	cdsClient        configuration.ConfigurationDiscoveryServiceClient
 
 	// set report strategy
 	rs ReportStrategy
-	
+
 	md    metadata.MD
 	creds credentials.TransportCredentials
 
@@ -131,6 +145,7 @@ func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers 
 	r.initSendPipeline()
 	r.check()
 	r.initCDS(cdsWatchers)
+	r.initMetricsCollector()
 	r.bootFlag = true
 }
 
@@ -205,6 +220,13 @@ func (r *gRPCReporter) Send(spans []go2sky.ReportedSpan) {
 }
 
 func (r *gRPCReporter) Close() {
+	// close meter collection goroutine
+	r.cancelFunc()
+	if r.meterCh != nil {
+		// close meter send channel
+		close(r.meterCh)
+	}
+
 	if r.sendCh != nil && r.bootFlag {
 		close(r.sendCh)
 	} else {
@@ -237,7 +259,7 @@ func (r *gRPCReporter) initSendPipeline() {
 			for s := range r.sendCh {
 				if r.rs != nil && !r.rs(s) {
 					continue
-				} 
+				}
 				err = stream.Send(s)
 				if err != nil {
 					r.logger.Errorf("send segment error %v", err)
@@ -286,6 +308,102 @@ func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 			time.Sleep(r.cdsInterval)
 		}
 	}()
+}
+
+func (r *gRPCReporter) initMetricsCollector() {
+	if r.meterInterval != nil && *r.meterInterval <= 0 {
+		r.logger.Info("user choose to close the meter collection")
+		return
+	}
+	go2sky.InitMetricCollector(r, r.meterInterval, r.ctx)
+	r.initSendMeterPipeline()
+}
+
+func (r *gRPCReporter) SendMetrics(m go2sky.RunTimeMetric) {
+
+	meterDataList := make([]*agentv3.MeterData, 0)
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangHeap, float64(m.HeapAlloc), m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangStack, float64(m.StackInUse), m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangGCTime, float64(m.GCPauseTime), m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangGCCount, float64(m.GCCount), m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangThreadNum, float64(m.ThreadNum), m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceGolangGoroutineNum, float64(m.GoroutineNum), m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceCPUUsedRate, m.CpuUsedRate, m.Time))
+	meterDataList = append(meterDataList, r.generateMeter(go2sky.InstanceMemUsedRate, m.MemUsedRate, m.Time))
+
+	defer func() {
+		// recover the panic caused by close sendCh
+		if err := recover(); err != nil {
+			r.logger.Errorf("reporter meter err %v", err)
+		}
+	}()
+
+	select {
+	case <-r.ctx.Done():
+		r.logger.Infof("send channel is closed")
+		return
+	case r.meterCh <- meterDataList:
+	default:
+		r.logger.Errorf("reach max send buffer")
+	}
+}
+
+func (r *gRPCReporter) generateMeter(name string, value float64, time int64) *agentv3.MeterData {
+	return &agentv3.MeterData{
+		Metric: &agentv3.MeterData_SingleValue{
+			SingleValue: &agentv3.MeterSingleValue{
+				Name:  name,
+				Value: value,
+			},
+		},
+		Timestamp:       time,
+		Service:         r.service,
+		ServiceInstance: r.serviceInstance,
+	}
+}
+
+func (r *gRPCReporter) initSendMeterPipeline() {
+	if r.meterClient == nil {
+		return
+	}
+	go func() {
+	StreamLoop:
+		for {
+			if r.conn.GetState() == connectivity.Shutdown {
+				break
+			}
+
+			stream, err := r.meterClient.CollectBatch(metadata.NewOutgoingContext(context.Background(), r.md))
+			if err != nil {
+				r.logger.Errorf("open stream error %v", err)
+				time.Sleep(5 * time.Second)
+				continue StreamLoop
+			}
+			for meters := range r.meterCh {
+				// TODO delete the log before merge
+				r.logger.Infof("meters:%+v", meters)
+				err = stream.Send(&agentv3.MeterDataCollection{MeterData: meters})
+				if err != nil {
+					r.logger.Errorf("send meter error %v", err)
+					r.closeMeterStream(stream)
+					continue StreamLoop
+				}
+			}
+			r.closeMeterStream(stream)
+			break
+		}
+	}()
+}
+
+func (r *gRPCReporter) closeMeterStream(stream agentv3.MeterReportService_CollectBatchClient) {
+	if r.conn.GetState() == connectivity.Shutdown {
+		return
+	}
+
+	_, err := stream.CloseAndRecv()
+	if err != nil && err != io.EOF {
+		r.logger.Errorf("send meter stream closing error %v", err)
+	}
 }
 
 func (r *gRPCReporter) closeStream(stream agentv3.TraceSegmentReportService_CollectClient) {

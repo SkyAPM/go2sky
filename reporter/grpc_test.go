@@ -19,22 +19,25 @@ package reporter
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
-	"reflect"
-	"testing"
-	"time"
-	"unsafe"
-
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/logger"
 	"github.com/SkyAPM/go2sky/propagation"
+	mock_v3 "github.com/SkyAPM/go2sky/reporter/grpc/language-agent/mock_meter"
 	mock "github.com/SkyAPM/go2sky/reporter/grpc/management/mock_management"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
+	"log"
+	"os"
+	"reflect"
 	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
 	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
+	"testing"
+	"time"
+	"unsafe"
 )
 
 const (
@@ -295,6 +298,7 @@ func createGRPCReporter() *gRPCReporter {
 	reporter := &gRPCReporter{
 		logger: logger.NewDefaultLogger(log.New(os.Stderr, "go2sky", log.LstdFlags)),
 	}
+	reporter.ctx, reporter.cancelFunc = context.WithCancel(context.Background())
 	return reporter
 }
 
@@ -438,4 +442,28 @@ func TestGRPCReporter_EnvOverride(t *testing.T) {
 	if cap(r.sendCh) != 10 {
 		t.Errorf("the expected value of maxSendQueueSize is 10")
 	}
+}
+
+func TestSendMetrics(t *testing.T) {
+	mockGRPCReporter := createGRPCReporter()
+	ctrl := gomock.NewController(t)
+	meterInterVal := 1 * time.Second
+	mockGRPCReporter.meterInterval = &meterInterVal
+	mockGRPCReporter.meterCh = make(chan []*agentv3.MeterData, 1000)
+
+	meterClient := mock_v3.NewMockMeterReportServiceClient(ctrl)
+	mockStream := mock_v3.NewMockMeterReportService_CollectBatchClient(ctrl)
+
+	mockStream.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+	meterClient.EXPECT().CollectBatch(gomock.Any()).Return(mockStream, nil).AnyTimes()
+
+	mockGRPCReporter.meterClient = meterClient
+	mockGRPCReporter.conn = &grpc.ClientConn{}
+
+	gomonkey.ApplyMethod(reflect.TypeOf(mockGRPCReporter.conn), "GetState", func(_ *grpc.ClientConn) connectivity.State {
+		return 2
+	})
+
+	mockGRPCReporter.initMetricsCollector()
+	time.Sleep(1 * time.Second)
 }
