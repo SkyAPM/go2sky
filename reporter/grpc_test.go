@@ -467,3 +467,31 @@ func TestSendMetrics(t *testing.T) {
 	mockGRPCReporter.initMetricsCollector()
 	time.Sleep(1 * time.Second)
 }
+
+func TestCollectGolangMetric(t *testing.T) {
+
+	interval := 5 * time.Second
+	report, err := NewGRPCReporter("127.0.0.1:11800", WithMeterCollectPeriod(interval))
+	if err != nil {
+		log.Fatalf("crate grpc reporter error: %v \n", err)
+	}
+
+	_, err = go2sky.NewTracer("service-yipingjian", go2sky.WithReporter(report))
+	if err != nil {
+		log.Fatalf("crate tracer error: %v \n", err)
+	}
+
+	go func() {
+		for {
+			s := ""
+			for i := 0; i < 10000; i++ {
+				s += "afff"
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	time.Sleep(1800 * time.Second)
+	report.Close()
+	time.Sleep(15 * time.Second)
+}
