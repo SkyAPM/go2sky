@@ -32,6 +32,8 @@ jobs:
         test:
           - name: Environment Variable
             config: test/e2e/cases/environment-variable/e2e.yaml
+          - name: Golang Runtime Metrics
+            config: test/e2e/cases/metrics/e2e.yaml
     steps:
       - uses: actions/checkout@v2
         with:

@@ -380,8 +380,6 @@ func (r *gRPCReporter) initSendMeterPipeline() {
 				continue StreamLoop
 			}
 			for meters := range r.meterCh {
-				// TODO delete the log before merge
-				r.logger.Infof("meters:%+v", meters)
 				err = stream.Send(&agentv3.MeterDataCollection{MeterData: meters})
 				if err != nil {
 					r.logger.Errorf("send meter error %v", err)
