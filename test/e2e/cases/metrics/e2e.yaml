@@ -40,7 +40,7 @@ verify:
   # verify with retry strategy
   retry:
     # max retry count
-    count: 3
+    count: 10
     # the interval between two retries, in millisecond.
     interval: 5s
   cases:
