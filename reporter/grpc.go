@@ -34,6 +34,8 @@ import (
 	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
 	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
 	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
+	logv3 "skywalking.apache.org/repo/goapi/collect/logging/v3"
+	glog "github.com/SkyAPM/go2sky/log"
 )
 
 const (
@@ -62,6 +64,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r := &gRPCReporter{
 		logger:        logger.NewDefaultLogger(log.New(os.Stderr, defaultLogPrefix, log.LstdFlags)),
 		sendCh:        make(chan *agentv3.SegmentObject, maxSendQueueSize),
+		logCh:         make(chan *logv3.LogData, maxSendQueueSize),
 		checkInterval: defaultCheckInterval,
 		cdsInterval:   defaultCDSInterval, // cds default on
 	}
@@ -96,6 +99,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
 	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
 	r.meterClient = agentv3.NewMeterReportServiceClient(r.conn)
+	r.logClient=logv3.NewLogReportServiceClient(r.conn)
 	if r.cdsInterval > 0 {
 		r.cdsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
 		r.cdsService = go2sky.NewConfigDiscoveryService()
@@ -112,10 +116,12 @@ type gRPCReporter struct {
 	logger           logger.Log
 	sendCh           chan *agentv3.SegmentObject
 	meterCh          chan []*agentv3.MeterData
+	logCh            chan *logv3.LogData
 	conn             *grpc.ClientConn
 	traceClient      agentv3.TraceSegmentReportServiceClient
 	managementClient managementv3.ManagementServiceClient
 	meterClient      agentv3.MeterReportServiceClient
+	logClient        logv3.LogReportServiceClient
 	checkInterval    time.Duration
 	cdsInterval      time.Duration
 	meterInterval    *time.Duration
@@ -146,6 +152,7 @@ func (r *gRPCReporter) Boot(service string, serviceInstance string, cdsWatchers 
 	r.check()
 	r.initCDS(cdsWatchers)
 	r.initMetricsCollector()
+	r.initSendLogPipeline()
 	r.bootFlag = true
 }
 
@@ -233,6 +240,10 @@ func (r *gRPCReporter) Close() {
 		r.closeGRPCConn()
 		cleanupProcessDirectory(r)
 	}
+
+	if r.logCh!=nil{
+		close(r.logCh)
+	}
 }
 
 func (r *gRPCReporter) closeGRPCConn() {
@@ -273,6 +284,7 @@ func (r *gRPCReporter) initSendPipeline() {
 		}
 	}()
 }
+
 
 func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 	if r.cdsClient == nil {
@@ -391,6 +403,97 @@ func (r *gRPCReporter) initSendMeterPipeline() {
 			break
 		}
 	}()
+}
+
+func (r *gRPCReporter)SendLog(logData go2sky.LogData)  {
+
+	if r.logClient==nil{
+		return
+	}
+
+	reportLogData:=logv3.LogData{}
+	reportLogData.Service=r.service
+	reportLogData.ServiceInstance=r.serviceInstance
+	reportLogData.Layer=r.layer
+	reportLogData.Body=&logv3.LogDataBody{Type: "text",Content: &logv3.LogDataBody_Text{Text: &logv3.TextLog{Text: logData.LogContent}}}
+
+	logLevelTag := &commonv3.KeyStringValuePair{
+		Key:   "LEVEL",
+		Value: logData.LogLevel,
+	}
+
+	logTags:=[]*commonv3.KeyStringValuePair{}
+	logTags=append(logTags,logLevelTag)
+	reportLogData.Tags=&logv3.LogTags{Data: logTags }
+
+	if logData.LogCtx!=nil{
+		traceContext:=logv3.TraceContext{}
+
+		skyCtx:=glog.FromContext(logData.LogCtx)
+
+		traceContext.TraceId=skyCtx.TraceID
+		traceContext.TraceSegmentId=skyCtx.TraceSegmentID
+		traceContext.SpanId=skyCtx.SpanID
+
+		reportLogData.TraceContext=&traceContext
+	}
+
+
+	defer func() {
+		// recover the panic caused by close sendCh
+		if err := recover(); err != nil {
+			r.logger.Errorf("reporter log err %v", err)
+		}
+	}()
+
+	select {
+	case <-r.ctx.Done():
+		r.logger.Infof("send channel is closed")
+		return
+	case r.logCh <- &reportLogData:
+	default:
+		r.logger.Errorf("reach max send buffer")
+	}
+}
+
+func (r *gRPCReporter) initSendLogPipeline() {
+	if r.logClient == nil {
+		return
+	}
+	go func() {
+	StreamLoop:
+		for {
+			stream, err := r.logClient.Collect(metadata.NewOutgoingContext(context.Background(), r.md))
+			if err != nil {
+				r.logger.Errorf("open stream error %v", err)
+				time.Sleep(5 * time.Second)
+				continue StreamLoop
+			}
+			for s := range r.logCh {
+				err = stream.Send(s)
+				if err != nil {
+					r.logger.Errorf("send segment error %v", err)
+					r.closeLogStream(stream)
+					continue StreamLoop
+				}
+			}
+			r.closeLogStream(stream)
+			r.closeGRPCConn()
+			break
+		}
+	}()
+}
+
+func (r *gRPCReporter) closeLogStream(stream logv3.LogReportService_CollectClient) {
+
+	if r.conn.GetState() == connectivity.Shutdown {
+		return
+	}
+
+	_, err := stream.CloseAndRecv()
+	if err != nil && err != io.EOF {
+		r.logger.Errorf("send log stream closing error %v", err)
+	}
 }
 
 func (r *gRPCReporter) closeMeterStream(stream agentv3.MeterReportService_CollectBatchClient) {
