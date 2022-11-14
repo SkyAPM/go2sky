@@ -35,17 +35,16 @@ type logReporter struct {
 
 func (lr *logReporter) SendLog(logData go2sky.ReportedLogData) {
 
-	if logData==nil{
+	if logData == nil {
 		return
 	}
 
-	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelWarn)){
+	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelWarn)) {
 		os.Stderr.WriteString(logData.Data())
 		return
 	}
 
-
-	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelError)){
+	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelError)) {
 		os.Stderr.WriteString(logData.Data())
 		return
 	}

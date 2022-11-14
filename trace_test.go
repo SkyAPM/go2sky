@@ -175,7 +175,7 @@ type mockRegisterReporter struct {
 }
 
 func (r *mockRegisterReporter) SendLog(logData ReportedLogData) {
-	if logData==nil{
+	if logData == nil {
 		return
 	}
 	fmt.Println(logData.Data())

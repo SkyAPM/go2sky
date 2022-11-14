@@ -21,15 +21,14 @@ type ReportedLogData interface {
 }
 
 type DefaultLogData struct {
-	LogCtx context.Context
+	LogCtx      context.Context
 	LogErrLevel LogLevel
-	LogContent string
+	LogContent  string
 }
 
 func (l *DefaultLogData) Context() context.Context {
 	return l.LogCtx
 }
-
 
 func (l *DefaultLogData) ErrorLevel() LogLevel {
 	return l.LogErrLevel
@@ -43,24 +42,24 @@ type SkyLogger struct {
 	mReporter Reporter
 }
 
-func NewSkyLogger(reporter Reporter) (*SkyLogger,error)  {
+func NewSkyLogger(reporter Reporter) (*SkyLogger, error) {
 
-	if reporter==nil{
-		return nil,errors.New("invalid reporter.")
+	if reporter == nil {
+		return nil, errors.New("invalid reporter.")
 	}
 
-	l:=new(SkyLogger)
-	l.mReporter=reporter
+	l := new(SkyLogger)
+	l.mReporter = reporter
 
-	return l,nil
+	return l, nil
 }
 
-func (l *SkyLogger)WriteLogWithContext(ctx context.Context,level LogLevel,data string)  {
+func (l *SkyLogger) WriteLogWithContext(ctx context.Context, level LogLevel, data string) {
 
-	xLogData:=DefaultLogData{}
-	xLogData.LogCtx=ctx
-	xLogData.LogErrLevel=level
-	xLogData.LogContent=data
+	xLogData := DefaultLogData{}
+	xLogData.LogCtx = ctx
+	xLogData.LogErrLevel = level
+	xLogData.LogContent = data
 
 	l.mReporter.SendLog(&xLogData)
 }

@@ -16,12 +16,12 @@
 
 traces:
   {{- contains .traces }}
-- segmentid: {{ notEmpty .segmentid }}
-  endpointnames:
-    - /GET/helloserver
-  duration: {{ ge .duration 0 }}
-  start: "{{ notEmpty .start}}"
-  iserror: false
-  traceids:
-    - {{ (index .traceids 0) }}
-  {{- end }}
+  - segmentid: {{ notEmpty .segmentid }}
+    endpointnames:
+      - /GET/helloserver
+    duration: {{ ge .duration 0 }}
+    start: "{{ notEmpty .start}}"
+    iserror: false
+    traceids:
+      - {{ (index .traceids 0) }}
+    {{- end }}

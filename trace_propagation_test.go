@@ -188,7 +188,7 @@ type NoopReporter struct {
 
 func (r *NoopReporter) SendLog(logData ReportedLogData) {
 
-	if logData==nil{
+	if logData == nil {
 		return
 	}
 

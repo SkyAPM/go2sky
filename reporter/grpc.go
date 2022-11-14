@@ -25,6 +25,7 @@ import (
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/internal/tool"
+	glog "github.com/SkyAPM/go2sky/log"
 	"github.com/SkyAPM/go2sky/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -33,9 +34,8 @@ import (
 	configuration "skywalking.apache.org/repo/goapi/collect/agent/configuration/v3"
 	commonv3 "skywalking.apache.org/repo/goapi/collect/common/v3"
 	agentv3 "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
-	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
 	logv3 "skywalking.apache.org/repo/goapi/collect/logging/v3"
-	glog "github.com/SkyAPM/go2sky/log"
+	managementv3 "skywalking.apache.org/repo/goapi/collect/management/v3"
 )
 
 const (
@@ -99,7 +99,7 @@ func NewGRPCReporter(serverAddr string, opts ...GRPCReporterOption) (go2sky.Repo
 	r.traceClient = agentv3.NewTraceSegmentReportServiceClient(r.conn)
 	r.managementClient = managementv3.NewManagementServiceClient(r.conn)
 	r.meterClient = agentv3.NewMeterReportServiceClient(r.conn)
-	r.logClient=logv3.NewLogReportServiceClient(r.conn)
+	r.logClient = logv3.NewLogReportServiceClient(r.conn)
 	if r.cdsInterval > 0 {
 		r.cdsClient = configuration.NewConfigurationDiscoveryServiceClient(r.conn)
 		r.cdsService = go2sky.NewConfigDiscoveryService()
@@ -241,7 +241,7 @@ func (r *gRPCReporter) Close() {
 		cleanupProcessDirectory(r)
 	}
 
-	if r.logCh!=nil{
+	if r.logCh != nil {
 		close(r.logCh)
 	}
 }
@@ -284,7 +284,6 @@ func (r *gRPCReporter) initSendPipeline() {
 		}
 	}()
 }
-
 
 func (r *gRPCReporter) initCDS(cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 	if r.cdsClient == nil {
@@ -405,39 +404,38 @@ func (r *gRPCReporter) initSendMeterPipeline() {
 	}()
 }
 
-func (r *gRPCReporter)SendLog(logData go2sky.ReportedLogData)  {
+func (r *gRPCReporter) SendLog(logData go2sky.ReportedLogData) {
 
-	if r.logClient==nil||logData==nil{
+	if r.logClient == nil || logData == nil {
 		return
 	}
 
-	reportLogData:=logv3.LogData{}
-	reportLogData.Service=r.service
-	reportLogData.ServiceInstance=r.serviceInstance
-	reportLogData.Layer=r.layer
-	reportLogData.Body=&logv3.LogDataBody{Type: "text",Content: &logv3.LogDataBody_Text{Text: &logv3.TextLog{Text: logData.Data()}}}
+	reportLogData := logv3.LogData{}
+	reportLogData.Service = r.service
+	reportLogData.ServiceInstance = r.serviceInstance
+	reportLogData.Layer = r.layer
+	reportLogData.Body = &logv3.LogDataBody{Type: "text", Content: &logv3.LogDataBody_Text{Text: &logv3.TextLog{Text: logData.Data()}}}
 
 	logLevelTag := &commonv3.KeyStringValuePair{
 		Key:   "LEVEL",
 		Value: string(logData.ErrorLevel()),
 	}
 
-	logTags:=[]*commonv3.KeyStringValuePair{}
-	logTags=append(logTags,logLevelTag)
-	reportLogData.Tags=&logv3.LogTags{Data: logTags }
+	logTags := []*commonv3.KeyStringValuePair{}
+	logTags = append(logTags, logLevelTag)
+	reportLogData.Tags = &logv3.LogTags{Data: logTags}
 
-	if logData.Context()!=nil{
-		traceContext:=logv3.TraceContext{}
+	if logData.Context() != nil {
+		traceContext := logv3.TraceContext{}
 
-		skyCtx:=glog.FromContext(logData.Context())
+		skyCtx := glog.FromContext(logData.Context())
 
-		traceContext.TraceId=skyCtx.TraceID
-		traceContext.TraceSegmentId=skyCtx.TraceSegmentID
-		traceContext.SpanId=skyCtx.SpanID
+		traceContext.TraceId = skyCtx.TraceID
+		traceContext.TraceSegmentId = skyCtx.TraceSegmentID
+		traceContext.SpanId = skyCtx.SpanID
 
-		reportLogData.TraceContext=&traceContext
+		reportLogData.TraceContext = &traceContext
 	}
-
 
 	defer func() {
 		// recover the panic caused by close sendCh
