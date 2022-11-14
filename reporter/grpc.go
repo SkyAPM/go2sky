@@ -405,9 +405,9 @@ func (r *gRPCReporter) initSendMeterPipeline() {
 	}()
 }
 
-func (r *gRPCReporter)SendLog(logData go2sky.LogData)  {
+func (r *gRPCReporter)SendLog(logData go2sky.ReportedLogData)  {
 
-	if r.logClient==nil{
+	if r.logClient==nil||logData==nil{
 		return
 	}
 
@@ -415,21 +415,21 @@ func (r *gRPCReporter)SendLog(logData go2sky.LogData)  {
 	reportLogData.Service=r.service
 	reportLogData.ServiceInstance=r.serviceInstance
 	reportLogData.Layer=r.layer
-	reportLogData.Body=&logv3.LogDataBody{Type: "text",Content: &logv3.LogDataBody_Text{Text: &logv3.TextLog{Text: logData.LogContent}}}
+	reportLogData.Body=&logv3.LogDataBody{Type: "text",Content: &logv3.LogDataBody_Text{Text: &logv3.TextLog{Text: logData.Data()}}}
 
 	logLevelTag := &commonv3.KeyStringValuePair{
 		Key:   "LEVEL",
-		Value: logData.LogLevel,
+		Value: string(logData.ErrorLevel()),
 	}
 
 	logTags:=[]*commonv3.KeyStringValuePair{}
 	logTags=append(logTags,logLevelTag)
 	reportLogData.Tags=&logv3.LogTags{Data: logTags }
 
-	if logData.LogCtx!=nil{
+	if logData.Context()!=nil{
 		traceContext:=logv3.TraceContext{}
 
-		skyCtx:=glog.FromContext(logData.LogCtx)
+		skyCtx:=glog.FromContext(logData.Context())
 
 		traceContext.TraceId=skyCtx.TraceID
 		traceContext.TraceSegmentId=skyCtx.TraceSegmentID

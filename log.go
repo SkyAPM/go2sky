@@ -1,6 +1,5 @@
 package go2sky
 
-
 import (
 	"context"
 	"errors"
@@ -55,7 +54,6 @@ func NewSkyLogger(reporter Reporter) (*SkyLogger,error)  {
 
 	return l,nil
 }
-
 
 func (l *SkyLogger)WriteLogWithContext(ctx context.Context,level LogLevel,data string)  {
 
