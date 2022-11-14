@@ -41,15 +41,18 @@ func (lr *logReporter) SendLog(logData go2sky.ReportedLogData) {
 
 	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelWarn)) {
 		os.Stderr.WriteString(logData.Data())
+		os.Stderr.WriteString("\n")
 		return
 	}
 
 	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelError)) {
 		os.Stderr.WriteString(logData.Data())
+		os.Stderr.WriteString("\n")
 		return
 	}
 
 	os.Stdout.WriteString(logData.Data())
+	os.Stdout.WriteString("\n")
 
 }
 

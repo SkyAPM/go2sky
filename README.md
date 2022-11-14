@@ -195,7 +195,7 @@ func SkyapmLogTest(ctx context.Context)  {
 
 	skyapmLogger,skyapmError:=go2sky.NewSkyLogger(r)
 	if skyapmError!=nil{
-		log.Fatalf("new NewSkyLogger error %v \n", skyapmError)
+		log.Fatalf("new SkyLogger error %v \n", skyapmError)
 	}
 	
 	logData:="your application log need to send to backend here..."
