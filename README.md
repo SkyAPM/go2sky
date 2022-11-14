@@ -178,19 +178,31 @@ go2sky.SpanID(ctx)
 
 ```go
 
-r, err := reporter.NewGRPCReporter("oap-skywalking:11800")
-if err != nil {
-    log.Fatalf("new reporter error %v \n", err)
+import (
+	"context"
+	"github.com/SkyAPM/go2sky"
+	"github.com/SkyAPM/go2sky/reporter"
+	"log"
+)
+
+func SkyapmLogTest(ctx context.Context)  {
+
+	r, err := reporter.NewGRPCReporter("oap-skywalking:11800")
+	if err != nil {
+		log.Fatalf("new reporter error %v \n", err)
+	}
+	defer r.Close()
+
+	skyapmLogger,skyapmError:=go2sky.NewSkyLogger(r)
+	if skyapmError!=nil{
+		log.Fatalf("new NewSkyLogger error %v \n", skyapmError)
+	}
+	
+	logData:="your application log need to send to backend here..."
+	
+	skyapmLogger.WriteLogWithContext(ctx,go2sky.LogLevelError,logData)
 }
-defer r.Close()
 
-xSkyapmLogger,xSkyapmError:=go2sky.NewSkyLogger(r)
-if xSkyapmError!=nil{
-    log.Fatalf("new NewSkyLogger error %v \n", xSkyapmError)
-}
-
-
-xSkyapmLogger.WriteLogWithContext(ctx,go2sky.LogLevelError,"user has logout!")
 
 ```
 
