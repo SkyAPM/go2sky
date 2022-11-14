@@ -32,6 +32,10 @@ type logReporter struct {
 	logger *log.Logger
 }
 
+func (lr *logReporter) SendLog(logData go2sky.ReportedLogData) {
+
+}
+
 func (lr *logReporter) Boot(service string, serviceInstance string, cdsWatchers []go2sky.AgentConfigChangeWatcher) {
 
 }

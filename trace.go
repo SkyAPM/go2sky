@@ -211,5 +211,6 @@ func (t *Tracer) createNoop(ctx context.Context) (s Span, nCtx context.Context) 
 type Reporter interface {
 	Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher)
 	Send(spans []ReportedSpan)
+	SendLog(logData ReportedLogData)
 	Close()
 }

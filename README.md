@@ -174,6 +174,26 @@ Get the `SpanID` of the `activeSpan` in the `Context`.
 go2sky.SpanID(ctx)
 ```
 
+## Application Log  Report
+
+```go
+
+r, err := reporter.NewGRPCReporter("oap-skywalking:11800")
+if err != nil {
+    log.Fatalf("new reporter error %v \n", err)
+}
+defer r.Close()
+
+xSkyapmError,xSkyapmLogger:=go2sky.NewSkyLogger(r)
+if xSkyapmError!=nil{
+    log.Fatalf("new NewSkyLogger error %v \n", xSkyapmError)
+}
+
+
+xSkyapmLogger.WriteLogWithContext(ctx,"ERROR","user has logout!")
+
+```
+
 ## Periodically Report
 Go2sky agent reports the segments periodically.
 It would not wait for all finished segments reported when the service exits.
