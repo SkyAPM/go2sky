@@ -184,13 +184,13 @@ if err != nil {
 }
 defer r.Close()
 
-xSkyapmError,xSkyapmLogger:=go2sky.NewSkyLogger(r)
+xSkyapmLogger,xSkyapmError:=go2sky.NewSkyLogger(r)
 if xSkyapmError!=nil{
     log.Fatalf("new NewSkyLogger error %v \n", xSkyapmError)
 }
 
 
-xSkyapmLogger.WriteLogWithContext(ctx,"ERROR","user has logout!")
+xSkyapmLogger.WriteLogWithContext(ctx,go2sky.LogLevelError,"user has logout!")
 
 ```
 

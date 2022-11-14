@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/SkyAPM/go2sky"
 )
@@ -33,6 +34,23 @@ type logReporter struct {
 }
 
 func (lr *logReporter) SendLog(logData go2sky.ReportedLogData) {
+
+	if logData==nil{
+		return
+	}
+
+	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelWarn)){
+		os.Stderr.WriteString(logData.Data())
+		return
+	}
+
+
+	if strings.EqualFold(string(logData.ErrorLevel()), string(go2sky.LogLevelError)){
+		os.Stderr.WriteString(logData.Data())
+		return
+	}
+
+	os.Stdout.WriteString(logData.Data())
 
 }
 

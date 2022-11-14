@@ -6,15 +6,24 @@ import (
 	"errors"
 )
 
+type LogLevel string
+
+const (
+	LogLevelDebug LogLevel = "debug"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelWarn  LogLevel = "warn"
+	LogLevelError LogLevel = "error"
+)
+
 type ReportedLogData interface {
 	Context() context.Context
-	ErrorLevel() string
+	ErrorLevel() LogLevel
 	Data() string
 }
 
 type DefaultLogData struct {
 	LogCtx context.Context
-	LogErrLevel string
+	LogErrLevel LogLevel
 	LogContent string
 }
 
@@ -23,7 +32,7 @@ func (l *DefaultLogData) Context() context.Context {
 }
 
 
-func (l *DefaultLogData) ErrorLevel() string {
+func (l *DefaultLogData) ErrorLevel() LogLevel {
 	return l.LogErrLevel
 }
 
@@ -35,19 +44,20 @@ type SkyLogger struct {
 	mReporter Reporter
 }
 
-func NewSkyLogger(reporter Reporter) (error,*SkyLogger)  {
+func NewSkyLogger(reporter Reporter) (*SkyLogger,error)  {
 
 	if reporter==nil{
-		return errors.New("invalid reporter."),nil
+		return nil,errors.New("invalid reporter.")
 	}
 
 	l:=new(SkyLogger)
 	l.mReporter=reporter
 
-	return nil,l
+	return l,nil
 }
 
-func (l *SkyLogger)WriteLogWithContext(ctx context.Context,level string,data string)  {
+
+func (l *SkyLogger)WriteLogWithContext(ctx context.Context,level LogLevel,data string)  {
 
 	xLogData:=DefaultLogData{}
 	xLogData.LogCtx=ctx
