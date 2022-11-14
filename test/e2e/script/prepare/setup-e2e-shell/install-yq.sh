@@ -14,7 +14,7 @@
 
 set -ex
 
-if ! command -v yq &> /dev/null; then
+if ! command -v yq &>/dev/null; then
   # prepare base dir
   BASE_DIR=/tmp/skywalking-infra-e2e/swctl
   BIN_DIR=/usr/local/bin
