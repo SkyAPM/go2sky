@@ -14,7 +14,29 @@
 # limitations under the License.
 #
 
-{{- contains . }}
-- key: {{ notEmpty .key }}
-  value: {{ ge .value 0 }}
-  {{- end }}
+setup:
+  env: compose
+  file: docker-compose.yml
+  timeout: 1200
+
+cleanup:
+  # always never success failure
+  on: success
+
+trigger:
+  action: http
+  interval: 3s
+  times: 5
+  url: http://127.0.0.1:${httpclient_8080}/hello
+  method: GET
+
+verify:
+  # verify with retry strategy
+  retry:
+    # max retry count
+    count: 10
+    # the interval between two retries, in millisecond.
+    interval: 10s
+  cases:
+    - query: curl http://127.0.0.1:${mockoap_12800}/receiveData
+      expected: expected.data.yml

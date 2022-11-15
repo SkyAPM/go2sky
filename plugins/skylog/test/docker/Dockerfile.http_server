@@ -14,7 +14,13 @@
 # limitations under the License.
 #
 
-{{- contains . }}
-- key: {{ notEmpty .key }}
-  value: {{ ge .value 0 }}
-  {{- end }}
+FROM golang:1.16
+
+ADD . /go2sky
+WORKDIR /go2sky
+
+EXPOSE 8080
+
+ENTRYPOINT ["go"]
+
+CMD ["run", "plugins/http/test/server/server.go"]

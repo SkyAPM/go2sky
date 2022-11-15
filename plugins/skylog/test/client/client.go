@@ -17,6 +17,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -26,8 +27,9 @@ import (
 )
 
 const (
-	oap     = "mockoap:19876"
-	service = "http-server"
+	oap         = "mockoap:19876"
+	service     = "http-client"
+	upstreamURL = "http://httpserver:8080/helloserver"
 )
 
 func main() {
@@ -41,14 +43,40 @@ func main() {
 		log.Fatalf("crate tracer error: %v \n", err)
 	}
 
+	client, err := httpPlugin.NewClient(tracer)
+	if err != nil {
+		log.Fatalf("create client error %v \n", err)
+	}
+
 	route := http.NewServeMux()
-	route.HandleFunc("/helloserver", func(writer http.ResponseWriter, request *http.Request) {
-		_, _ = writer.Write([]byte("Hello World!"))
+	route.HandleFunc("/hello", func(writer http.ResponseWriter, request *http.Request) {
+		clientReq, err1 := http.NewRequest(http.MethodGet, upstreamURL, nil)
+		if err1 != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			log.Printf("unable to create http request error: %v \n", err)
+			return
+		}
+		clientReq = clientReq.WithContext(request.Context())
+		res, err1 := client.Do(clientReq)
+		if err1 != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			log.Printf("unable to do http request error: %v \n", err)
+			return
+		}
+		defer res.Body.Close()
+		body, err1 := ioutil.ReadAll(res.Body)
+		if err1 != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			log.Printf("read http response error: %v \n", err)
+			return
+		}
+		writer.WriteHeader(res.StatusCode)
+		_, _ = writer.Write(body)
 	})
 
 	sm, err := httpPlugin.NewServerMiddleware(tracer)
 	if err != nil {
-		log.Fatalf("create server middleware error %v \n", err)
+		log.Fatalf("create client error %v \n", err)
 	}
 	err = http.ListenAndServe(":8080", sm(route))
 	if err != nil {

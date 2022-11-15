@@ -18,3 +18,4 @@ bin/
 
 # Coverage
 coverage.txt
+/vendor

@@ -14,7 +14,21 @@
 # limitations under the License.
 #
 
-{{- contains . }}
-- key: {{ notEmpty .key }}
-  value: {{ ge .value 0 }}
+logItems:
+  {{- contains .logItems }}
+  - serviceName: http-server
+    logSize: {{ gt .logSize 0 }}
+    logs:
+      {{- contains .logs }}
+      - timestamp: {{ ge .timestamp 0 }}
+        endpoint: ''
+        body:
+          type: text
+          content: {{notEmpty .content}}
+        traceContext: {{notEmpty .traceContext}}
+        tags:
+          data:
+            - {key: LEVEL, value: INFO}
+        layer: ''
+      {{- end }}
   {{- end }}

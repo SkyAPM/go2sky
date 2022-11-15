@@ -41,8 +41,14 @@ func main() {
 		log.Fatalf("crate tracer error: %v \n", err)
 	}
 
+	skylogWriter, err := go2sky.NewSkyLogger(report)
+	if err != nil {
+		log.Fatalf("crate skylogger error: %v \n", err)
+	}
+
 	route := http.NewServeMux()
 	route.HandleFunc("/helloserver", func(writer http.ResponseWriter, request *http.Request) {
+		skylogWriter.WriteLogWithContext(request.Context(), go2sky.LogLevelInfo, "log data from path [/helloserver]")
 		_, _ = writer.Write([]byte("Hello World!"))
 	})
 
