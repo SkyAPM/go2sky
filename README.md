@@ -8,6 +8,8 @@
 **GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metrics formats.
 
 # Installation
+- Require Golang 1.16
+
 ```
 $ go get -u github.com/SkyAPM/go2sky
 ```
