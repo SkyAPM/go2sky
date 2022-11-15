@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-  {{- contains . }}
+{{- contains . }}
 - key: {{ notEmpty .key }}
   value: {{ ge .value 0 }}
   {{- end }}

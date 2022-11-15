@@ -41,9 +41,9 @@ func main() {
 		log.Fatalf("crate tracer error: %v \n", err)
 	}
 
-	skylogWriter, err := go2sky.NewSkyLogger(report)
+	skylogWriter, err := go2sky.NewLogger(report)
 	if err != nil {
-		log.Fatalf("crate skylogger error: %v \n", err)
+		log.Fatalf("crate Logger error: %v \n", err)
 	}
 
 	route := http.NewServeMux()

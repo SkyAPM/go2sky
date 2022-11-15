@@ -35,8 +35,8 @@ services:
       retries: 120
   httpserver:
     build:
-      context: ../../../
-      dockerfile: ./plugins/http/test/docker/Dockerfile.http_server
+      context: ../../../../..
+      dockerfile: ../../../../../plugins/http/test/docker/Dockerfile.http_server
     environment:
       SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
     networks:
@@ -55,8 +55,8 @@ services:
         condition: service_healthy
   httpclient:
     build:
-      context: ../../../
-      dockerfile: ./plugins/http/test/docker/Dockerfile.http_client
+      context: ../../../../..
+      dockerfile: ../../../../../plugins/http/test/docker/Dockerfile.http_client
     environment:
       SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
     expose:

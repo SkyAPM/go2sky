@@ -54,23 +54,23 @@ func (l *DefaultLogData) Data() string {
 	return l.LogContent
 }
 
-type SkyLogger struct {
+type Logger struct {
 	mReporter Reporter
 }
 
-func NewSkyLogger(reporter Reporter) (*SkyLogger, error) {
+func NewLogger(reporter Reporter) (*Logger, error) {
 
 	if reporter == nil {
 		return nil, errors.New("invalid reporter.")
 	}
 
-	l := new(SkyLogger)
+	l := new(Logger)
 	l.mReporter = reporter
 
 	return l, nil
 }
 
-func (l *SkyLogger) WriteLogWithContext(ctx context.Context, level LogLevel, data string) {
+func (l *Logger) WriteLogWithContext(ctx context.Context, level LogLevel, data string) {
 
 	xLogData := DefaultLogData{}
 	xLogData.LogCtx = ctx

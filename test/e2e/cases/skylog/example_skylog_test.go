@@ -50,9 +50,9 @@ func TestSkyapmLog(t *testing.T) {
 		}
 	}()
 
-	skyapmLogger, skyapmError := go2sky.NewSkyLogger(r)
+	skyapmLogger, skyapmError := go2sky.NewLogger(r)
 	if skyapmError != nil {
-		log.Fatalf("new SkyLogger error %v \n", skyapmError)
+		log.Fatalf("new Logger error %v \n", skyapmError)
 	}
 
 	logData := "your application log need to send to backend here..."
