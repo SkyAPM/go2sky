@@ -35,7 +35,7 @@ services:
       retries: 120
   httpserver:
     build:
-      context: ../../../../
+      context: ../../../../../
       dockerfile: ./test/e2e/cases/skylog/test/docker/Dockerfile.http_server
     environment:
       SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
@@ -55,7 +55,7 @@ services:
         condition: service_healthy
   httpclient:
     build:
-      context: ../../../../
+      context: ../../../../../
       dockerfile: ./test/e2e/cases/skylog/test/docker/Dockerfile.http_client
     environment:
       SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
