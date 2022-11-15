@@ -35,7 +35,7 @@ jobs:
           - name: Golang Runtime Metrics
             config: test/e2e/cases/metrics/e2e.yaml
           - name: Application Log Report
-              config: test/e2e/cases/skylog/test/e2e.yaml
+            config: test/e2e/cases/skylog/test/e2e.yaml
     steps:
       - uses: actions/checkout@v2
         with:
