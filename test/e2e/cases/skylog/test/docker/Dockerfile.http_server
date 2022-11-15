@@ -23,4 +23,4 @@ EXPOSE 8080
 
 ENTRYPOINT ["go"]
 
-CMD ["run", "plugins/http/test/server/server.go"]
+CMD ["run", "test/e2e/cases/skylog/server/server.go"]
