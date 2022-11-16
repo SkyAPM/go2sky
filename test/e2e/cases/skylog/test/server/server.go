@@ -40,8 +40,6 @@ func main() {
 		oapAddr = oap
 	}
 
-	oapAddr = "192.168.200.100:31467"
-
 	log.Println(fmt.Sprintf("create grpc reporter oap=[%s]", oapAddr))
 
 	report, err := reporter.NewGRPCReporter(oapAddr, reporter.WithCheckInterval(time.Second))
