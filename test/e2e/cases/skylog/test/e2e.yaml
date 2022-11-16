@@ -21,7 +21,7 @@ setup:
 
 cleanup:
   # always never success failure
-  on: success
+  on: always
 
 trigger:
   action: http

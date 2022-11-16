@@ -29,7 +29,7 @@ logItems:
         traceContext:
           traceId: {{ notEmpty .traceId }}
           traceSegmentId: {{ notEmpty .traceSegmentId }}
-          spanId: {{ notEmpty .spanId }}
+          spanId: {{ ge .spanId 0 }}
         tags:
           data:
             - key: LEVEL
