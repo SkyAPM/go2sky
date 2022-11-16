@@ -15,20 +15,25 @@
 #
 
 logItems:
-  {{- contains .logItems }}
-  - serviceName: http-server
-    logSize: {{ gt .logSize 0 }}
+{{- contains .logItems }}
+  - serviceName: {{ notEmpty .serviceName }}
+    logSize: {{gt .logSize 0 }}
     logs:
-      {{- contains .logs }}
+      {{- contains .logItems }}
       - timestamp: {{ ge .timestamp 0 }}
         endpoint: ''
         body:
           type: text
-          content: {{notEmpty .content}}
-        traceContext: {{notEmpty .traceContext}}
+          content:
+            text: {{ notEmpty .text }}
+        traceContext:
+          - traceId: {{ notEmpty .traceId }}
+            traceSegmentId: {{ notEmpty .traceSegmentId }}
+            spanId: {{ ge .spanId 0 }}
         tags:
           data:
-            - {key: LEVEL, value: INFO}
+            - key: LEVEL
+              value: info
         layer: ''
       {{- end }}
-  {{- end }}
+{{- end }}
