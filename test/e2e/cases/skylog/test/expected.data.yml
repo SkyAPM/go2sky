@@ -14,26 +14,29 @@
 # limitations under the License.
 #
 
+segmentItems: []
+meterItems: []
+
 logItems:
-{{- contains .logItems }}
-  - serviceName: {{ notEmpty .serviceName }}
-    logSize: {{gt .logSize 0 }}
-    logs:
-      {{- contains .logs }}
-      - timestamp: {{ ge .timestamp 0 }}
-        endpoint: ''
-        body:
-          type: text
-          content:
-            text: {{ notEmpty .text }}
-        traceContext:
-          traceId: {{ notEmpty .traceId }}
-          traceSegmentId: {{ notEmpty .traceSegmentId }}
-          spanId: {{ ge .spanId 0 }}
-        tags:
-          data:
-            - key: LEVEL
-              value: info
-        layer: ''
-      {{- end }}
-{{- end }}
+  {{- contains .logItems }}
+- serviceName: http-server
+  logSize: {{gt .logSize 0 }}
+  logs:
+    {{- contains .logs }}
+    - timestamp: {{ ge .timestamp 0 }}
+      endpoint: ''
+      body:
+        type: text
+        content:
+          text: 'log data from path=[/helloserver]'
+      traceContext:
+        traceId: N/A
+        traceSegmentId:  N/A
+        spanId: -1
+      tags:
+        data:
+          - key: LEVEL
+            value: info
+      layer: ''
+    {{- end }}
+  {{- end }}
