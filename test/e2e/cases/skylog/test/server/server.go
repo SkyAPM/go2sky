@@ -18,16 +18,19 @@ package main
 
 import (
 	"fmt"
+	httpPlugin "github.com/SkyAPM/go2sky/plugins/http"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/SkyAPM/go2sky"
 	"github.com/SkyAPM/go2sky/reporter"
 )
 
 const (
-	oap = "mockoap:19876"
+	oap     = "mockoap:19876"
+	service = "http-server"
 )
 
 func main() {
@@ -37,12 +40,23 @@ func main() {
 		oapAddr = oap
 	}
 
-	report, err := reporter.NewGRPCReporter(oapAddr)
+	oapAddr = "192.168.200.100:31467"
+
+	log.Println(fmt.Sprintf("create grpc reporter oap=[%s]", oapAddr))
+
+	report, err := reporter.NewGRPCReporter(oapAddr, reporter.WithCheckInterval(time.Second))
 	if err != nil {
 		log.Fatalf("create grpc reporter error: %v \n", err)
 	}
 
 	log.Println("create grpc reporter success.")
+
+	tracer, err := go2sky.NewTracer(service, go2sky.WithReporter(report))
+	if err != nil {
+		log.Fatalf("crate tracer error: %v \n", err)
+	}
+
+	log.Println("create tracer success.")
 
 	skylogWriter, err := go2sky.NewLogger(report)
 	if err != nil {
@@ -67,9 +81,14 @@ func main() {
 		_, _ = writer.Write([]byte("Hello World!"))
 	})
 
-	log.Println("create server router success.")
+	sm, err := httpPlugin.NewServerMiddleware(tracer)
+	if err != nil {
+		log.Fatalf("create server middleware error %v \n", err)
+	}
 
-	err = http.ListenAndServe(":58080", route)
+	log.Println("create server middleware success.")
+
+	err = http.ListenAndServe(":58080", sm(route))
 	if err != nil {
 		log.Fatal(err)
 	}
