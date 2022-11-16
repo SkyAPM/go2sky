@@ -27,9 +27,9 @@ logItems:
           content:
             text: {{ notEmpty .text }}
         traceContext:
-          - traceId: {{ notEmpty .traceId }}
-            traceSegmentId: {{ notEmpty .traceSegmentId }}
-            spanId: {{ notEmpty .spanId }}
+          traceId: {{ notEmpty .traceId }}
+          traceSegmentId: {{ notEmpty .traceSegmentId }}
+          spanId: {{ notEmpty .spanId }}
         tags:
           data:
             - key: LEVEL
