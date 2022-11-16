@@ -19,8 +19,8 @@ FROM golang:1.16
 ADD . /go2sky
 WORKDIR /go2sky
 
-EXPOSE 8080
+EXPOSE 58080
 
 ENTRYPOINT ["go"]
 
-CMD ["run", "test/e2e/cases/skylog/server/server.go"]
+CMD ["run", "test/e2e/cases/skylog/test/server/server.go"]

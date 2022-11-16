@@ -17,46 +17,59 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/SkyAPM/go2sky"
-	httpPlugin "github.com/SkyAPM/go2sky/plugins/http"
 	"github.com/SkyAPM/go2sky/reporter"
 )
 
 const (
-	oap     = "mockoap:19876"
-	service = "http-server"
+	oap = "mockoap:19876"
 )
 
 func main() {
-	report, err := reporter.NewGRPCReporter(oap)
-	if err != nil {
-		log.Fatalf("crate grpc reporter error: %v \n", err)
+
+	oapAddr := os.Getenv("GO2SKY_OAP")
+	if len(oapAddr) < 1 {
+		oapAddr = oap
 	}
 
-	tracer, err := go2sky.NewTracer(service, go2sky.WithReporter(report))
+	report, err := reporter.NewGRPCReporter(oapAddr)
 	if err != nil {
-		log.Fatalf("crate tracer error: %v \n", err)
+		log.Fatalf("create grpc reporter error: %v \n", err)
 	}
+
+	log.Println("create grpc reporter success.")
 
 	skylogWriter, err := go2sky.NewLogger(report)
 	if err != nil {
-		log.Fatalf("crate Logger error: %v \n", err)
+		log.Fatalf("crate logger error: %v \n", err)
 	}
 
+	log.Println("create logger success.")
+
 	route := http.NewServeMux()
+
+	route.HandleFunc("/healthCheck", func(writer http.ResponseWriter, request *http.Request) {
+
+		skylogWriter.WriteLogWithContext(request.Context(), go2sky.LogLevelInfo, fmt.Sprintf("log data from path=[%s]", request.URL.Path))
+
+		_, _ = writer.Write([]byte("I am fine!"))
+	})
+
 	route.HandleFunc("/helloserver", func(writer http.ResponseWriter, request *http.Request) {
-		skylogWriter.WriteLogWithContext(request.Context(), go2sky.LogLevelInfo, "log data from path [/helloserver]")
+
+		skylogWriter.WriteLogWithContext(request.Context(), go2sky.LogLevelInfo, fmt.Sprintf("log data from path=[%s]", request.URL.Path))
+
 		_, _ = writer.Write([]byte("Hello World!"))
 	})
 
-	sm, err := httpPlugin.NewServerMiddleware(tracer)
-	if err != nil {
-		log.Fatalf("create server middleware error %v \n", err)
-	}
-	err = http.ListenAndServe(":8080", sm(route))
+	log.Println("create server router success.")
+
+	err = http.ListenAndServe(":58080", route)
 	if err != nil {
 		log.Fatal(err)
 	}

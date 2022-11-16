@@ -42,38 +42,16 @@ services:
     networks:
       - e2e
     expose:
-      - 8080
+      - 58080
     ports:
-      - 8080
+      - 58080
     healthcheck:
-      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
+      test: [ "CMD", "curl", "http://127.0.0.1:58080/healthCheck" ]
       interval: 5s
       timeout: 60s
       retries: 120
     depends_on:
       mockoap:
-        condition: service_healthy
-  httpclient:
-    build:
-      context: ../../../../../
-      dockerfile: ./test/e2e/cases/skylog/test/docker/Dockerfile.http_client
-    environment:
-      SW_AGENT_COLLECTOR_GET_AGENT_DYNAMIC_CONFIG_INTERVAL: -1
-    expose:
-      - 8080
-    ports:
-      - 8080
-    networks:
-      - e2e
-    healthcheck:
-      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
-      interval: 5s
-      timeout: 60s
-      retries: 120
-    depends_on:
-      mockoap:
-        condition: service_healthy
-      httpserver:
         condition: service_healthy
 networks:
   e2e:

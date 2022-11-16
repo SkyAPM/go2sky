@@ -27,7 +27,7 @@ trigger:
   action: http
   interval: 3s
   times: 5
-  url: http://127.0.0.1:${httpclient_8080}/hello
+  url: http://127.0.0.1:${httpserver_58080}/helloserver
   method: GET
 
 verify:
