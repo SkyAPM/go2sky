@@ -18,6 +18,7 @@ package go2sky
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"reflect"
 	"sync"
@@ -171,6 +172,13 @@ type mockRegisterReporter struct {
 	success bool
 	wg      sync.WaitGroup
 	Spans   []ReportedSpan
+}
+
+func (r *mockRegisterReporter) SendLog(logData ReportedLogData) {
+	if logData == nil {
+		return
+	}
+	fmt.Println(logData.Data())
 }
 
 func (r *mockRegisterReporter) Send(spans []ReportedSpan) {

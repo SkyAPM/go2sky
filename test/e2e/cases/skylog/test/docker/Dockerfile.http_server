@@ -14,14 +14,13 @@
 # limitations under the License.
 #
 
-traces:
-  {{- contains .traces }}
-  - segmentid: {{ notEmpty .segmentid }}
-    endpointnames:
-      - /GET/helloserver
-    duration: {{ ge .duration 0 }}
-    start: "{{ notEmpty .start}}"
-    iserror: false
-    traceids:
-      - {{ (index .traceids 0) }}
-    {{- end }}
+FROM golang:1.16
+
+ADD . /go2sky
+WORKDIR /go2sky
+
+EXPOSE 58080
+
+ENTRYPOINT ["go"]
+
+CMD ["run", "test/e2e/cases/skylog/test/server/server.go"]

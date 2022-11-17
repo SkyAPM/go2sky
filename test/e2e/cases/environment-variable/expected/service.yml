@@ -22,4 +22,4 @@
   shortname: app1
   layers:
     - GENERAL
-{{- end }}
+  {{- end }}

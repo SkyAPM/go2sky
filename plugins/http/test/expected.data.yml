@@ -36,12 +36,12 @@ segmentItems:
         peer: httpserver:8080
         tags:
         {{- contains .tags }}
-          - key: http.method
-            value: GET
-          - key: url
-            value: {{ .value }}
-          - key: status_code
-            value: '200'
+        - key: http.method
+          value: GET
+        - key: url
+          value: {{ .value }}
+        - key: status_code
+          value: '200'
         {{- end }}
       - operationName: /GET/hello
         isError: false
@@ -56,12 +56,12 @@ segmentItems:
         peer: ''
         tags:
         {{- contains .tags }}
-          - key: http.method
-            value: GET
-          - key: url
-            value: {{ .value }}
-          - key: status_code
-            value: '200'
+        - key: http.method
+          value: GET
+        - key: url
+          value: {{ .value }}
+        - key: status_code
+          value: '200'
         {{- end }}
       {{- end }}
     {{- end }}

@@ -8,6 +8,8 @@
 **GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metrics formats.
 
 # Installation
+- Require Golang 1.16
+
 ```
 $ go get -u github.com/SkyAPM/go2sky
 ```
@@ -172,6 +174,35 @@ Get the `SpanID` of the `activeSpan` in the `Context`.
 
 ```go
 go2sky.SpanID(ctx)
+```
+
+## Report Application Logs
+
+go2sky provides a logger to transmit logs of application to the SkyWalking OAP server. 
+
+```go
+
+import (
+	"context"
+	"github.com/SkyAPM/go2sky"
+	"github.com/SkyAPM/go2sky/reporter"
+	"log"
+)
+
+func reportLogsTest(ctx context.Context)  {
+	r, err := reporter.NewGRPCReporter("oap-skywalking:11800")
+	if err != nil {
+		log.Fatalf("new reporter error %v \n", err)
+	}
+	defer r.Close()
+
+	logger, errOfLoggerCreation := go2sky.NewLogger(r)
+	if errOfLoggerCreation != nil{
+		log.Fatalf("new Logger error %v \n", skyapmError)
+	}	
+	logData := "your application log need to send to backend here..."
+	logger.WriteLogWithContext(ctx,go2sky.LogLevelError, logData)
+}
 ```
 
 ## Periodically Report

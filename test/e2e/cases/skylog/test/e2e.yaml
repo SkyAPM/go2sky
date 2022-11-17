@@ -14,14 +14,29 @@
 # limitations under the License.
 #
 
-traces:
-  {{- contains .traces }}
-  - segmentid: {{ notEmpty .segmentid }}
-    endpointnames:
-      - /GET/helloserver
-    duration: {{ ge .duration 0 }}
-    start: "{{ notEmpty .start}}"
-    iserror: false
-    traceids:
-      - {{ (index .traceids 0) }}
-    {{- end }}
+setup:
+  env: compose
+  file: docker-compose.yml
+  timeout: 1200
+
+cleanup:
+  # always never success failure
+  on: always
+
+trigger:
+  action: http
+  interval: 3s
+  times: 5
+  url: http://127.0.0.1:${httpserver_58080}/helloserver
+  method: GET
+
+verify:
+  # verify with retry strategy
+  retry:
+    # max retry count
+    count: 10
+    # the interval between two retries, in millisecond.
+    interval: 10s
+  cases:
+    - query: curl http://127.0.0.1:${mockoap_12800}/receiveData
+      expected: expected.data.yml

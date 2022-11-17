@@ -14,14 +14,29 @@
 # limitations under the License.
 #
 
-traces:
-  {{- contains .traces }}
-  - segmentid: {{ notEmpty .segmentid }}
-    endpointnames:
-      - /GET/helloserver
-    duration: {{ ge .duration 0 }}
-    start: "{{ notEmpty .start}}"
-    iserror: false
-    traceids:
-      - {{ (index .traceids 0) }}
+segmentItems: []
+meterItems: []
+
+logItems:
+  {{- contains .logItems }}
+- serviceName: http-server
+  logSize: {{gt .logSize 0 }}
+  logs:
+    {{- contains .logs }}
+    - timestamp: {{ ge .timestamp 0 }}
+      endpoint: ''
+      body:
+        type: text
+        content:
+          text: 'log data from path=[/helloserver]'
+      traceContext:
+        traceId: N/A
+        traceSegmentId:  N/A
+        spanId: -1
+      tags:
+        data:
+          - key: LEVEL
+            value: info
+      layer: ''
     {{- end }}
+  {{- end }}

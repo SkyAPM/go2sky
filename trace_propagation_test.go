@@ -18,6 +18,7 @@ package go2sky
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -183,6 +184,16 @@ func TestTracer_EntryAndExitInTrace(t *testing.T) {
 type NoopReporter struct {
 	wg    *sync.WaitGroup
 	Spans []ReportedSpan
+}
+
+func (r *NoopReporter) SendLog(logData ReportedLogData) {
+
+	if logData == nil {
+		return
+	}
+
+	fmt.Println(logData.Data())
+
 }
 
 func (*NoopReporter) Boot(service string, serviceInstance string, cdsWatchers []AgentConfigChangeWatcher) {
