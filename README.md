@@ -6,7 +6,7 @@
 
 **GO2Sky** is an instrument SDK library, written in Go, by following [Apache SkyWalking](https://github.com/apache/incubator-skywalking) tracing and metrics formats.
 
-## NOTICE, SkyWalking upstream begins to build the auto-instrument agent on April 2023
+## NOTICE, SkyWalking upstream began to build the auto-instrument agent on April 2023
 **This repository are going to be archived and replaced by [the official agent](https://github.com/apache/skywalking-go) once the upstream does the first release.**
 **Please consider immigrating to the better solution.**
 
